@@ -10,7 +10,7 @@ batch_size: 12
 epochs: 100
 lr_lambda: 0.995 # Exponential decay factor
 loss: "monai.losses.TverskyLoss"
-loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 0.5}
+loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 1.0, "beta": 1.0}
 
 # RNG seeds
 torch_seed: 0
