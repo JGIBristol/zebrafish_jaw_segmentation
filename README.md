@@ -12,3 +12,7 @@ TODO
 - [ ] compare accuracy to a sensible baseline
 - [ ] latex paper with build script
 - [ ] full documentation
+
+Scripts:
+- [ ] Create DICOMs
+- [ ] View DICOMs

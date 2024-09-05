@@ -1,0 +1,10 @@
+# You shouldn't need to change this
+# User-defined configuration is in userconf.yml
+
+# This contains directories of 2d tifs
+wahabs_old_tifs: "DATABASE/uCT/Wahab_clean_dataset/low_res_clean_v3/"
+felix_old_labels_dir: "1Felix and Rich make models/Training dataset Tiffs"
+
+wahabs_3d_tifs: "DATABASE/uCT/Wahab_clean_dataset/TIFS/"
+felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
+wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training set 1"

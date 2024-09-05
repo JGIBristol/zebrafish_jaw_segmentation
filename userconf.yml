@@ -1,0 +1,24 @@
+# User-defined configuration file; things here depend on where your files are etc.
+rdsf_dir: '/home/mh19137/zebrafish_rdsf/'
+dicom_dir: '/home/mh19137/zebrafish_jaw_segmentation/dicoms/'
+
+# Options for the model that you might want to change
+window_size: 192,192,192  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
+learning_rate: 0.00005
+optimiser: "Adam"  # Must be one of the torch.optim optimisers
+batch_size: 2
+epochs: 100
+lr_lambda: 0.95  # Exponential decay factor
+
+model_params:
+  # Things you probably won't need to change - I just kept them here to keep all the params in one place
+  spatial_dims: 3
+  n_classes: 2  # n bones + background
+  in_channels: 1  # Our images are greyscale
+
+  # Things you might want to change
+  n_layers: 6  # 6?
+  n_initial_filters: 6  # 6 would be sensible
+  kernel_size: 3  # 7
+  stride: 2  # 2
+  dropout: 0.0
