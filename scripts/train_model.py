@@ -13,7 +13,6 @@ import numpy as np
 import torchio as tio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from monai.losses import TverskyLoss
 
 from fishjaw.util import files, util
 from fishjaw.model import data, model
@@ -219,7 +218,7 @@ def main(*, pretrained: Union[str, None]) -> None:
     fig.savefig(str(output_dir / "example_data.png"))
 
     # Define loss function
-    loss = TverskyLoss(include_background=False, to_onehot_y=True, alpha=0.5)
+    loss = model.lossfn()
 
     # Train the model
     net, train_losses, val_losses = model.train(

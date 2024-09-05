@@ -4,6 +4,7 @@ Define the model
 """
 
 import os
+import importlib
 from math import sqrt
 
 import torch
@@ -79,6 +80,19 @@ def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
     y = data[tio.LABEL][tio.DATA]
 
     return x, y
+
+
+def lossfn() -> torch.nn.modules.Module:
+    """
+    Get the loss function from the config file
+
+    """
+    module_path, class_name = util.userconf()["loss"].rsplit(".", 1)
+    options: dict = util.userconf()["loss_options"]
+
+    module = importlib.import_module(module_path)
+
+    return getattr(module, class_name)(**options)
 
 
 def train_step(

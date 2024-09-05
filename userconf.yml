@@ -9,6 +9,8 @@ optimiser: "Adam"  # Must be one of the torch.optim optimisers
 batch_size: 12
 epochs: 100
 lr_lambda: 0.995 # Exponential decay factor
+loss: "monai.losses.TverskyLoss"
+loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 0.5}
 
 # RNG seeds
 torch_seed: 0
