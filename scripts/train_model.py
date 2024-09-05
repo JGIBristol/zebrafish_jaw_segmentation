@@ -132,6 +132,9 @@ def main(*, pretrained: Union[str, None]) -> None:
     state_dict = torch.load(pretrained) if pretrained is not None else None
 
     # Create a model and optimiser
+    uconf = util.userconf()
+    torch.manual_seed(uconf["torch_seed"])
+
     net = model.monai_unet()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == "cpu":
@@ -153,7 +156,7 @@ def main(*, pretrained: Union[str, None]) -> None:
         output_dir.mkdir()
 
     # Read in data
-    dicom_paths = list(files.dicom_dir().glob("*.dcm"))
+    dicom_paths = sorted(list(files.dicom_dir().glob("*.dcm")))
 
     # Convert to subjects
     subjects = [
@@ -174,7 +177,7 @@ def main(*, pretrained: Union[str, None]) -> None:
     )
 
     # Choose some indices to act as train, validation and test
-    rng = np.random.default_rng(seed=0)
+    rng = np.random.default_rng(seed=uconf["test_train_seed"])
     indices = np.arange(len(subjects))
     rng.shuffle(indices)
     train_idx, val_idx, test_idx = np.split(
@@ -193,14 +196,13 @@ def main(*, pretrained: Union[str, None]) -> None:
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
 
     # Convert to dataloaders
-    uconf = util.userconf()
     patch_size = (128, 128, 128)
     batch_size = uconf["batch_size"]
     train_loader = data.train_val_loader(
-        train_subjects, shuffle=True, patch_size=patch_size, batch_size=batch_size
+        train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
     )
     val_loader = data.train_val_loader(
-        val_subjects, shuffle=False, patch_size=patch_size, batch_size=batch_size
+        val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
     )
 
     patch_overlap = (4, 4, 4)
@@ -227,8 +229,10 @@ def main(*, pretrained: Union[str, None]) -> None:
         train_loader,
         val_loader,
         device=device,
-        epochs=util.userconf()["epochs"],
-        lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=uconf["lr_lambda"]),
+        epochs=uconf["epochs"],
+        lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(
+            optimiser, gamma=uconf["lr_lambda"]
+        ),
         checkpoint=True,
     )
 

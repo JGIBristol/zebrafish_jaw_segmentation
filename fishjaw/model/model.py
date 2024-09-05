@@ -9,7 +9,7 @@ from math import sqrt
 import torch
 import numpy as np
 import torchio as tio
-from tqdm import tqdm, trange
+from tqdm import trange
 from monai.networks.nets import AttentionUnet
 
 from ..util import util

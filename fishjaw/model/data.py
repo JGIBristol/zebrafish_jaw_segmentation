@@ -62,23 +62,26 @@ def subject(
 def train_val_loader(
     subjects: tio.SubjectsDataset,
     *,
-    shuffle: bool,
+    train: bool,
     patch_size: tuple[int, int, int],
     batch_size: int,
 ) -> torch.utils.data.DataLoader:
     """
     Create a dataloader from a SubjectsDataset
 
-    The training data should be shuffled; validation data should not be
+    Training data is shuffled and has the last batch dropped; validation data is not
 
     :param subjects: The dataset. Training data should have random transforms applied
-    :param shuffle: Whether to shuffle the data
+    :param train: If we're training or not
     :param patch_size: The size of the patches to extract
     :param batch_size: The batch size
 
     :returns: The loader
 
     """
+    shuffle = train is True
+    drop_last = train is True
+
     # Even probability of the patches being centred on each value
     label_probs = {0: 1, 1: 1}
     patch_sampler = tio.LabelSampler(
@@ -101,6 +104,7 @@ def train_val_loader(
         shuffle=shuffle,
         num_workers=0,  # Load the data in the main process
         pin_memory=False,  # No idea why I have to set this to False, otherwise we get obscure errors
+        drop_last=drop_last,
     )
 
 
