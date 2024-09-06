@@ -47,12 +47,12 @@ def model_params() -> dict:
     return params
 
 
-def monai_unet() -> AttentionUnet:
+def monai_unet(*, params: dict = model_params()) -> AttentionUnet:
     """
     U-Net model for segmentation
 
     """
-    return AttentionUnet(**model_params())
+    return AttentionUnet(**params())
 
 
 def optimiser(model: AttentionUnet) -> torch.optim.Optimizer:
