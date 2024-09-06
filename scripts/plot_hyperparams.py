@@ -10,6 +10,7 @@ import yaml
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 
 
 def _plot_coarse():
@@ -22,7 +23,7 @@ def _plot_coarse():
         list((pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse").glob("*"))
     )
 
-    fig, axes = plt.subplots(1, 2)
+    fig, axes = plt.subplots(1, 2, sharey=True)
     cmap = plt.get_cmap("viridis")
 
     for path in tqdm(paths):
@@ -45,7 +46,17 @@ def _plot_coarse():
         axes[0].plot(train_loss, color=colour)
         axes[1].plot(val_loss, color=colour)
 
-    fig.tight_layout()
+    # Add a colorbar
+    cbar = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=-6, vmax=1)), ax=axes
+    )
+    cbar.set_label("Learning rate")
+
+    axes[0].set_title("Training loss")
+    axes[1].set_title("Validation loss")
+
+    for axis in axes:
+        axis.set_xticks([])
 
     fig.savefig("coarse_search.png")
 

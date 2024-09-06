@@ -180,7 +180,7 @@ def step(
         fig, _ = images_3d.plot_subject(test_subject)
         fig.savefig(str(out_dir / "test_truth.png"))
         plt.close(fig)
-    
+
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
     np.save(out_dir / "val_losses.npy", val_losses)
@@ -202,7 +202,12 @@ def main(*, mode: str, n_steps: int):
 
         with open(out_dir / "config.yaml", "w") as cfg_file:
             yaml.dump(config, cfg_file)
-        step(config, train_subjects, val_subjects, test_subject, out_dir)
+
+        try:
+            step(config, train_subjects, val_subjects, test_subject, out_dir)
+        except torch.cuda.OutOfMemoryError as e:
+            print(config)
+            print(e)
 
 
 if __name__ == "__main__":
