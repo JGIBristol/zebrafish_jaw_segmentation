@@ -58,7 +58,7 @@ def _alpha(rng: np.random.Generator, mode: str) -> float:
 
 
 def _n_filters(rng: np.random.Generator, mode: str) -> int:
-    return int(rng.integers(4, 32))
+    return int(rng.integers(4, 25))
 
 
 def _config(rng: np.random.Generator, mode: str) -> dict:
