@@ -6,6 +6,7 @@ Train several models with different hyperparameters to compare the results
 import pathlib
 import argparse
 
+import yaml
 import torch
 import numpy as np
 import torchio as tio
@@ -21,7 +22,7 @@ def _output_dir(n: int, mode: str) -> pathlib.Path:
     Get the output directory for this run
 
     """
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_output" / mode / n
+    out_dir = pathlib.Path(__file__).parents[1] / "tuning_output" / mode / str(n)
     if not out_dir.is_dir():
         out_dir.mkdir(parents=True)
 
@@ -40,14 +41,15 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
 
 
 def _batch_size(rng: np.random.Generator, mode: str) -> int:
-    return rng.integers(1, 32)
+    # Maximum here sort of depends on what you can fit on the GPU
+    return int(rng.integers(1, 12))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
     if mode == "coarse":
-        return 10
+        return 3
     if mode == "med":
-        return 50
+        return 10
     return rng.integers(50, 500)
 
 
@@ -90,6 +92,8 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
             "beta": 1 - alpha,
             "softmax": True,
         },
+        "torch_seed": 0,
+        "mode": mode,
     }
 
     return config
@@ -159,22 +163,27 @@ def step(
     torch.manual_seed(config["torch_seed"])
     net, train_losses, val_losses = train_model(config, train_subjects, val_subjects)
 
-    # Plot the loss
-    fig = training.plot_losses(train_losses, val_losses)
-    fig.savefig(str(out_dir / "loss.png"))
-    plt.close(fig)
+    if config["mode"] != "coarse":
+        # Plot the loss
+        fig = training.plot_losses(train_losses, val_losses)
+        fig.savefig(str(out_dir / "loss.png"))
+        plt.close(fig)
 
-    # Plot the testing image
-    fig = images_3d.plot_inference(
-        net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
-    )
-    fig.savefig(str(out_dir / "test_pred.png"))
-    plt.close(fig)
+        # Plot the testing image
+        fig = images_3d.plot_inference(
+            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+        )
+        fig.savefig(str(out_dir / "test_pred.png"))
+        plt.close(fig)
 
-    # Plot the ground truth for this image
-    fig, _ = images_3d.plot_subject(test_subject)
-    fig.savefig(str(out_dir / "test_truth.png"))
-    plt.close(fig)
+        # Plot the ground truth for this image
+        fig, _ = images_3d.plot_subject(test_subject)
+        fig.savefig(str(out_dir / "test_truth.png"))
+        plt.close(fig)
+    
+    # Save the losses to file
+    np.save(out_dir / "train_losses.npy", train_losses)
+    np.save(out_dir / "val_losses.npy", val_losses)
 
 
 def main(*, mode: str, n_steps: int):
@@ -190,6 +199,9 @@ def main(*, mode: str, n_steps: int):
         out_dir = _output_dir(i, mode)
 
         config = _config(rng, mode)
+
+        with open(out_dir / "config.yaml", "w") as cfg_file:
+            yaml.dump(config, cfg_file)
         step(config, train_subjects, val_subjects, test_subject, out_dir)
 
 
