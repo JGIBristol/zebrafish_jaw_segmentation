@@ -269,3 +269,54 @@ def train(
                 lr_scheduler.step()
 
     return model, train_batch_losses, val_batch_losses
+
+
+def _predict_patches(
+    model: torch.nn.Module,
+    patches: tio.data.sampler.PatchSampler,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Make a prediction some patches
+
+    Returns the predictions and the locations of the patches
+
+    """
+    tensors = []
+    locations = []
+    for patch in patches:
+        tensors.append(patch[tio.IMAGE][tio.DATA].unsqueeze(0))
+        locations.append(patch[tio.LOCATION])
+
+    device = next(model.parameters()).device
+
+    tensors = torch.cat(tensors, dim=0).to(device)
+    locations = torch.stack(locations)
+
+    return model(tensors).to("cpu").detach(), locations
+
+
+def predict(
+    model: torch.nn.Module,
+    subject: tio.Subject,
+    *,
+    patch_size: tuple[int, int, int],
+    patch_overlap: tuple[int, int, int],
+) -> np.ndarray:
+    """
+    Make a prediction on a subject using the provided model
+
+    :param model: the model to use
+    :param subject: the subject to predict on
+    :param patch_size: the size of the patches to use
+    :param patch_overlap: the overlap between patches. Uses a hann window
+
+    """
+    # Make predictions on the patches
+    sampler = tio.GridSampler(subject, patch_size, patch_overlap=patch_overlap)
+    prediction, locations = _predict_patches(model, sampler)
+
+    # Stitch them together
+    aggregator = tio.inference.GridAggregator(sampler=sampler, overlap_mode="hann")
+    aggregator.add_batch(prediction, locations=locations)
+
+    return aggregator.get_output_tensor()[1].numpy()

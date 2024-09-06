@@ -72,54 +72,32 @@ def plot_losses(train_losses: list[float], val_losses: list[float]) -> plt.Figur
     return fig
 
 
-def plot_test_image(
-    net: torch.nn.Module, sampler: tio.GridSampler, output_dir: pathlib.Path
+def plot_inference(
+    net: torch.nn.Module,
+    subject: tio.GridSampler,
+    *,
+    patch_size: tuple[int, int, int],
+    patch_overlap: tuple[int, int, int],
 ) -> plt.Figure:
     """
-    Plot the test image
+    Plot the inference on an image
 
     """
-    agg_kw = {"sampler": sampler, "overlap_mode": "hann"}
-    pred_aggregator = tio.inference.GridAggregator(**agg_kw)
-    img_aggregator = tio.inference.GridAggregator(**agg_kw)
-    truth_aggregator = tio.inference.GridAggregator(**agg_kw)
+    # Get the image from the subject
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+    print(image.shape)
 
-    # Our image is smaller than 1 batch, so we can just do it all at once
-    batch = []
-    locations = []
-    truth = []
-    for patch in sampler:
-        gpu_patch = patch[tio.IMAGE][tio.DATA].unsqueeze(0)
-        truth_patch = patch[tio.LABEL][tio.DATA].unsqueeze(0)
-
-        locations.append(patch[tio.LOCATION])
-        batch.append(gpu_patch)
-        truth.append(truth_patch)
-
-    device = next(net.parameters()).device
-
-    batch_tensor = torch.cat(batch, dim=0).to(device)
-    truth_tensor = torch.cat(truth, dim=0).to(device)
-    locations_tensor = torch.stack(locations)
-    patch_pred = net(batch_tensor).to("cpu").detach()
-
-    pred_aggregator.add_batch(patch_pred, locations=locations_tensor)
-    img_aggregator.add_batch(batch_tensor, locations=locations_tensor)
-    truth_aggregator.add_batch(truth_tensor, locations=locations_tensor)
-
-    prediction = pred_aggregator.get_output_tensor()[1].numpy()
-    image = img_aggregator.get_output_tensor()[0].numpy()
-    truth = truth_aggregator.get_output_tensor()[0].numpy()
+    # Perform inference
+    prediction = model.predict(
+        net, subject, patch_size=patch_size, patch_overlap=patch_overlap
+    )
+    print(prediction.shape)
 
     fig, _ = images_3d.plot_slices(image, prediction)
     fig.suptitle("Model Prediction")
     fig.tight_layout()
-    fig.savefig(str(output_dir / "prediction.png"))
 
-    fig, _ = images_3d.plot_slices(image, truth)
-    fig.suptitle("Truth")
-    fig.tight_layout()
-    fig.savefig(str(output_dir / "truth.png"))
+    return fig
 
 
 def main(*, pretrained: Union[str, None]) -> None:
@@ -193,6 +171,7 @@ def main(*, pretrained: Union[str, None]) -> None:
         [subjects[i] for i in train_idx], transform=transforms
     )
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
+    test_subject = subjects[test_idx]
 
     # Convert to dataloaders
     patch_size = (128, 128, 128)
@@ -202,11 +181,6 @@ def main(*, pretrained: Union[str, None]) -> None:
     )
     val_loader = data.train_val_loader(
         val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
-    )
-
-    patch_overlap = (4, 4, 4)
-    test_sampler = tio.GridSampler(
-        subjects[test_idx], patch_size, patch_overlap=patch_overlap
     )
 
     # Plot an example of the training data
@@ -240,7 +214,8 @@ def main(*, pretrained: Union[str, None]) -> None:
     fig.savefig(str(output_dir / "loss.png"))
 
     # Plot the testing image
-    plot_test_image(net, test_sampler, output_dir)
+    fig = plot_inference(net, test_subject, patch_size=patch_size, patch_overlap=(4, 4, 4))
+    fig.savefig(str(output_dir / "prediction.png"))
 
 
 if __name__ == "__main__":
