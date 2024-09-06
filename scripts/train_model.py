@@ -167,6 +167,8 @@ def main():
     )
     fig.savefig(str(output_dir / "prediction.png"))
 
+    # Plot the ground truth for this image
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model to segment the jawbone")

@@ -198,7 +198,7 @@ def get_data(
     print(f"Test: {test_idx=}")
 
     train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=transforms
+        [subjects[i] for i in train_idx], transform=transforms()
     )
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
     test_subject = subjects[test_idx]
