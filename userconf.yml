@@ -4,15 +4,19 @@ dicom_dir: '/home/mh19137/zebrafish_jaw_segmentation/dicoms/'
 
 # Options for the model that you might want to change
 window_size: 192,192,192  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
-learning_rate: 0.0002
+learning_rate: 0.005
 optimiser: "Adam"  # Must be one of the torch.optim optimisers
-batch_size: 12
+batch_size: 16
 epochs: 100
-lr_lambda: 0.995 # Exponential decay factor
+lr_lambda: 1.0 # Exponential decay factor
 loss: "monai.losses.TverskyLoss"
-loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 1.0, "beta": 1.0}
+loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 1, "beta": 1, "softmax": true}
 
 # RNG seeds
+# Note that this still doesn't guarantee reproducibility,
+# since the dataloaders and probably some algorithms/other things have different sources
+# of randomness
+# But (hopefully) it should mean our model is initialised the same way each time
 torch_seed: 0
 test_train_seed: 1
 
