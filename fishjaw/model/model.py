@@ -16,15 +16,12 @@ from monai.networks.nets import AttentionUnet
 from ..util import util
 
 
-def model_params() -> dict:
+def convert_params(params: dict) -> dict:
     """
-    Get the model params from the user config file,
-    calcuating any extras that might be needed and renaming
-    them to be consistent with the monai API
+    Convert the parameters to the right format, adding any extras
+    and renaming them to be consistent with the monai API
 
     """
-    params = util.userconf()["model_params"]
-
     # Get the number of channels for each layer by finding the number channels in the first layer
     # and then doing some maths
     start = int(sqrt(params["n_initial_filters"]))
@@ -45,6 +42,14 @@ def model_params() -> dict:
     params.pop("stride")
 
     return params
+
+
+def model_params() -> dict:
+    """
+    Get the model params from the user config file
+
+    """
+    return convert_params(util.userconf()["model_params"])
 
 
 def monai_unet(*, params: dict = model_params()) -> AttentionUnet:
