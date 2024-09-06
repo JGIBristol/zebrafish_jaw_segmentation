@@ -6,27 +6,16 @@ Train a model to segment the jawbone from labelled DICOM images
 import pathlib
 import warnings
 import argparse
-from typing import Union
 
 import torch
 import numpy as np
 import torchio as tio
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files, util
+from fishjaw.util import util
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d
-from fishjaw.images import transform
-
-
-def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
-    """
-    Get the centre of the jaw for a given fish
-
-    """
-    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
-    return transform.centre(n)
+from fishjaw.images import io
 
 
 def plot_losses(train_losses: list[float], val_losses: list[float]) -> plt.Figure:
@@ -100,18 +89,18 @@ def plot_inference(
     return fig
 
 
-def main(*, pretrained: Union[str, None]) -> None:
+def train_model(
+    config: dict,
+    train_subjects: torch.utils.data.DataLoader,
+    val_subjects: torch.utils.data.DataLoader,
+) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
-    Create a model, train it, then save it
+    Create a model, train and return it
+
+    Returns the model, the training losses and the validation losses
 
     """
-    # Check that the pretrained state dict is valid
-    state_dict = torch.load(pretrained) if pretrained is not None else None
-
     # Create a model and optimiser
-    uconf = util.userconf()
-    torch.manual_seed(uconf["torch_seed"])
-
     net = model.monai_unet()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == "cpu":
@@ -123,59 +112,10 @@ def main(*, pretrained: Union[str, None]) -> None:
     net = net.to(device)
 
     optimiser = model.optimiser(net)
-    if state_dict is not None:
-        net.load_state_dict(state_dict["model_state_dict"])
-        optimiser.load_state_dict(state_dict["optimizer_state_dict"])
-        print(f"Loaded pretrained model, trained for {state_dict['epoch']} epochs")
 
-    output_dir = pathlib.Path("train_output")
-    if not output_dir.is_dir():
-        output_dir.mkdir()
-
-    # Read in data
-    dicom_paths = sorted(list(files.dicom_dir().glob("*.dcm")))
-
-    # Convert to subjects
-    subjects = [
-        data.subject(path, centre=centre(path))
-        for path in tqdm(dicom_paths, desc="Reading DICOMs")
-    ]
-
-    # Define some random transforms
-    transforms = tio.Compose(
-        [
-            # tio.RandomFlip(axes=(0), flip_probability=0.5),
-            # tio.RandomAffine(
-            #     p=1,
-            #     degrees=10,
-            #     scales=0.5,
-            # ),
-        ]
-    )
-
-    # Choose some indices to act as train, validation and test
-    rng = np.random.default_rng(seed=uconf["test_train_seed"])
-    indices = np.arange(len(subjects))
-    rng.shuffle(indices)
-    train_idx, val_idx, test_idx = np.split(
-        indices, [int(0.95 * len(indices)), len(indices) - 1]
-    )
-    assert len(test_idx) == 1
-    test_idx = test_idx[0]
-
-    print(f"Train: {len(train_idx)=}")
-    print(f"Val: {val_idx=}")
-    print(f"Test: {test_idx=}")
-
-    train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=transforms
-    )
-    val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
-    test_subject = subjects[test_idx]
-
-    # Convert to dataloaders
-    patch_size = (128, 128, 128)
-    batch_size = uconf["batch_size"]
+    # Create dataloaders
+    patch_size = io.patch_size()
+    batch_size = config["batch_size"]
     train_loader = data.train_val_loader(
         train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
     )
@@ -183,52 +123,52 @@ def main(*, pretrained: Union[str, None]) -> None:
         val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
     )
 
-    # Plot an example of the training data
-    example_data = next(iter(train_loader))
-    fig, _ = images_3d.plot_slices(
-        example_data[tio.IMAGE][tio.DATA][0].squeeze().numpy(),
-        mask=example_data[tio.LABEL][tio.DATA][0].squeeze().numpy(),
-    )
-    fig.savefig(str(output_dir / "example_data.png"))
-
     # Define loss function
     loss = model.lossfn()
 
-    # Train the model
-    net, train_losses, val_losses = model.train(
+    return model.train(
         net,
         optimiser,
         loss,
         train_loader,
         val_loader,
         device=device,
-        epochs=uconf["epochs"],
+        epochs=config["epochs"],
         lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(
-            optimiser, gamma=uconf["lr_lambda"]
+            optimiser, gamma=config["lr_lambda"]
         ),
-        checkpoint=True,
     )
+
+
+def main():
+    """
+    Get the right data, train the model and create some outputs
+
+    """
+    config = util.userconf()
+    torch.manual_seed(config["torch_seed"])
+    rng = np.random.default_rng(seed=config["test_train_seed"])
+
+    train_subjects, val_subjects, test_subject = data.get_data(rng)
+
+    net, train_losses, val_losses = train_model(config, train_subjects, val_subjects)
+
+    output_dir = pathlib.Path("train_output")
+    if not output_dir.is_dir():
+        output_dir.mkdir()
 
     # Plot the loss
     fig = plot_losses(train_losses, val_losses)
     fig.savefig(str(output_dir / "loss.png"))
 
     # Plot the testing image
-    fig = plot_inference(net, test_subject, patch_size=patch_size, patch_overlap=(4, 4, 4))
+    fig = plot_inference(
+        net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+    )
     fig.savefig(str(output_dir / "prediction.png"))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model to segment the jawbone")
-
-    default_weights = "data/starting_weights.pth"
-    parser.add_argument(
-        "--pretrained",
-        nargs="?",
-        type=str,
-        const=default_weights,
-        help=f"""Whether to load a pretrained model at the provided path.
-                 Defaults to {default_weights} if no path is provided""",
-    )
 
     main(**vars(parser.parse_args()))
