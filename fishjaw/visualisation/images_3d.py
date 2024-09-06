@@ -3,10 +3,14 @@ Plotting 3D things
 
 """
 
+
+import torch
+import numpy as np
+import torchio as tio
 import matplotlib.pyplot as plt
 
-import numpy as np
 
+from ..model import model
 
 def plot_slices(
     arr: np.ndarray, mask: np.ndarray = None
@@ -33,3 +37,40 @@ def plot_slices(
     fig.tight_layout()
 
     return fig, axes
+
+
+def plot_subject(subject: tio.Subject) -> plt.Figure:
+    """
+    Plot the image and label of a subject
+
+    """
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+    label = subject[tio.LABEL][tio.DATA].squeeze().numpy()
+
+    return plot_slices(image, label)
+
+
+def plot_inference(
+    net: torch.nn.Module,
+    subject: tio.GridSampler,
+    *,
+    patch_size: tuple[int, int, int],
+    patch_overlap: tuple[int, int, int],
+) -> plt.Figure:
+    """
+    Plot the inference on an image
+
+    """
+    # Get the image from the subject
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+
+    # Perform inference
+    prediction = model.predict(
+        net, subject, patch_size=patch_size, patch_overlap=patch_overlap
+    )
+
+    fig, _ = plot_slices(image, prediction)
+    fig.suptitle("Model Prediction")
+    fig.tight_layout()
+
+    return fig

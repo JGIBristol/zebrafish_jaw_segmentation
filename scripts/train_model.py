@@ -9,7 +9,6 @@ import argparse
 
 import torch
 import numpy as np
-import torchio as tio
 import matplotlib.pyplot as plt
 
 from fishjaw.util import util
@@ -57,34 +56,6 @@ def plot_losses(train_losses: list[float], val_losses: list[float]) -> plt.Figur
 
     log_axis.set_title("Log Loss")
     log_axis.set_xlabel("Epoch")
-
-    return fig
-
-
-def plot_inference(
-    net: torch.nn.Module,
-    subject: tio.GridSampler,
-    *,
-    patch_size: tuple[int, int, int],
-    patch_overlap: tuple[int, int, int],
-) -> plt.Figure:
-    """
-    Plot the inference on an image
-
-    """
-    # Get the image from the subject
-    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
-    print(image.shape)
-
-    # Perform inference
-    prediction = model.predict(
-        net, subject, patch_size=patch_size, patch_overlap=patch_overlap
-    )
-    print(prediction.shape)
-
-    fig, _ = images_3d.plot_slices(image, prediction)
-    fig.suptitle("Model Prediction")
-    fig.tight_layout()
 
     return fig
 
@@ -160,17 +131,21 @@ def main():
     # Plot the loss
     fig = plot_losses(train_losses, val_losses)
     fig.savefig(str(output_dir / "loss.png"))
+    plt.close(fig)
 
     # Plot the testing image
-    fig = plot_inference(
+    fig = images_3d.plot_inference(
         net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
     )
-    fig.savefig(str(output_dir / "prediction.png"))
+    fig.savefig(str(output_dir / "test_pred.png"))
+    plt.close(fig)
 
     # Plot the ground truth for this image
+    fig, _ = images_3d.plot_subject(test_subject)
+    fig.savefig(str(output_dir / "test_truth.png"))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model to segment the jawbone")
-
     main(**vars(parser.parse_args()))
