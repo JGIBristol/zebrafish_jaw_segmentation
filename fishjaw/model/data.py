@@ -6,10 +6,13 @@ Loading, pre-processing, etc. the data for the model
 import pathlib
 
 import torch
+import torch.utils
 import numpy as np
 import torchio as tio
+from tqdm import tqdm
 
 from ..images import io, transform
+from ..util import files
 
 
 def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
@@ -27,7 +30,7 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
 def subject(
     dicom_path: pathlib.Path,
     *,
-    centre: tuple[int, int, int] = None,
+    centre: tuple[int, int, int] = None,  # Shadowing whoops
 ) -> tio.Subject:
     """
     Create a subject from a DICOM file
@@ -129,3 +132,75 @@ def test_loader(
         num_workers=0,
         pin_memory=False,
     )
+
+
+def transforms() -> tio.transforms.Transform:
+    """
+    Define the transforms to apply to the training data
+
+    """
+    return tio.Compose(
+        [
+            # tio.RandomFlip(axes=(0), flip_probability=0.5),
+            # tio.RandomAffine(
+            #     p=1,
+            #     degrees=10,
+            #     scales=0.5,
+            # ),
+        ]
+    )
+
+
+def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
+    """
+    Get the centre of the jaw for a given fish
+
+    """
+    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+    return transform.centre(n)
+
+
+def get_data(
+    rng: np.random.Generator, *, train_frac: float = 0.95
+) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
+    """
+    Get all the data used in the training process - training, validation and testing
+    This reads in the DICOMs created by `scripts/create_dicoms.py`
+    Prints a progress bar
+
+    :param rng: A random number generator to use for test/train/split
+    :param train_frac: The fraction of the data to use for training (roughly)
+
+    :return: subjects for training
+    :return: subjects for validation
+    :return: a subject, for testing
+
+    """
+    # Read in data + convert to subjects
+    dicom_paths = sorted(list(files.dicom_dir().glob("*.dcm")))
+    subjects = [
+        subject(path, centre=centre(path))
+        for path in tqdm(dicom_paths, desc="Reading DICOMs")
+    ]
+
+    # Choose some indices to act as train, validation and test
+    # This is a bit of a hack
+    indices = np.arange(len(subjects))
+    rng.shuffle(indices)
+    train_idx, val_idx, test_idx = np.split(
+        indices, [int(train_frac * len(indices)), len(indices) - 1]
+    )
+    assert len(test_idx) == 1
+    test_idx = test_idx[0]
+
+    print(f"Train: {len(train_idx)=}")
+    print(f"Val: {val_idx=}")
+    print(f"Test: {test_idx=}")
+
+    train_subjects = tio.SubjectsDataset(
+        [subjects[i] for i in train_idx], transform=transforms
+    )
+    val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
+    test_subject = subjects[test_idx]
+
+    return train_subjects, val_subjects, test_subject
