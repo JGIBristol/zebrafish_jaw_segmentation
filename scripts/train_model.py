@@ -9,12 +9,25 @@ import argparse
 
 import torch
 import numpy as np
+import torchio as tio
 import matplotlib.pyplot as plt
 
 from fishjaw.util import util
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 from fishjaw.images import io
+
+
+def _plot_example(batch: dict[str, torch.Tensor]):
+    """
+    Plot an example of the training data
+
+    """
+    img = batch[tio.IMAGE][tio.DATA][0, 0].numpy()
+    label = batch[tio.LABEL][tio.DATA][0, 0].numpy()
+
+    fig, _ = images_3d.plot_slices(img, label)
+    fig.savefig("train_output/train_example.png")
 
 
 def train_model(
@@ -50,6 +63,9 @@ def train_model(
     val_loader = data.train_val_loader(
         val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
     )
+
+    # Plot an example of the training data (which has been augmented)
+    _plot_example(next(iter(train_loader)))
 
     # Define loss function
     loss = model.lossfn()
