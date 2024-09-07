@@ -8,7 +8,7 @@ patch_size: 128,128,128
 learning_rate: 0.05
 optimiser: "Adam"  # Must be one of the torch.optim optimisers
 batch_size: 16
-epochs: 10
+epochs: 25
 lr_lambda: 1.0 # Exponential decay factor
 loss: "monai.losses.TverskyLoss"
 loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 1, "beta": 1, "softmax": true}

@@ -145,7 +145,7 @@ def transforms() -> tio.transforms.Transform:
             # tio.RandomAffine(
             #     p=1,
             #     degrees=10,
-            #     scales=0.5,
+            #     scales=0.2,
             # ),
         ]
     )

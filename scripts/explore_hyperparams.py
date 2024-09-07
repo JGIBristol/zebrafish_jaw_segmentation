@@ -33,7 +33,8 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
     if mode == "coarse":
         lr_range = (-6, 1)
     elif mode == "med":
-        raise NotImplementedError
+        # This is a bit of a guess cus it never really blew up in the coarse search
+        lr_range = (-6, 1)
     elif mode == "fine":
         raise NotImplementedError
 
@@ -49,7 +50,7 @@ def _epochs(rng: np.random.Generator, mode: str) -> int:
     if mode == "coarse":
         return 3
     if mode == "med":
-        return 10
+        return 25
     return rng.integers(50, 500)
 
 
