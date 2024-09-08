@@ -13,6 +13,43 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
 
+def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
+    fig, axes = plt.subplots(1, 2, sharey=True)
+    cmap = plt.get_cmap("viridis")
+
+    for path in tqdm(paths):
+        try:
+            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
+            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
+        except FileNotFoundError:
+            continue
+
+        # Get the batch size
+        with open(path / "config.yaml") as f:
+            params = yaml.safe_load(f)
+        batch_size = params["batch_size"]
+
+        # Scale to between 0 and 1
+        scaled = (batch_size - 2) / 12
+
+        # Get the colour from the LR
+        colour = cmap(scaled)
+        axes[0].plot(train_loss, color=colour)
+        axes[1].plot(val_loss, color=colour)
+
+    # Add a colorbar
+    cbar = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=2, vmax=12)), ax=axes
+    )
+    cbar.set_label("Batch size")
+    axes[0].set_title("Training loss")
+    axes[1].set_title("Validation loss")
+    for axis in axes:
+        axis.set_xticks([])
+
+    return fig
+
+
 def _lr_plot(paths: list[pathlib.Path]) -> plt.Figure:
     fig, axes = plt.subplots(1, 2, sharey=True)
     cmap = plt.get_cmap("viridis")
@@ -29,6 +66,7 @@ def _lr_plot(paths: list[pathlib.Path]) -> plt.Figure:
             params = yaml.safe_load(f)
         lr = params["learning_rate"]
         n_filters = params["model_params"]["n_initial_filters"]
+        batch_size = params["batch_size"]
 
         # Scale to between 0 and 1
         scaled_lr = (np.log10(lr) + 6) / 7
@@ -86,7 +124,7 @@ def _filter_plot(paths: list[pathlib.Path]) -> plt.Figure:
     axes[1].set_title("Validation loss")
     for axis in axes:
         axis.set_xticks([])
-    
+
     return fig
 
 
@@ -108,6 +146,10 @@ def _plot_coarse():
     fig.savefig("coarse_search_n_filters.png")
     plt.close(fig)
 
+    fig = _batch_plot(paths)
+    fig.savefig("med_search_batch.png")
+    plt.close(fig)
+
 
 def _plot_med():
     """
@@ -125,6 +167,10 @@ def _plot_med():
 
     fig = _filter_plot(paths)
     fig.savefig("med_search_n_filters.png")
+    plt.close(fig)
+
+    fig = _batch_plot(paths)
+    fig.savefig("med_search_batch.png")
     plt.close(fig)
 
 

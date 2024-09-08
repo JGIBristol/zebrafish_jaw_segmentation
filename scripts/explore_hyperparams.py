@@ -55,7 +55,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         # This is a bit of a guess cus it never really blew up in the coarse search
         lr_range = (-6, 1)
     elif mode == "fine":
-        raise NotImplementedError
+        lr_range = (-6, 1)
 
     return 10 ** rng.uniform(*lr_range)
 
