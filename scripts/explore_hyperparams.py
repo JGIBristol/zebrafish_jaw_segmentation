@@ -20,7 +20,10 @@ from fishjaw.images import io
 
 def _output_parent(mode: str) -> pathlib.Path:
     """Parent dir for output"""
-    return pathlib.Path(__file__).parents[1] / "tuning_output" / mode
+    retval = pathlib.Path(__file__).parents[1] / "tuning_output" / mode
+    if not retval.is_dir():
+        retval.mkdir(parents=True)
+    return retval
 
 
 def _output_dir(n: int, mode: str) -> pathlib.Path:
@@ -232,8 +235,10 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
             for subdir in _output_parent(mode).iterdir():
                 if subdir.is_dir():
                     shutil.rmtree(subdir)
+    # Needs refactor
             start = 0
     else:
+        start = 0
         if continue_run or restart_run:
             raise ValueError(
                 "No existing directories found- nothing to continue or restart (don't specify either)"
