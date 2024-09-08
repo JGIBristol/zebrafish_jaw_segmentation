@@ -3,6 +3,7 @@ Train several models with different hyperparameters to compare the results
 
 """
 
+import shutil
 import pathlib
 import argparse
 
@@ -17,16 +18,34 @@ from fishjaw.visualisation import images_3d, training
 from fishjaw.images import io
 
 
+def _output_parent(mode: str) -> pathlib.Path:
+    """Parent dir for output"""
+    return pathlib.Path(__file__).parents[1] / "tuning_output" / mode
+
+
 def _output_dir(n: int, mode: str) -> pathlib.Path:
     """
     Get the output directory for this run
 
     """
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_output" / mode / str(n)
+    out_dir = _output_parent(mode) / str(n)
     if not out_dir.is_dir():
         out_dir.mkdir(parents=True)
 
     return out_dir
+
+
+def _n_runs(mode: str) -> int:
+    """
+    How many runs we've done in this mode so far
+
+    Doesn't check the integrity of the directories, just counts them
+
+    """
+    out_dir = _output_parent(mode)
+
+    # The directories are named by number, so we can just count them
+    return sum(1 for file_ in out_dir.iterdir() if file_.is_dir())
 
 
 def _lr(rng: np.random.Generator, mode: str) -> float:
@@ -187,16 +206,44 @@ def step(
     np.save(out_dir / "val_losses.npy", val_losses)
 
 
-def main(*, mode: str, n_steps: int):
+def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
     """
     Set up the configuration and run the training
 
     """
+    if restart_run:
+        raise ValueError("Actually I don't want to implement this")
+
+    # Check if we have existing directories
+    n_runs = _n_runs(mode)
+    if n_runs > 0:
+        if not (continue_run ^ restart_run):
+            raise ValueError(
+                f"{n_runs} directories found; specify one of --continue_run or --restart_run"
+            )
+
+        if continue_run:
+            start = n_runs
+            print(f"Continuing from run {start}")
+
+        else:
+            print("Restarting run")
+            # Delete subdirs in _output_parent(mode)
+            for subdir in _output_parent(mode).iterdir():
+                if subdir.is_dir():
+                    shutil.rmtree(subdir)
+            start = 0
+    else:
+        if continue_run or restart_run:
+            raise ValueError(
+                "No existing directories found- nothing to continue or restart (don't specify either)"
+            )
+
     # NB we are still using the patch_size defined in userconf
     rng = np.random.default_rng()
     train_subjects, val_subjects, test_subject = data.get_data(rng)
 
-    for i in range(n_steps):
+    for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
 
         config = _config(rng, mode)
@@ -224,5 +271,17 @@ if __name__ == "__main__":
               Determines the range of hyperparameters, and which are searched""",
     )
     parser.add_argument("n_steps", type=int, help="Number of models to train")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--continue_run",
+        action="store_true",
+        help="If some directories with outputs exist, continue from where they left off",
+    )
+    group.add_argument(
+        "--restart_run",
+        action="store_true",
+        help="If some directories with outputs exist, delete them and start again from the beginning.",
+    )
 
     main(**vars(parser.parse_args()))
