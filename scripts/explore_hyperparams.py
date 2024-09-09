@@ -196,13 +196,22 @@ def step(
         fig = images_3d.plot_inference(
             net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
         )
-        fig.savefig(str(out_dir / "test_pred.png"))
+        fig.savefig(str(out_dir / "val_pred.png"))
         plt.close(fig)
 
         # Plot the ground truth for this image
         fig, _ = images_3d.plot_subject(test_subject)
-        fig.savefig(str(out_dir / "test_truth.png"))
+        fig.savefig(str(out_dir / "val_truth.png"))
         plt.close(fig)
+
+        # Save the ground truth and testing image
+        # This saves them as weird shapes but it's fine
+        np.save(out_dir / "val_truth.npy", test_subject[tio.LABEL][tio.DATA].numpy())
+        # It's actually the validation subject, but i've accidentally called it something else
+        prediction = model.predict(
+            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+        )
+        np.save(out_dir / "val_pred.npy", prediction)
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
@@ -235,7 +244,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
             for subdir in _output_parent(mode).iterdir():
                 if subdir.is_dir():
                     shutil.rmtree(subdir)
-    # Needs refactor
+            # Needs refactor
             start = 0
     else:
         start = 0
@@ -247,6 +256,9 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
     # NB we are still using the patch_size defined in userconf
     rng = np.random.default_rng()
     train_subjects, val_subjects, test_subject = data.get_data(rng)
+
+    # We want to test on the validation subject as well...
+    test_subject = val_subjects[0]
 
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
