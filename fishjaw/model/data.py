@@ -147,12 +147,12 @@ def transforms() -> tio.transforms.Transform:
                 degrees=10,
                 scales=0.2,
             ),
-            tio.RandomBlur(p=0.3),
-            tio.RandomBiasField(0.4, p=0.5),
-            tio.RandomNoise(0.1, 0.01, p=0.25),
-            tio.RandomGamma((-0.3, 0.3), p=0.25),
-            tio.ZNormalization(),
-            tio.RescaleIntensity(percentiles=(0.5, 99.5)),
+            # tio.RandomBlur(p=0.3),
+            # tio.RandomBiasField(0.4, p=0.5),
+            # tio.RandomNoise(0.1, 0.01, p=0.25),
+            # tio.RandomGamma((-0.3, 0.3), p=0.25),
+            # tio.ZNormalization(),
+            # tio.RescaleIntensity(percentiles=(0.5, 99.5)),
         ]
     )
 

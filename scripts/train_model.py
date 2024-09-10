@@ -34,11 +34,13 @@ def train_model(
     config: dict,
     train_subjects: torch.utils.data.DataLoader,
     val_subjects: torch.utils.data.DataLoader,
-) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
+) -> tuple[
+    tuple[torch.nn.Module, list[list[float]], list[list[float]], torch.optim.Optimizer]
+]:
     """
     Create a model, train and return it
 
-    Returns the model, the training losses and the validation losses
+    Returns the model, the training losses and the validation losses, and the optimiser
 
     """
     # Create a model and optimiser
@@ -70,21 +72,24 @@ def train_model(
     # Define loss function
     loss = model.lossfn()
 
-    return model.train(
-        net,
-        optimiser,
-        loss,
-        train_loader,
-        val_loader,
-        device=device,
-        epochs=config["epochs"],
-        lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(
-            optimiser, gamma=config["lr_lambda"]
+    return (
+        model.train(
+            net,
+            optimiser,
+            loss,
+            train_loader,
+            val_loader,
+            device=device,
+            epochs=config["epochs"],
+            lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(
+                optimiser, gamma=config["lr_lambda"]
+            ),
         ),
+        optimiser,
     )
 
 
-def main():
+def main(*, save: bool):
     """
     Get the right data, train the model and create some outputs
 
@@ -95,7 +100,18 @@ def main():
 
     train_subjects, val_subjects, test_subject = data.get_data(rng)
 
-    net, train_losses, val_losses = train_model(config, train_subjects, val_subjects)
+    (net, train_losses, val_losses), optimiser = train_model(
+        config, train_subjects, val_subjects
+    )
+
+    if save:
+        torch.save(
+            {
+                "model": net.state_dict(),
+                "optimiser": optimiser.state_dict(),
+            },
+            "model/state_dict.pth",
+        )
 
     output_dir = pathlib.Path("train_output")
     if not output_dir.is_dir():
@@ -121,4 +137,5 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model to segment the jawbone")
+    parser.add_argument("--save", help="Save the model", action="store_true")
     main(**vars(parser.parse_args()))

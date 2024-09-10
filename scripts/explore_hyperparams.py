@@ -58,22 +58,23 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         # This is a bit of a guess cus it never really blew up in the coarse search
         lr_range = (-6, 1)
     elif mode == "fine":
-        lr_range = (-6, 1)
+        # From centering around a value that seems to broadly work
+        lr_range = (-4, 2)
 
-    return 10 ** rng.uniform(*lr_range)
+    return 5 * 10 ** rng.uniform(*lr_range)
 
 
 def _batch_size(rng: np.random.Generator, mode: str) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
-    return int(rng.integers(1, 12))
+    return int(rng.integers(2, 10))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
     if mode == "coarse":
         return 3
     if mode == "med":
-        return 25
-    return rng.integers(50, 500)
+        return 15
+    return rng.integers(25, 125)
 
 
 def _alpha(rng: np.random.Generator, mode: str) -> float:
@@ -81,7 +82,13 @@ def _alpha(rng: np.random.Generator, mode: str) -> float:
 
 
 def _n_filters(rng: np.random.Generator, mode: str) -> int:
-    return int(rng.integers(4, 25))
+    return int(rng.integers(3, 9))
+
+
+def _lambda(rng: np.random.Generator, mode: str) -> float:
+    if mode != "fine":
+        return 1
+    return 1 - (10 ** rng.uniform(-17, -1))
 
 
 def _config(rng: np.random.Generator, mode: str) -> dict:
@@ -106,7 +113,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "optimiser": "Adam",
         "batch_size": _batch_size(rng, mode),
         "epochs": _epochs(rng, mode),
-        "lr_lambda": 1.0,
+        "lr_lambda": _lambda(rng, mode),
         "loss": "monai.losses.TverskyLoss",
         "loss_options": {
             "include_background": False,
@@ -187,6 +194,14 @@ def step(
     net, train_losses, val_losses = train_model(config, train_subjects, val_subjects)
 
     if config["mode"] != "coarse":
+        # Plot a training patch
+        patch = next(iter(train_subjects))
+        fig, axis = images_3d.plot_slices(
+            patch[tio.IMAGE][tio.DATA].squeeze().numpy(),
+            patch[tio.LABEL][tio.DATA].squeeze().numpy(),
+        )
+        fig.savefig(str(out_dir / "train_patch.png"))
+
         # Plot the loss
         fig = training.plot_losses(train_losses, val_losses)
         fig.savefig(str(out_dir / "loss.png"))
