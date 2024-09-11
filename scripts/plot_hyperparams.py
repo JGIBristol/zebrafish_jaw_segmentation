@@ -230,6 +230,19 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         return float(f.read().strip())
 
 
+def _plot_scores(run_info: list[RunInfo]) -> plt.Figure:
+    """
+    Plot histograms of the DICE scores and scatter plots
+
+    """
+    fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+
+    axes[0, 0].hist([run.dice for run in run_info], bins=20)
+    axes[0, 0].set_title("DICE scores")
+
+    return fig
+
+
 def _plot_fine():
     """
     Find the DICE accuracy of each, plot it
@@ -258,6 +271,13 @@ def _plot_fine():
                 params["epochs"],
             )
         )
+
+    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
+    fig = _plot_scores(runs)
+    fig.savefig(str(out_dir / "scores.png"))
 
 
 def main(mode: str):
