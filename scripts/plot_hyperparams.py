@@ -174,13 +174,72 @@ def _plot_med():
     plt.close(fig)
 
 
+def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the Dice score between a binary mask (truth) and a float array (pred).
+
+    Parameters:
+    truth (np.ndarray): Binary mask array.
+    pred (np.ndarray): Float prediction array.
+
+    Returns:
+    float: Dice score.
+    """
+    intersection = np.sum(truth * pred)
+    volume1 = np.sum(truth)
+    volume2 = np.sum(pred)
+
+    # Both arrays are empty, consider Dice score as 1
+    if volume1 + volume2 == 0:
+        return 1.0
+
+    return 2.0 * intersection / (volume1 + volume2)
+
+
+def _dicescore(results_dir: pathlib.Path) -> float:
+    """
+    Get the DICE score from the i-th run
+
+    """
+    dice_file = results_dir / "dice.txt"
+    if not dice_file.exists():
+        pred = np.load(results_dir / "val_pred.npy")
+        truth = np.load(results_dir / "val_truth.npy").squeeze()
+
+        # Scale the prediction to 0 or 1
+        pred = 1 / (1 + np.exp(-pred))
+
+        # Get the DICE score
+        score = dice_score(truth, pred)
+
+        with open(dice_file, "w") as f:
+            f.write(str(score))
+
+    with open(dice_file) as f:
+        return float(f.read().strip())
+
+
+def _plot_fine():
+    """
+    Find the DICE accuracy of each, plot it
+
+    """
+    for fine_dir in (pathlib.Path(__file__).parents[1] / "tuning_output" / "fine").glob(
+        "*"
+    ):
+        try:
+            dice = _dicescore(fine_dir)
+        except FileNotFoundError:
+            continue
+
+
 def main(mode: str):
     if mode == "coarse":
         _plot_coarse()
     elif mode == "med":
         _plot_med()
     else:
-        raise NotImplementedError
+        _plot_fine()
 
 
 if __name__ == "__main__":
