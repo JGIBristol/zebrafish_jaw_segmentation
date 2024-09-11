@@ -10,6 +10,7 @@ import argparse
 import yaml
 import torch
 import numpy as np
+import monai.losses
 import torchio as tio
 import matplotlib.pyplot as plt
 
@@ -74,7 +75,7 @@ def _epochs(rng: np.random.Generator, mode: str) -> int:
         return 3
     if mode == "med":
         return 15
-    return rng.integers(25, 125)
+    return int(rng.integers(25, 250))
 
 
 def _alpha(rng: np.random.Generator, mode: str) -> float:
@@ -161,7 +162,9 @@ def train_model(
     )
 
     # Define loss function
-    loss = model.lossfn()
+    _, loss_name = config["loss"].rsplit(".", 1)
+    options = config["loss_options"]
+    loss = getattr(monai.losses, loss_name)(**options)
 
     return model.train(
         net,
