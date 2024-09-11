@@ -5,7 +5,7 @@ Plot the results from the hyperparam search
 
 import pathlib
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import yaml
 import numpy as np
@@ -230,15 +230,39 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         return float(f.read().strip())
 
 
-def _plot_scores(run_info: list[RunInfo]) -> plt.Figure:
+def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     """
     Plot histograms of the DICE scores and scatter plots
 
     """
     fig, axes = plt.subplots(2, 3, figsize=(12, 8))
 
-    axes[0, 0].hist([run.dice for run in run_info], bins=20)
+    axes[0, 0].hist([run.dice for run in run_infos], bins=20)
     axes[0, 0].set_title("DICE scores")
+
+    dice_scores = [run.dice for run in run_infos]
+    # Identify the top n
+    n = 5
+    top_dice_scores = set(sorted(dice_scores, reverse=True)[:n])
+
+    for axis, field in zip(axes.flat[1:], fields(RunInfo)[1:]):
+        attr_name = field.name
+        axis.plot([getattr(run, attr_name) for run in run_infos], dice_scores, ".")
+        axis.set_title(attr_name)
+
+        # Plot the top N again in a different colour
+        axis.plot(
+            [
+                getattr(run, attr_name)
+                for run in run_infos
+                if run.dice in top_dice_scores
+            ],
+            [run.dice for run in run_infos if run.dice in top_dice_scores],
+            "r.",
+        )
+
+    # Log scale for learning rate
+    axes[0, 1].set_xscale("log")
 
     return fig
 
@@ -249,10 +273,10 @@ def _plot_fine():
 
     """
     runs = []
-
-    for fine_dir in (pathlib.Path(__file__).parents[1] / "tuning_output" / "fine").glob(
-        "*"
-    ):
+    data_dirs = list(
+        (pathlib.Path(__file__).parents[1] / "tuning_output" / "fine").glob("*")
+    )
+    for fine_dir in data_dirs:
         # We might still be running, in which case the last dir will be incomplete
         try:
             dice = _dicescore(fine_dir)
@@ -278,6 +302,13 @@ def _plot_fine():
 
     fig = _plot_scores(runs)
     fig.savefig(str(out_dir / "scores.png"))
+
+    # Print the best params
+    n = 5
+    top_dice_scores = set(sorted([r.dice for r in runs], reverse=True)[:n])
+    for r, d in zip(runs, data_dirs):
+        if r.dice in top_dice_scores:
+            print(r, d.name)
 
 
 def main(mode: str):
