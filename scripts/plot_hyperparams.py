@@ -5,12 +5,23 @@ Plot the results from the hyperparam search
 
 import pathlib
 import argparse
+from dataclasses import dataclass
 
 import yaml
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+
+
+@dataclass
+class RunInfo:
+    dice: float
+    lr: float
+    n_filters: int
+    batch_size: int
+    alpha: float
+    epochs: int
 
 
 def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
@@ -224,13 +235,29 @@ def _plot_fine():
     Find the DICE accuracy of each, plot it
 
     """
+    runs = []
+
     for fine_dir in (pathlib.Path(__file__).parents[1] / "tuning_output" / "fine").glob(
         "*"
     ):
+        # We might still be running, in which case the last dir will be incomplete
         try:
             dice = _dicescore(fine_dir)
         except FileNotFoundError:
             continue
+
+        params = yaml.safe_load(open(fine_dir / "config.yaml"))
+
+        runs.append(
+            RunInfo(
+                dice,
+                params["learning_rate"],
+                params["model_params"]["n_initial_filters"],
+                params["batch_size"],
+                params["loss_options"]["alpha"],
+                params["epochs"],
+            )
+        )
 
 
 def main(mode: str):
