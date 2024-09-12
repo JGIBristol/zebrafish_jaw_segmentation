@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from fishjaw.util import files, util
 from fishjaw.model import data, model
+from fishjaw.model import io
 from fishjaw.visualisation import images_3d, training
 
 
