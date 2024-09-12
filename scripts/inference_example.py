@@ -3,6 +3,7 @@ Perform inference on an out-of-sample subject
 
 """
 
+import pathlib
 import argparse
 
 import torch
@@ -10,7 +11,7 @@ import tifffile
 import numpy as np
 import torchio as tio
 
-from fishjaw.util import files
+from fishjaw.util import files, util
 from fishjaw.model import model
 from fishjaw.images import io, transform
 from fishjaw.visualisation import images_3d
@@ -62,7 +63,7 @@ def main(args):
     img = _read_img(img_n)
 
     # Crop it to the jaw
-    crop_lookup = {273: (1685, 221, 286)}
+    crop_lookup = {273: (1685, 221, 286), 274: (1413, 174, 240)}
     img = transform.crop(img, crop_lookup[img_n])
 
     # Create a subject
@@ -73,12 +74,27 @@ def main(args):
     model.to("cuda")
 
     # Perform inference
+    activation = None
+    if util.userconf()["loss_options"]["softmax"]:
+        activation = "softmax"
+    elif util.userconf()["loss_options"]["sigmoid"]:
+        activation = "sigmoid"
+    else:
+        raise ValueError("No activation specified in userconf")
+
     fig = images_3d.plot_inference(
-        model, subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+        model,
+        subject,
+        patch_size=io.patch_size(),
+        patch_overlap=(4, 4, 4),
+        activation=activation,
     )
 
     # Save the output image
-    fig.savefig("output.png")
+    out_dir = pathlib.Path("inference/")
+    if not out_dir.exists():
+        out_dir.mkdir()
+    fig.savefig(out_dir / f"inference_{img_n}.png")
 
 
 if __name__ == "__main__":
@@ -86,6 +102,9 @@ if __name__ == "__main__":
         description="Perform inference on an out-of-sample subject"
     )
     parser.add_argument(
-        "subject", help="The subject to perform inference on", choices={273}, type=int
+        "subject",
+        help="The subject to perform inference on",
+        choices={273, 274},
+        type=int,
     )
     main(parser.parse_args())

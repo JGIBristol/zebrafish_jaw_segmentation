@@ -8,7 +8,7 @@ import torch
 import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
-
+from scipy.special import softmax
 
 from ..model import model
 
@@ -30,7 +30,7 @@ def plot_slices(
     for i, ax in zip(indices, axes.flat):
         ax.imshow(arr[i], cmap="gray", vmin=vmin, vmax=vmax)
         if mask is not None:
-            ax.imshow(mask[i], cmap="hot_r", alpha=0.5)
+            ax.imshow(mask[i], cmap="hot", alpha=0.5)
         ax.axis("off")
         ax.set_title(i)
 
@@ -56,6 +56,7 @@ def plot_inference(
     *,
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
+    activation: str = "softmax",
 ) -> plt.Figure:
     """
     Plot the inference on an image
@@ -68,6 +69,10 @@ def plot_inference(
     prediction = model.predict(
         net, subject, patch_size=patch_size, patch_overlap=patch_overlap
     )
+
+    # If the loss used a softmax activation
+    if activation == "softmax":
+        prediction = softmax(prediction)
 
     fig, _ = plot_slices(image, prediction)
     fig.suptitle("Model Prediction")
