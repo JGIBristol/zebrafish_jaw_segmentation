@@ -8,9 +8,12 @@ import argparse
 import torch
 import tifffile
 import numpy as np
+import torchio as tio
 
 from fishjaw.util import files
 from fishjaw.model import model
+from fishjaw.images import io, transform
+from fishjaw.visualisation import images_3d
 
 
 def _load_model() -> torch.nn.Module:
@@ -30,27 +33,22 @@ def _load_model() -> torch.nn.Module:
     return net
 
 
-def _read_img(subject: int) -> np.ndarray:
+def _read_img(img_n: int) -> np.ndarray:
     """
     Read the chosen image
 
     """
-    path = files.wahab_3d_tifs_dir() / f"ak_{subject}.tif"
+    path = files.wahab_3d_tifs_dir() / f"ak_{img_n}.tif"
     return tifffile.imread(path)
 
 
-def _infer(model: torch.nn.Module, img: np.ndarray) -> np.ndarray:
+def _get_subject(img: np.ndarray) -> tio.Subject:
     """
-    Perform inference on an image
+    Convert the image into a subject
 
     """
-
-
-def _save_img(img: np.ndarray, prediction: np.ndarray):
-    """
-    Save the output image
-
-    """
+    tensor = torch.as_tensor(img, dtype=torch.float32).unsqueeze(0)
+    return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
 
 
 def main(args):
@@ -59,18 +57,28 @@ def main(args):
     Save the output image
 
     """
-    model = _load_model()
-
     # Read the chosen image
     img_n = args.subject
     img = _read_img(img_n)
-    print(img)
+
+    # Crop it to the jaw
+    crop_lookup = {273: (1685, 221, 286)}
+    img = transform.crop(img, crop_lookup[img_n])
+
+    # Create a subject
+    subject = _get_subject(img)
+
+    # Load the model
+    model = _load_model()
+    model.to("cuda")
 
     # Perform inference
-    prediction = _infer(model, img)
+    fig = images_3d.plot_inference(
+        model, subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+    )
 
     # Save the output image
-    _save_img(img, prediction)
+    fig.savefig("output.png")
 
 
 if __name__ == "__main__":
