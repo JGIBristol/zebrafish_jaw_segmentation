@@ -48,3 +48,13 @@ def felix_labels_2_dir() -> pathlib.Path:
 
     """
     return util.rdsf_dir() / util.config()["felix_labels_dir_2"]
+
+
+def model_path() -> pathlib.Path:
+    """
+    Get the path to the cached, as created by scripts/train_model.py
+
+    :returns: Path to the model
+
+    """
+    return pathlib.Path(__file__).parents[2] / "model" / "state_dict.pth"

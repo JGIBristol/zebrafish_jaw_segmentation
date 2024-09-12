@@ -12,10 +12,9 @@ import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
 
-from fishjaw.util import util
+from fishjaw.util import files, util
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
-from fishjaw.images import io
 
 
 def _plot_example(batch: dict[str, torch.Tensor]):
@@ -110,7 +109,7 @@ def main(*, save: bool):
                 "model": net.state_dict(),
                 "optimiser": optimiser.state_dict(),
             },
-            "model/state_dict.pth",
+            str(files.model_path()),
         )
 
     output_dir = pathlib.Path("train_output")
