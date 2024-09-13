@@ -30,7 +30,7 @@ def plot_slices(
     for i, ax in zip(indices, axes.flat):
         ax.imshow(arr[i], cmap="gray", vmin=vmin, vmax=vmax)
         if mask is not None:
-            ax.imshow(mask[i], cmap="hot", alpha=0.5)
+            ax.imshow(mask[i], cmap="hot_r", alpha=0.5)
         ax.axis("off")
         ax.set_title(i)
 
