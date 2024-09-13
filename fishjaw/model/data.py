@@ -141,12 +141,12 @@ def transforms() -> tio.transforms.Transform:
     """
     return tio.Compose(
         [
-            # tio.RandomFlip(axes=(0), flip_probability=0.5),
-            # tio.RandomAffine(
-            #     p=0.25,
-            #     degrees=10,
-            #     scales=0.2,
-            # ),
+            tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),
+            tio.RandomAffine(
+                p=0.25,
+                degrees=10,
+                scales=0.2,
+            ),
             # tio.RandomBlur(p=0.3),
             # tio.RandomBiasField(0.4, p=0.5),
             # tio.RandomNoise(0.1, 0.01, p=0.25),

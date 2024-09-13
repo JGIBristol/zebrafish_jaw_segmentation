@@ -3,6 +3,7 @@ Train a model to segment the jawbone from labelled DICOM images
 
 """
 
+import pickle
 import pathlib
 import warnings
 import argparse
@@ -108,6 +109,14 @@ def main(*, save: bool):
 
     train_subjects, val_subjects, test_subject = data.get_data(rng)
 
+    # Save the testing subject
+    output_dir = pathlib.Path("train_output")
+    if not output_dir.is_dir():
+        output_dir.mkdir()
+    with open(output_dir / "test_subject.pkl", "wb") as f:
+        pickle.dump(test_subject, f)
+
+
     (net, train_losses, val_losses), optimiser = train_model(
         config, train_subjects, val_subjects
     )
@@ -120,10 +129,6 @@ def main(*, save: bool):
             },
             str(files.model_path()),
         )
-
-    output_dir = pathlib.Path("train_output")
-    if not output_dir.is_dir():
-        output_dir.mkdir()
 
     # Plot the loss
     fig = training.plot_losses(train_losses, val_losses)
