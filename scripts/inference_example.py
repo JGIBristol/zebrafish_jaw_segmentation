@@ -3,6 +3,7 @@ Perform inference on an out-of-sample subject
 
 """
 
+import pickle
 import pathlib
 import argparse
 
@@ -52,12 +53,17 @@ def _get_subject(img: np.ndarray) -> tio.Subject:
     return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
 
 
-def main(args):
+def _subject(args: argparse.Namespace) -> tio.Subject:
     """
-    Load the model, read the chosen image and perform inference
-    Save the output image
+    Either read the image of choice and turn it into a Subject, or load the testing subject
 
     """
+    # Load the testing subject
+    if args.test:
+        with open("train_output/test_subject.pkl", "rb") as f:
+            return pickle.load(f)
+
+    # Create a subject from the chosen image
     # Read the chosen image
     img_n = args.subject
     img = _read_img(img_n)
@@ -71,7 +77,16 @@ def main(args):
     img = transform.crop(img, crop_lookup[img_n])
 
     # Create a subject
-    subject = _get_subject(img)
+    return _get_subject(img)
+
+
+def main(args):
+    """
+    Load the model, read the chosen image and perform inference
+    Save the output image
+
+    """
+    subject = _subject(args)
 
     # Load the model
     model = _load_model()
@@ -98,17 +113,28 @@ def main(args):
     out_dir = pathlib.Path("inference/")
     if not out_dir.exists():
         out_dir.mkdir()
-    fig.savefig(out_dir / f"inference_{img_n}.png")
+    out_path = (
+        out_dir / f"inference_{args.subject}.png"
+        if args.subject
+        else out_dir / "test.png"
+    )
+    fig.savefig(out_path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Perform inference on an out-of-sample subject"
     )
-    parser.add_argument(
-        "subject",
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--subject",
         help="The subject to perform inference on",
         choices={247, 273, 274},
         type=int,
     )
+    group.add_argument(
+        "--test", help="Perform inference on the test data", action="store_true"
+    )
+
     main(parser.parse_args())
