@@ -98,6 +98,14 @@ def main(*, save: bool):
     torch.manual_seed(config["torch_seed"])
     rng = np.random.default_rng(seed=config["test_train_seed"])
 
+    # Find the activation - we'll need this for inference
+    if config["loss_options"].get("softmax", False):
+        activation = "softmax"
+    elif config["loss_options"].get("sigmoid", False):
+        activation = "sigmoid"
+    else:
+        raise ValueError("No activation found")
+
     train_subjects, val_subjects, test_subject = data.get_data(rng)
 
     (net, train_losses, val_losses), optimiser = train_model(
@@ -121,12 +129,6 @@ def main(*, save: bool):
     fig = training.plot_losses(train_losses, val_losses)
     fig.savefig(str(output_dir / "loss.png"))
     plt.close(fig)
-
-    # Find the activation
-    if config["loss_options"]["softmax"]:
-        activation = "softmax"
-    elif activation == "sigmoid":
-        activation = "sigmoid"
 
     # Plot the testing image
     fig = images_3d.plot_inference(
