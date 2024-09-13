@@ -16,7 +16,7 @@ from matplotlib.colors import Normalize
 
 @dataclass
 class RunInfo:
-    dice: float
+    score: float
     lr: float
     n_filters: int
     batch_size: int
@@ -139,6 +139,50 @@ def _filter_plot(paths: list[pathlib.Path]) -> plt.Figure:
     return fig
 
 
+def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
+    """
+    Plot scatter plots and a histogram of dice scores if they exist
+    metric must either be "dice" or "loss"
+
+    """
+    data_dirs = list(data_dir.glob("*"))
+    runs = []
+    for dir_ in data_dirs:
+        # We might still be running, in which case the last dir will be incomplete
+        if metric == "dice":
+            try:
+                score = _dicescore(dir_)
+            except FileNotFoundError:
+                continue
+        elif metric == "loss":
+            try:
+                score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
+            except FileNotFoundError:
+                continue
+
+        params = yaml.safe_load(open(dir_ / "config.yaml"))
+
+        runs.append(
+            RunInfo(
+                score,
+                params["learning_rate"],
+                params["model_params"]["n_initial_filters"],
+                params["batch_size"],
+                params["loss_options"]["alpha"],
+                params["epochs"],
+            )
+        )
+
+    # Print the best params
+    n = 5
+    top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
+    for r, d in zip(runs, data_dirs):
+        if r.score in top_dice_scores:
+            print(r, d.name)
+
+    return _plot_scores(runs)
+
+
 def _plot_coarse():
     """
     Read the losses and indices from the coarse search,
@@ -149,17 +193,24 @@ def _plot_coarse():
         list((pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse").glob("*"))
     )
 
+    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "coarse"
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
     fig = _lr_plot(paths)
-    fig.savefig("coarse_search.png")
+    fig.savefig(out_dir / "coarse_search.png")
     plt.close(fig)
 
     fig = _filter_plot(paths)
-    fig.savefig("coarse_search_n_filters.png")
+    fig.savefig(out_dir / "coarse_search_n_filters.png")
     plt.close(fig)
 
     fig = _batch_plot(paths)
-    fig.savefig("med_search_batch.png")
+    fig.savefig(out_dir / "coarse_search_batch.png")
     plt.close(fig)
+
+    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse", metric="loss")
+    fig.savefig(str(out_dir / "scores.png"))
 
 
 def _plot_med():
@@ -237,17 +288,17 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     """
     fig, axes = plt.subplots(2, 3, figsize=(12, 8))
 
-    axes[0, 0].hist([run.dice for run in run_infos], bins=20)
-    axes[0, 0].set_title("DICE scores")
+    axes[0, 0].hist([run.score for run in run_infos], bins=20)
+    axes[0, 0].set_title("Scores")
 
-    dice_scores = [run.dice for run in run_infos]
+    scores = [run.score for run in run_infos]
     # Identify the top n
     n = 5
-    top_dice_scores = set(sorted(dice_scores, reverse=True)[:n])
+    top_scores = set(sorted(scores, reverse=True)[:n])
 
     for axis, field in zip(axes.flat[1:], fields(RunInfo)[1:]):
         attr_name = field.name
-        axis.plot([getattr(run, attr_name) for run in run_infos], dice_scores, ".")
+        axis.plot([getattr(run, attr_name) for run in run_infos], scores, ".")
         axis.set_title(attr_name)
 
         # Plot the top N again in a different colour
@@ -255,9 +306,9 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
             [
                 getattr(run, attr_name)
                 for run in run_infos
-                if run.dice in top_dice_scores
+                if run.score in top_scores
             ],
-            [run.dice for run in run_infos if run.dice in top_dice_scores],
+            [run.score for run in run_infos if run.score in top_scores],
             "r.",
         )
 
@@ -267,50 +318,12 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
-def _plot_scatters(data_dir: pathlib.Path) -> plt.Figure:
-    """
-    Plot scatter plots and a histogram of dice scores if they exist
-
-    """
-    data_dirs = list(data_dir.glob("*"))
-    runs = []
-    for fine_dir in data_dirs:
-        # We might still be running, in which case the last dir will be incomplete
-        # Or the run might not output the predictions, in which case it won't exist
-        try:
-            dice = _dicescore(fine_dir)
-        except FileNotFoundError:
-            dice = np.nan
-
-        params = yaml.safe_load(open(fine_dir / "config.yaml"))
-
-        runs.append(
-            RunInfo(
-                dice,
-                params["learning_rate"],
-                params["model_params"]["n_initial_filters"],
-                params["batch_size"],
-                params["loss_options"]["alpha"],
-                params["epochs"],
-            )
-        )
-
-    # Print the best params
-    n = 5
-    top_dice_scores = set(sorted([r.dice for r in runs], reverse=True)[:n])
-    for r, d in zip(runs, data_dirs):
-        if r.dice in top_dice_scores:
-            print(r, d.name)
-
-    return _plot_scores(runs)
-
-
 def _plot_fine():
     """
     Find the DICE accuracy of each, plot it
 
     """
-    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "fine")
+    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "fine", metric="dice")
 
     out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
     if not out_dir.exists():
