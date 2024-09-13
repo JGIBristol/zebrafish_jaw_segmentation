@@ -3,7 +3,6 @@ Plotting 3D things
 
 """
 
-
 import torch
 import numpy as np
 import torchio as tio
@@ -11,6 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.special import softmax
 
 from ..model import model
+
 
 def plot_slices(
     arr: np.ndarray, mask: np.ndarray = None
@@ -62,17 +62,19 @@ def plot_inference(
     Plot the inference on an image
 
     """
-    # Get the image from the subject
-    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+    assert activation in {"softmax", "sigmoid"}
 
     # Perform inference
     prediction = model.predict(
-        net, subject, patch_size=patch_size, patch_overlap=patch_overlap
+        net,
+        subject,
+        patch_size=patch_size,
+        patch_overlap=patch_overlap,
+        activation=activation,
     )
 
-    # If the loss used a softmax activation
-    if activation == "softmax":
-        prediction = softmax(prediction)
+    # Get the image from the subject
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
 
     fig, _ = plot_slices(image, prediction)
     fig.suptitle("Model Prediction")

@@ -308,6 +308,7 @@ def predict(
     *,
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
+    activation: str
 ) -> np.ndarray:
     """
     Make a prediction on a subject using the provided model
@@ -316,11 +317,22 @@ def predict(
     :param subject: the subject to predict on
     :param patch_size: the size of the patches to use
     :param patch_overlap: the overlap between patches. Uses a hann window
+    :param activation: the activation function to use
 
     """
+    assert activation in {"softmax", "sigmoid"}
+
     # Make predictions on the patches
     sampler = tio.GridSampler(subject, patch_size, patch_overlap=patch_overlap)
     prediction, locations = _predict_patches(model, sampler)
+
+    # Apply the activation function
+    if activation == "softmax":
+        prediction = torch.nn.functional.softmax(prediction, dim=1)
+    elif activation == "sigmoid":
+        prediction = torch.sigmoid(prediction)
+    else:
+        raise ValueError(f"Unknown activation function: {activation}")
 
     # Stitch them together
     aggregator = tio.inference.GridAggregator(sampler=sampler, overlap_mode="hann")

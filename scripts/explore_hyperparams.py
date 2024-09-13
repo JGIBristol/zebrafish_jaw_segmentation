@@ -210,9 +210,12 @@ def step(
         fig.savefig(str(out_dir / "loss.png"))
         plt.close(fig)
 
+        # We need to find the activation for inference
+        activation = "sigmoid" if config["loss_options"]["sigmoid"] else "softmax"
+
         # Plot the testing image
         fig = images_3d.plot_inference(
-            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4), activation=activation
         )
         fig.savefig(str(out_dir / "val_pred.png"))
         plt.close(fig)
@@ -225,9 +228,14 @@ def step(
         # Save the ground truth and testing image
         # This saves them as weird shapes but it's fine
         np.save(out_dir / "val_truth.npy", test_subject[tio.LABEL][tio.DATA].numpy())
+
         # It's actually the validation subject, but i've accidentally called it something else
         prediction = model.predict(
-            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+            net,
+            test_subject,
+            patch_size=io.patch_size(),
+            patch_overlap=(4, 4, 4),
+            activation=activation,
         )
         np.save(out_dir / "val_pred.npy", prediction)
 

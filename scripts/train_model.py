@@ -122,9 +122,19 @@ def main(*, save: bool):
     fig.savefig(str(output_dir / "loss.png"))
     plt.close(fig)
 
+    # Find the activation
+    if config["loss_options"]["softmax"]:
+        activation = "softmax"
+    elif activation == "sigmoid":
+        activation = "sigmoid"
+
     # Plot the testing image
     fig = images_3d.plot_inference(
-        net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4)
+        net,
+        test_subject,
+        patch_size=io.patch_size(),
+        patch_overlap=(4, 4, 4),
+        activation=activation,
     )
     fig.savefig(str(output_dir / "test_pred.png"))
     plt.close(fig)
