@@ -210,6 +210,7 @@ def _plot_coarse():
     plt.close(fig)
 
     fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse", metric="loss")
+    fig.suptitle("NB: only run for a few epochs, minimum loss might mean LR is too high")
     fig.savefig(str(out_dir / "scores.png"))
 
 
