@@ -8,10 +8,16 @@ patch_size: 160,160,160
 learning_rate: 1.0
 optimiser: "Adam"  # Must be one of the torch.optim optimisers
 batch_size: 2
-epochs: 250
-lr_lambda: 0.99 # Exponential decay factor
+epochs: 100
+lr_lambda: 1.0 # Exponential decay factor
 loss: "monai.losses.TverskyLoss"
-loss_options: {"include_background": false, "to_onehot_y": true, "alpha": 0.5, "beta": 0.5, "softmax": true}
+loss_options: {
+  "include_background": false,
+  "to_onehot_y": true,
+  "alpha": 0.5,
+  "beta": 0.5,
+  "sigmoid": true,
+}
 
 # RNG seeds
 # Note that this still doesn't guarantee reproducibility,
@@ -29,7 +35,7 @@ model_params:
 
   # Things you might want to change
   n_layers: 6  # 6?
-  n_initial_filters: 10  # 6 would be sensible
+  n_initial_filters: 8  # 6 would be sensible
   kernel_size: 3
   stride: 2  # 2
-  dropout: 0.1
+  dropout: 0.0
