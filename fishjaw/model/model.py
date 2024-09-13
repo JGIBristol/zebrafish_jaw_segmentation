@@ -250,7 +250,8 @@ def train(
     train_batch_losses = []
     val_batch_losses = []
 
-    for epoch in trange(epochs):
+    progress_bar = trange(epochs, desc="Training")
+    for epoch in progress_bar:
         model, train_batch_loss = train_step(
             model, optim, loss_fn, train_data, device=device
         )
@@ -272,6 +273,7 @@ def train(
                 lr_scheduler.step(np.mean(val_batch_losses[-1]))
             else:
                 lr_scheduler.step()
+        progress_bar.set_description(f"Val loss: {np.mean(val_batch_losses[-1]):.4f}")
 
     return model, train_batch_losses, val_batch_losses
 
