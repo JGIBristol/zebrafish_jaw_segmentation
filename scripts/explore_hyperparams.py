@@ -62,7 +62,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         # From centering around a value that seems to broadly work
         lr_range = (-4, 2)
 
-    return 5 * 10 ** rng.uniform(*lr_range)
+    return 10 ** rng.uniform(*lr_range)
 
 
 def _batch_size(rng: np.random.Generator, mode: str) -> int:
@@ -72,7 +72,7 @@ def _batch_size(rng: np.random.Generator, mode: str) -> int:
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
     if mode == "coarse":
-        return 3
+        return 5
     if mode == "med":
         return 15
     return int(rng.integers(25, 250))
@@ -121,7 +121,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
             "to_onehot_y": True,
             "alpha": alpha,
             "beta": 1 - alpha,
-            "softmax": True,
+            "sigmoid": True,
         },
         "torch_seed": 0,
         "mode": mode,
