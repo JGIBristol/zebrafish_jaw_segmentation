@@ -204,6 +204,7 @@ def step(
             patch[tio.LABEL][tio.DATA].squeeze().numpy(),
         )
         fig.savefig(str(out_dir / "train_patch.png"))
+        plt.close(fig)
 
         # Plot the loss
         fig = training.plot_losses(train_losses, val_losses)
