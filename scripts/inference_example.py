@@ -76,6 +76,9 @@ def _subject(args: argparse.Namespace) -> tio.Subject:
     }
     img = transform.crop(img, crop_lookup[img_n])
 
+    # Scale to [0, 1]
+    img = img / 65535
+
     # Create a subject
     return _get_subject(img)
 
@@ -92,7 +95,8 @@ def main(args):
     model = _load_model()
     model.to("cuda")
 
-    # Perform inference
+    # Find which activation function to use from the config file
+    # This assumes this was the same activation function used during training...
     config = util.userconf()
     if config["loss_options"].get("softmax", False):
         activation = "softmax"
@@ -101,6 +105,7 @@ def main(args):
     else:
         raise ValueError("No activation found")
 
+    # Perform inference
     fig = images_3d.plot_inference(
         model,
         subject,
