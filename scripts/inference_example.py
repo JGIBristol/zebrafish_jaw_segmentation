@@ -63,7 +63,11 @@ def main(args):
     img = _read_img(img_n)
 
     # Crop it to the jaw
-    crop_lookup = {273: (1685, 221, 286), 274: (1413, 174, 240)}
+    crop_lookup = {
+        247: (1710, 431, 290),
+        273: (1685, 221, 286),
+        274: (1413, 174, 240),
+    }
     img = transform.crop(img, crop_lookup[img_n])
 
     # Create a subject
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "subject",
         help="The subject to perform inference on",
-        choices={273, 274},
+        choices={247, 273, 274},
         type=int,
     )
     main(parser.parse_args())
