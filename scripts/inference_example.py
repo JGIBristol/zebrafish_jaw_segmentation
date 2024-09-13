@@ -78,13 +78,13 @@ def main(args):
     model.to("cuda")
 
     # Perform inference
-    activation = None
-    if util.userconf()["loss_options"]["softmax"]:
+    config = util.userconf()
+    if config["loss_options"].get("softmax", False):
         activation = "softmax"
-    elif util.userconf()["loss_options"]["sigmoid"]:
+    elif config["loss_options"].get("sigmoid", False):
         activation = "sigmoid"
     else:
-        raise ValueError("No activation specified in userconf")
+        raise ValueError("No activation found")
 
     fig = images_3d.plot_inference(
         model,
