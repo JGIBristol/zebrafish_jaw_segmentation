@@ -224,17 +224,24 @@ def _plot_med():
         list((pathlib.Path(__file__).parents[1] / "tuning_output" / "med").glob("*"))
     )
 
+    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "med"
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
     fig = _lr_plot(paths)
-    fig.savefig("med_search.png")
+    fig.savefig(out_dir / "med_search.png")
     plt.close(fig)
 
     fig = _filter_plot(paths)
-    fig.savefig("med_search_n_filters.png")
+    fig.savefig(out_dir / "med_search_n_filters.png")
     plt.close(fig)
 
     fig = _batch_plot(paths)
-    fig.savefig("med_search_batch.png")
+    fig.savefig(out_dir / "med_search_batch.png")
     plt.close(fig)
+
+    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "med", metric="dice")
+    fig.savefig(out_dir / "scores.png")
 
 
 def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
