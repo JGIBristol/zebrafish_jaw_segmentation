@@ -267,21 +267,20 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
-def _plot_fine():
+def _plot_scatters(data_dir: pathlib.Path) -> plt.Figure:
     """
-    Find the DICE accuracy of each, plot it
+    Plot scatter plots and a histogram of dice scores if they exist
 
     """
+    data_dirs = list(data_dir.glob("*"))
     runs = []
-    data_dirs = list(
-        (pathlib.Path(__file__).parents[1] / "tuning_output" / "fine").glob("*")
-    )
     for fine_dir in data_dirs:
         # We might still be running, in which case the last dir will be incomplete
+        # Or the run might not output the predictions, in which case it won't exist
         try:
             dice = _dicescore(fine_dir)
         except FileNotFoundError:
-            continue
+            dice = np.nan
 
         params = yaml.safe_load(open(fine_dir / "config.yaml"))
 
@@ -296,19 +295,28 @@ def _plot_fine():
             )
         )
 
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
-    if not out_dir.exists():
-        out_dir.mkdir(parents=True)
-
-    fig = _plot_scores(runs)
-    fig.savefig(str(out_dir / "scores.png"))
-
     # Print the best params
     n = 5
     top_dice_scores = set(sorted([r.dice for r in runs], reverse=True)[:n])
     for r, d in zip(runs, data_dirs):
         if r.dice in top_dice_scores:
             print(r, d.name)
+
+    return _plot_scores(runs)
+
+
+def _plot_fine():
+    """
+    Find the DICE accuracy of each, plot it
+
+    """
+    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "fine")
+
+    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
+    fig.savefig(str(out_dir / "scores.png"))
 
 
 def main(mode: str):
