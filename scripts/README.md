@@ -15,6 +15,10 @@ Training Models
 Hyperparameter Tuning
 ----
 `explore_hyperparams.py`: train lots of models with different hyperparameters, to see what's best
+                          This script isn't particularly good or robust - most of the options are defined
+                          by the config `dict` within this script, but there are some other parameters and
+                          extra things (e.g. the transformations that get applied) that are hard-coded in other
+                          places.
 `plot_hyperparams.py`: plot the result of the hyperparameter tuning
 
 Other Stuff
