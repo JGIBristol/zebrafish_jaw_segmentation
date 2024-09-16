@@ -92,8 +92,8 @@ def main(args):
     subject = _subject(args)
 
     # Load the model
-    model = _load_model()
-    model.to("cuda")
+    net = _load_model()
+    net.to("cuda")
 
     # Find which activation function to use from the config file
     # This assumes this was the same activation function used during training...
@@ -106,15 +106,17 @@ def main(args):
         raise ValueError("No activation found")
 
     # Perform inference
-    fig = images_3d.plot_inference(
-        model,
+    prediction = model.predict(
+        net,
         subject,
         patch_size=io.patch_size(),
         patch_overlap=(4, 4, 4),
         activation=activation,
     )
 
-    # Save the output image
+    # Save the image and prediction as tiffs
+
+    # Save the output image and prediction as slices
     out_dir = pathlib.Path("inference/")
     if not out_dir.exists():
         out_dir.mkdir()
@@ -123,6 +125,9 @@ def main(args):
         if args.subject
         else out_dir / "test.png"
     )
+
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+    fig, _ = images_3d.plot_slices(image, prediction)
     fig.savefig(out_path)
 
 
@@ -133,7 +138,8 @@ if __name__ == "__main__":
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        "--subject",
+        "subject",
+        nargs="?",
         help="The subject to perform inference on",
         choices={247, 273, 274},
         type=int,

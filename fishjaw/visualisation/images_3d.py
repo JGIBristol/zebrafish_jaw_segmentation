@@ -61,6 +61,9 @@ def plot_inference(
     """
     Plot the inference on an image
 
+    Helper function that just bundles together `fishjaw.model.predict`
+    and `fishjaw.visualisation.images_3d.plot_slices`
+
     """
     assert activation in {"softmax", "sigmoid"}
 
