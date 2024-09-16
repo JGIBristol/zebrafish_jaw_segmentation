@@ -14,7 +14,7 @@ import torchio as tio
 
 from fishjaw.util import files, util
 from fishjaw.model import model
-from fishjaw.images import io, transform
+from fishjaw.images import io, transform, metrics
 from fishjaw.visualisation import images_3d
 
 
@@ -131,6 +131,15 @@ def main(args):
 
     # If we're using the test data, we have access to the ground truth so can
     # work out the Dice score and stick it in the plot too
+    if args.test:
+        truth = subject[tio.LABEL][tio.DATA].squeeze().numpy()
+        dice = metrics.dice_score(truth, prediction)
+        fig.suptitle(f"Dice: {dice:.3f}", y=0.99)
+
+        # We might as well save the truth as a tiff too
+        tifffile.imwrite(out_dir / f"{prefix}_truth.tif", truth)
+    else:
+        fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
 
     fig.savefig(out_dir / f"{prefix}_slices.png")
 
