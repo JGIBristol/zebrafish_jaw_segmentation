@@ -13,6 +13,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
+from fishjaw.images import metrics
+
 
 @dataclass
 class RunInfo:
@@ -244,28 +246,6 @@ def _plot_med():
     fig.savefig(out_dir / "scores.png")
 
 
-def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
-    """
-    Calculate the Dice score between a binary mask (truth) and a float array (pred).
-
-    Parameters:
-    truth (np.ndarray): Binary mask array.
-    pred (np.ndarray): Float prediction array.
-
-    Returns:
-    float: Dice score.
-    """
-    intersection = np.sum(truth * pred)
-    volume1 = np.sum(truth)
-    volume2 = np.sum(pred)
-
-    # Both arrays are empty, consider Dice score as 1
-    if volume1 + volume2 == 0:
-        return 1.0
-
-    return 2.0 * intersection / (volume1 + volume2)
-
-
 def _dicescore(results_dir: pathlib.Path) -> float:
     """
     Get the DICE score from the i-th run
@@ -280,7 +260,7 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         pred = 1 / (1 + np.exp(-pred))
 
         # Get the DICE score
-        score = dice_score(truth, pred)
+        score = metrics.dice_score(truth, pred)
 
         with open(dice_file, "w") as f:
             f.write(str(score))

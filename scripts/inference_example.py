@@ -128,6 +128,10 @@ def main(args):
 
     # Save the output image and prediction as slices
     fig, _ = images_3d.plot_slices(image, prediction)
+
+    # If we're using the test data, we have access to the ground truth so can
+    # work out the Dice score and stick it in the plot too
+
     fig.savefig(out_dir / f"{prefix}_slices.png")
 
 
