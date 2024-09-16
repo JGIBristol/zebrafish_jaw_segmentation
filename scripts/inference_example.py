@@ -114,21 +114,21 @@ def main(args):
         activation=activation,
     )
 
-    # Save the image and prediction as tiffs
+    # Convert the image to a 3d numpy array - for plotting
+    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
 
-    # Save the output image and prediction as slices
     out_dir = pathlib.Path("inference/")
     if not out_dir.exists():
         out_dir.mkdir()
-    out_path = (
-        out_dir / f"inference_{args.subject}.png"
-        if args.subject
-        else out_dir / "test.png"
-    )
 
-    image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
+    # Save the image and prediction as tiffs
+    prefix = args.subject if args.subject else "test"
+    tifffile.imwrite(out_dir / f"{prefix}_image.tif", image)
+    tifffile.imwrite(out_dir / f"{prefix}_prediction.tif", prediction)
+
+    # Save the output image and prediction as slices
     fig, _ = images_3d.plot_slices(image, prediction)
-    fig.savefig(out_path)
+    fig.savefig(out_dir / f"{prefix}_slices.png")
 
 
 if __name__ == "__main__":
