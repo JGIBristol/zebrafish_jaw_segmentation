@@ -5,11 +5,15 @@ dicom_dir: '/home/mh19137/zebrafish_jaw_segmentation/dicoms/'
 # Options for the model that you might want to change
 window_size: 192,192,192  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: 160,160,160
-learning_rate: 0.005
-optimiser: "Adam"  # Must be one of the torch.optim optimisers
 batch_size: 2
 epochs: 150
 lr_lambda: 0.99 # Exponential decay factor
+
+# Optimiser options
+optimiser: "Adam"  # Must be one of the torch.optim optimisers
+learning_rate: 0.005
+
+# Loss function options
 loss: "monai.losses.TverskyLoss"
 loss_options: {
   "include_background": false,

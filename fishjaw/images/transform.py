@@ -30,23 +30,27 @@ def centre(n: int) -> tuple[float, float, float]:
     return tuple(int(x) for x in _jaw_centres().loc[n, ["z", "x", "y"]].values)
 
 
-def _window_size() -> tuple[int, int, int]:
+def window_size(config: dict) -> tuple[int, int, int]:
     """
-    Get the size of the window to crop
+    Get the size of the window to crop from a dict of config (e.g. userconf.yml)
+
+    :param config: must contain "window_size" as a comma-separated string of numbers
+    :returns: Tuple of the window size
 
     """
-    return tuple(int(x) for x in util.userconf()["window_size"].split(","))
+    return tuple(int(x) for x in config["window_size"].split(","))
 
 
 def crop(
     img: np.ndarray,
     centre: tuple[int, int, int],
+    window_size: tuple[int, int, int],
 ) -> np.ndarray:
     """
     Crop an image around a given centre
 
     """
-    d, w, h = _window_size()
+    d, w, h = window_size
     z, y, x = centre
 
     return img[

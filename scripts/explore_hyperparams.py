@@ -61,6 +61,8 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
     elif mode == "fine":
         # From centering around a value that seems to broadly work
         lr_range = (-4, 2)
+    else:
+        raise ValueError(f"Unknown mode {mode}")
 
     return 10 ** rng.uniform(*lr_range)
 
@@ -125,6 +127,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         },
         "torch_seed": 0,
         "mode": mode,
+        "patch_size": "160,160,160",
     }
 
     return config
@@ -142,17 +145,17 @@ def train_model(
 
     """
     # Get the model params
-    model_params = model.convert_params(config["model_params"])
+    model_params = model.model_params(config["model_params"])
 
     # Create a model and optimiser
     net = model.monai_unet(params=model_params)
     device = "cuda"
     net = net.to(device)
 
-    optimiser = model.optimiser(net)
+    optimiser = model.optimiser(config, net)
 
     # Create dataloaders
-    patch_size = io.patch_size()
+    patch_size = data.patch_size(config)
     batch_size = config["batch_size"]
     train_loader = data.train_val_loader(
         train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
@@ -216,7 +219,11 @@ def step(
 
         # Plot the testing image
         fig = images_3d.plot_inference(
-            net, test_subject, patch_size=io.patch_size(), patch_overlap=(4, 4, 4), activation=activation
+            net,
+            test_subject,
+            patch_size=data.patch_size(config),
+            patch_overlap=(4, 4, 4),
+            activation=activation,
         )
         fig.savefig(str(out_dir / "val_pred.png"))
         plt.close(fig)
@@ -234,7 +241,7 @@ def step(
         prediction = model.predict(
             net,
             test_subject,
-            patch_size=io.patch_size(),
+            patch_size=data.patch_size(config),
             patch_overlap=(4, 4, 4),
             activation=activation,
         )
@@ -282,7 +289,10 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
 
     # NB we are still using the patch_size defined in userconf
     rng = np.random.default_rng()
-    train_subjects, val_subjects, test_subject = data.get_data(rng)
+    # TODO - un-hard-code the dicom dir
+    train_subjects, val_subjects, test_subject = data.get_data(
+        {"dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/"}, rng
+    )
 
     # We want to test on the validation subject as well...
     test_subject = val_subjects[0]

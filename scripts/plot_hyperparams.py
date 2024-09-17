@@ -161,6 +161,8 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
                 score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
             except FileNotFoundError:
                 continue
+        else:
+            raise ValueError("metric must be either 'dice' or 'loss'")
 
         params = yaml.safe_load(open(dir_ / "config.yaml"))
 
@@ -211,8 +213,12 @@ def _plot_coarse():
     fig.savefig(out_dir / "coarse_search_batch.png")
     plt.close(fig)
 
-    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse", metric="loss")
-    fig.suptitle("NB: only run for a few epochs, minimum loss might mean LR is too high")
+    fig = _plot_scatters(
+        pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse", metric="loss"
+    )
+    fig.suptitle(
+        "NB: only run for a few epochs, minimum loss might mean LR is too high"
+    )
     fig.savefig(str(out_dir / "scores.png"))
 
 
@@ -242,7 +248,9 @@ def _plot_med():
     fig.savefig(out_dir / "med_search_batch.png")
     plt.close(fig)
 
-    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "med", metric="dice")
+    fig = _plot_scatters(
+        pathlib.Path(__file__).parents[1] / "tuning_output" / "med", metric="dice"
+    )
     fig.savefig(out_dir / "scores.png")
 
 
@@ -257,7 +265,7 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         truth = np.load(results_dir / "val_truth.npy").squeeze()
 
         # Scale the prediction to 0 or 1
-        pred = 1 / (1 + np.exp(-pred))
+        pred = 1 / (1 + np.exp(-1 * pred))
 
         # Get the DICE score
         score = metrics.dice_score(truth, pred)
@@ -291,11 +299,7 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
 
         # Plot the top N again in a different colour
         axis.plot(
-            [
-                getattr(run, attr_name)
-                for run in run_infos
-                if run.score in top_scores
-            ],
+            [getattr(run, attr_name) for run in run_infos if run.score in top_scores],
             [run.score for run in run_infos if run.score in top_scores],
             "r.",
         )
@@ -311,7 +315,9 @@ def _plot_fine():
     Find the DICE accuracy of each, plot it
 
     """
-    fig = _plot_scatters(pathlib.Path(__file__).parents[1] / "tuning_output" / "fine", metric="dice")
+    fig = _plot_scatters(
+        pathlib.Path(__file__).parents[1] / "tuning_output" / "fine", metric="dice"
+    )
 
     out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
     if not out_dir.exists():

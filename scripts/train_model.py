@@ -45,7 +45,7 @@ def train_model(
 
     """
     # Create a model and optimiser
-    net = model.monai_unet()
+    net = model.monai_unet(params=model.model_params(config["model_params"]))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == "cpu":
@@ -56,10 +56,10 @@ def train_model(
     print(f"Using {device} device")
     net = net.to(device)
 
-    optimiser = model.optimiser(net)
+    optimiser = model.optimiser(config, net)
 
     # Create dataloaders
-    patch_size = io.patch_size()
+    patch_size = data.patch_size(config)
     batch_size = config["batch_size"]
     train_loader = data.train_val_loader(
         train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
@@ -72,7 +72,7 @@ def train_model(
     _plot_example(next(iter(train_loader)))
 
     # Define loss function
-    loss = model.lossfn()
+    loss = model.lossfn(config)
 
     return (
         model.train(
@@ -108,7 +108,7 @@ def main(*, save: bool):
     else:
         raise ValueError("No activation found")
 
-    train_subjects, val_subjects, test_subject = data.get_data(rng)
+    train_subjects, val_subjects, test_subject = data.get_data(config, rng)
 
     # Save the testing subject
     output_dir = pathlib.Path("train_output")
@@ -140,7 +140,7 @@ def main(*, save: bool):
     fig = images_3d.plot_inference(
         net,
         test_subject,
-        patch_size=io.patch_size(),
+        patch_size=data.patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
     )

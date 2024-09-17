@@ -15,6 +15,36 @@ from ..images import io, transform
 from ..util import files
 
 
+def ints2float(int_arr: np.ndarray) -> np.ndarray:
+    """
+    Scale an array from 16-bit integer values to 16-bit float values in [0, 1]
+
+    :param int_arr: The array to scale. Should be 16-bit integers - might be stored as a 32-bit
+                    datatype, but the values should be in the range of a 16-bit integer
+
+    :returns: The scaled array, with values between 0 and 1 using a float16 datatype
+
+    :raises: ValueError if the max value is less than the max value of a uint8 or greater than the max value of a uint16
+    :raises: ValueError if the array is not of integer type
+
+    """
+    # Check that the values are in the right range
+    if (max_val := int_arr.max()) < np.iinfo(np.uint8).max:
+        raise ValueError(
+            f"Max value {max_val} is less than can be stored by a uint8 - are you sure this is 16-bit data?"
+        )
+    elif max_val > (uint16max := np.iinfo(np.uint16).max):
+        raise ValueError(
+            f"Max value {max_val} is greater than can be stored by a uint16 - are you sure this is 16-bit data?"
+        )
+
+    # Check that the values are of integer type
+    if not np.issubdtype(int_arr.dtype, np.integer):
+        raise ValueError(f"Array is not of integer type, but {int_arr.dtype}")
+
+    return int_arr.astype(np.float16) / uint16max
+
+
 def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
     """
     Convert a numpy array to a torch tensor with an additional dimension
@@ -31,27 +61,33 @@ def subject(
     dicom_path: pathlib.Path,
     *,
     centre: tuple[int, int, int] = None,  # Shadowing whoops
+    window_size: tuple[int, int, int] = None,
 ) -> tio.Subject:
     """
     Create a subject from a DICOM file
-    Optionally, crop the image with the provided centre
-    and the size defined in the userconf file
+    Optionally, crop the image with the provided centre and size
 
     :param dicom_path: Path to the DICOM file
     :param centre: The centre of the window.
 
     :returns: The subject
+    :raises: ValueError if exactly one of centre and window_size specified
 
     """
+    if (centre is None) != (window_size is None):
+        raise ValueError(
+            f"Exactly one of centre ({centre}) and window_size ({window_size}) must be specified"
+        )
+
     image, mask = io.read_dicom(dicom_path)
 
     if centre is not None:
-        image = transform.crop(image, centre)
-        mask = transform.crop(mask, centre)
+        image = transform.crop(image, centre, window_size)
+        mask = transform.crop(mask, centre, window_size)
 
-    # Need to copy since torch doesn't support non-writable tensors
     # Convert to a float in [0, 1]
-    image = image.copy() / 65535
+    # Need to copy since torch doesn't support non-writable tensors
+    image = ints2float(image.copy())
     mask = mask.copy()
 
     return tio.Subject(
@@ -157,6 +193,17 @@ def transforms() -> tio.transforms.Transform:
     )
 
 
+def patch_size(config: dict) -> tuple[int, int, int]:
+    """
+    Get the patch size from the configuration
+
+    :param config: The configuration, that might be from userconf.yml
+    :returns: The patch size as a tuple of ints ZYX
+
+    """
+    return tuple(int(x) for x in config["patch_size"].split(","))
+
+
 def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
     """
     Get the centre of the jaw for a given fish
@@ -167,13 +214,14 @@ def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
 
 
 def get_data(
-    rng: np.random.Generator, *, train_frac: float = 0.95
+    config: dict, rng: np.random.Generator, *, train_frac: float = 0.95
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
     This reads in the DICOMs created by `scripts/create_dicoms.py`
     Prints a progress bar
 
+    :param config: The configuration, e.g. from userconf.yml
     :param rng: A random number generator to use for test/train/split
     :param train_frac: The fraction of the data to use for training (roughly)
 
@@ -183,7 +231,7 @@ def get_data(
 
     """
     # Read in data + convert to subjects
-    dicom_paths = sorted(list(files.dicom_dir().glob("*.dcm")))
+    dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [
         subject(path, centre=centre(path))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")

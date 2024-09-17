@@ -4,6 +4,7 @@ Define the model
 """
 
 import os
+import warnings
 import importlib
 from math import sqrt
 
@@ -16,7 +17,20 @@ from monai.networks.nets import AttentionUnet
 from ..util import util
 
 
-def convert_params(in_params: dict) -> dict:
+def channels(n_layers: int, n_initial_filters: int) -> list[int]:
+    """
+    Find the number of channels in each layer of the network
+
+    :param n_layers: the number of layers in the network
+    :param n_initial_filters: the number of filters in the first layer
+    :returns: the number of filters in each layer
+
+    """
+    start = int(sqrt(n_initial_filters))
+    return [2**n for n in range(start, start + n_layers)]
+
+
+def model_params(in_params: dict) -> dict:
     """
     Find the parameters that we need to pass to the model constructor
 
@@ -41,9 +55,9 @@ def convert_params(in_params: dict) -> dict:
 
     # Get the number of channels for each layer by finding the number channels in the first layer
     # and then doing some maths
-    start = int(sqrt(in_params["n_initial_filters"]))
-    channels_per_layer = [2**n for n in range(start, start + in_params["n_layers"])]
-    out_params["channels"] = channels_per_layer
+    out_params["channels"] = channels(
+        in_params["n_layers"], in_params["n_initial_filters"]
+    )
 
     # Convolution stride is always the same, apart from in the first layer where it's implicitly 1
     # (to preserve the size of the input)
@@ -55,34 +69,42 @@ def convert_params(in_params: dict) -> dict:
     return out_params
 
 
-def model_params() -> dict:
-    """
-    Get the model params from the user config file
-
-    """
-    return convert_params(util.userconf()["model_params"])
-
-
-def monai_unet(*, params: dict = model_params()) -> AttentionUnet:
-    """
-    U-Net model for segmentation
-
-    """
-    return AttentionUnet(**params)
-
-
-def optimiser(model: AttentionUnet) -> torch.optim.Optimizer:
+def optimiser(config: dict, model: AttentionUnet) -> torch.optim.Optimizer:
     """
     Get the right optimiser by reading the user config file
 
+    :param config: the configuration for the optimiser; must contain the optimiser name and learning rate
     :param model: the model to optimise
     :returns: the optimiser
 
     """
-    user_config = util.userconf()
-    return getattr(torch.optim, user_config["optimiser"])(
-        model.parameters(), user_config["learning_rate"]
+    return getattr(torch.optim, config["optimiser"])(
+        model.parameters(), config["learning_rate"]
     )
+
+
+def lossfn(config: dict) -> torch.nn.modules.Module:
+    """
+    Get the loss function from the config file
+
+    """
+    module_path, class_name = config["loss"].rsplit(".", 1)
+    options: dict = config["loss_options"]
+
+    module = importlib.import_module(module_path)
+
+    return getattr(module, class_name)(**options)
+
+
+def monai_unet(*, params: dict) -> AttentionUnet:
+    """
+    U-Net model for segmentation
+
+    :param params: the parameters for the model, as might be returned by model_params
+
+    """
+    warnings.warn("remember to refactor this to just read the config")
+    return AttentionUnet(**params)
 
 
 def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
@@ -96,19 +118,6 @@ def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
     y = data[tio.LABEL][tio.DATA]
 
     return x, y
-
-
-def lossfn() -> torch.nn.modules.Module:
-    """
-    Get the loss function from the config file
-
-    """
-    module_path, class_name = util.userconf()["loss"].rsplit(".", 1)
-    options: dict = util.userconf()["loss_options"]
-
-    module = importlib.import_module(module_path)
-
-    return getattr(module, class_name)(**options)
 
 
 def train_step(

@@ -13,17 +13,17 @@ import numpy as np
 import torchio as tio
 
 from fishjaw.util import files, util
-from fishjaw.model import model
+from fishjaw.model import model, data
 from fishjaw.images import io, transform, metrics
 from fishjaw.visualisation import images_3d
 
 
-def _load_model() -> torch.nn.Module:
+def _load_model(config: dict) -> torch.nn.Module:
     """
     Load the model from disk
 
     """
-    net = model.monai_unet()
+    net = model.monai_unet(params=model.model_params(config["model_params"]))
 
     # Load the state dict
     path = files.model_path()
@@ -35,12 +35,12 @@ def _load_model() -> torch.nn.Module:
     return net
 
 
-def _read_img(img_n: int) -> np.ndarray:
+def _read_img(config: dict, img_n: int) -> np.ndarray:
     """
     Read the chosen image
 
     """
-    path = files.wahab_3d_tifs_dir() / f"ak_{img_n}.tif"
+    path = files.wahab_3d_tifs_dir(config) / f"ak_{img_n}.tif"
     return tifffile.imread(path)
 
 
@@ -53,7 +53,7 @@ def _get_subject(img: np.ndarray) -> tio.Subject:
     return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
 
 
-def _subject(args: argparse.Namespace) -> tio.Subject:
+def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     """
     Either read the image of choice and turn it into a Subject, or load the testing subject
 
@@ -62,11 +62,13 @@ def _subject(args: argparse.Namespace) -> tio.Subject:
     if args.test:
         with open("train_output/test_subject.pkl", "rb") as f:
             return pickle.load(f)
+    else:
+        window_size = transform.window_size(config["window_size"])
 
     # Create a subject from the chosen image
     # Read the chosen image
     img_n = args.subject
-    img = _read_img(img_n)
+    img = _read_img(config, img_n)
 
     # Crop it to the jaw
     crop_lookup = {
@@ -74,10 +76,10 @@ def _subject(args: argparse.Namespace) -> tio.Subject:
         273: (1685, 221, 286),
         274: (1413, 174, 240),
     }
-    img = transform.crop(img, crop_lookup[img_n])
+    img = transform.crop(img, crop_lookup[img_n], window_size)
 
     # Scale to [0, 1]
-    img = img / 65535
+    img = data.ints2float(img)
 
     # Create a subject
     return _get_subject(img)
@@ -89,15 +91,15 @@ def main(args):
     Save the output image
 
     """
-    subject = _subject(args)
+    config = util.userconf()
+    subject = _subject(config, args)
 
     # Load the model
-    net = _load_model()
+    net = _load_model(config)
     net.to("cuda")
 
     # Find which activation function to use from the config file
     # This assumes this was the same activation function used during training...
-    config = util.userconf()
     if config["loss_options"].get("softmax", False):
         activation = "softmax"
     elif config["loss_options"].get("sigmoid", False):
@@ -109,7 +111,7 @@ def main(args):
     prediction = model.predict(
         net,
         subject,
-        patch_size=io.patch_size(),
+        patch_size=data.patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
     )

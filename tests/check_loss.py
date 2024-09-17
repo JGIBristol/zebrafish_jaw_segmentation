@@ -30,7 +30,7 @@ def _to_prediction(img: torch.Tensor) -> torch.Tensor:
     Add the right number of channels such that this represents a onehot prediction
 
     """
-    return F.one_hot(img.squeeze(dim=0)).permute(0, 4, 1, 2, 3)
+    return F.one_hot(img.squeeze(dim=0)).permute(0, 4, 1, 2, 3)  # pylint: disable=not-callable
 
 
 def main():
@@ -41,7 +41,17 @@ def main():
     """
     rng = np.random.default_rng()
 
-    loss = model.lossfn()
+    loss_config = {
+        "loss": "monai.losses.TverskyLoss",
+        "loss_options": {
+            "include_background": False,
+            "to_onehot_y": True,
+            "alpha": 0.5,
+            "beta": 0.5,
+            "sigmoid": True,
+        },
+    }
+    loss = model.lossfn(loss_config)
 
     img_size = 255, 256, 257
     reference_image = _gen_img(rng, img_size)

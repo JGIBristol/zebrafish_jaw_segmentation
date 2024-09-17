@@ -11,16 +11,6 @@ import numpy as np
 from ..util import util
 
 
-def patch_size() -> tuple[int, int, int]:
-    """
-    Read the patch size from the config file
-
-    :return: The patch size ZYX
-
-    """
-
-    return tuple(int(x) for x in util.userconf()["patch_size"].split(","))
-
 
 def read_dicom(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
     """

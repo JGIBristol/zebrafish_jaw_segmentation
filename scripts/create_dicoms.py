@@ -11,7 +11,7 @@ import tifffile
 import numpy as np
 from tqdm import tqdm
 
-from fishjaw.util import files
+from fishjaw.util import files, util
 
 
 class Dicom:
@@ -101,17 +101,17 @@ class Dicom:
         print(f"Saved to {out_path}")
 
 
-def create_wahab_dicoms() -> None:
+def create_wahab_dicoms(config: dict) -> None:
     """
     Create DICOMs from Wahab's segmented images
 
     """
     label_paths = sorted(
-        list(files.wahab_labels_dir().glob("*.tif")), key=lambda x: x.name
+        list(files.wahab_labels_dir(config).glob("*.tif")), key=lambda x: x.name
     )
 
     # Find the corresponding images
-    wahab_tif_dir = files.wahab_3d_tifs_dir()
+    wahab_tif_dir = files.wahab_3d_tifs_dir(config)
     for label_path in tqdm(
         label_paths[2:], desc="Creating DICOMs from Wahab's segmentations"
     ):
@@ -122,7 +122,7 @@ def create_wahab_dicoms() -> None:
             )
             continue
 
-        out_path = files.dicom_dir() / img_path.name.replace(".tif", ".dcm")
+        out_path = files.dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
 
         if out_path.exists():
             print(f"Skipping {out_path}, already exists")
@@ -138,16 +138,16 @@ def create_wahab_dicoms() -> None:
         dicom.write(out_path)
 
 
-def create_felix_second_dicoms():
+def create_felix_second_dicoms(config: dict):
     """
     Create DICOMs from Felix's second set of segmented images
 
     """
     # Find the paths for the labels
-    label_paths = list(files.felix_labels_2_dir().glob("*.tif"))
+    label_paths = list(files.felix_labels_2_dir(config).glob("*.tif"))
 
     # Find the corresponding images
-    wahab_tif_dir = files.wahab_3d_tifs_dir()
+    wahab_tif_dir = files.wahab_3d_tifs_dir(config)
     for label_path in tqdm(
         label_paths, desc="Creating DICOMs from Felix's first segmentations"
     ):
@@ -157,7 +157,7 @@ def create_felix_second_dicoms():
                 f"Could not find corresponding image for {label_path}"
             )
 
-        out_path = files.dicom_dir() / img_path.name.replace(".tif", ".dcm")
+        out_path = files.dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
 
         if out_path.exists():
             print(f"Skipping {out_path}, already exists")
@@ -177,13 +177,15 @@ def main():
     Get the images and labels, create DICOM files and save them to disk
 
     """
-    if not files.dicom_dir().is_dir():
-        files.dicom_dir().mkdir()
+    config = util.userconf()
+
+    if not (dicom_dir := files.dicom_dir(config)).is_dir():
+        dicom_dir.mkdir()
 
     # We should really check here that there's no overlap between Felix and Wahab's images
 
-    create_wahab_dicoms()
-    create_felix_second_dicoms()
+    create_wahab_dicoms(config)
+    create_felix_second_dicoms(config)
 
 
 if __name__ == "__main__":

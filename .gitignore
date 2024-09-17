@@ -1,3 +1,17 @@
+# Images/plots
+*.png
+*.dcm
+*.stl
+*.tif
+
+# Models/data
+*.pth
+*.npy
+test_subject.pkl
+
+# Hyperparameter tuning
+tuning_output/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
