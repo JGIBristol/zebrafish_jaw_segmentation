@@ -16,32 +16,43 @@ from monai.networks.nets import AttentionUnet
 from ..util import util
 
 
-def convert_params(params: dict) -> dict:
+def convert_params(in_params: dict) -> dict:
     """
-    Convert the parameters to the right format, adding any extras
-    and renaming them to be consistent with the monai API
+    Find the parameters that we need to pass to the model constructor
+
+    Converts some to the right format, adds any extras, and renames them to be
+    consistent with the monai API
+
+    :param config: configuration, that might be e.g. the
+                   "model_params" dict in userconf.yml
+    :returns: the parameters to pass to the model constructor
 
     """
+    # Some parameters we can just directly take from the config
+    out_params = {
+        "spatial_dims": in_params["spatial_dims"],
+        "in_channels": in_params["in_channels"],
+        "kernel_size": in_params["kernel_size"],
+        "up_kernel_size": in_params["kernel_size"],
+        "dropout": in_params["dropout"],
+    }
+
+    # Others we need to calculate
+
     # Get the number of channels for each layer by finding the number channels in the first layer
     # and then doing some maths
-    start = int(sqrt(params["n_initial_filters"]))
-    channels_per_layer = [2**n for n in range(start, start + params["n_layers"])]
-    params["channels"] = channels_per_layer
+    start = int(sqrt(in_params["n_initial_filters"]))
+    channels_per_layer = [2**n for n in range(start, start + in_params["n_layers"])]
+    out_params["channels"] = channels_per_layer
 
     # Convolution stride is always the same, apart from in the first layer where it's implicitly 1
     # (to preserve the size of the input)
-    strides = [params["stride"]] * (params["n_layers"] - 1)
-    params["strides"] = strides
+    out_params["strides"] = [in_params["stride"]] * (in_params["n_layers"] - 1)
 
     # Rename some of the parameters to be consistent with the monai API
-    params["out_channels"] = params.pop("n_classes")
+    out_params["out_channels"] = in_params["n_classes"]
 
-    # Remove unused parameters
-    params.pop("n_initial_filters")
-    params.pop("n_layers")
-    params.pop("stride")
-
-    return params
+    return out_params
 
 
 def model_params() -> dict:
@@ -308,7 +319,7 @@ def predict(
     *,
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
-    activation: str
+    activation: str,
 ) -> np.ndarray:
     """
     Make a prediction on a subject using the provided model

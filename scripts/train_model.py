@@ -46,6 +46,7 @@ def train_model(
     """
     # Create a model and optimiser
     net = model.monai_unet()
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == "cpu":
         # Yellow text
