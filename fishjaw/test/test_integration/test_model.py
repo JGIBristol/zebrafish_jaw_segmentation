@@ -21,6 +21,7 @@ def test_model_params() -> None:
 
     """
     in_params = {
+        "model_name": "monai.networks.nets.AttentionUnet",
         "spatial_dims": 3,
         "n_classes": 2,  # n bones + background
         "in_channels": 1,  # Our images are greyscale
@@ -30,7 +31,6 @@ def test_model_params() -> None:
         "stride": 2,  # 2
         "dropout": 0.0,
     }
-    out_params = model.model_params(in_params)
 
     # Will raise an exception if something has gone wrong
-    model.monai_unet(params=out_params)
+    model.model(in_params)

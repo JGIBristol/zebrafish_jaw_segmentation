@@ -14,9 +14,9 @@ import monai.losses
 import torchio as tio
 import matplotlib.pyplot as plt
 
+from fishjaw.util import util
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
-from fishjaw.images import io
 
 
 def _output_parent(mode: str) -> pathlib.Path:
@@ -103,6 +103,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
 
     config = {
         "model_params": {
+            "model_name": "monai.networks.nets.AttentionUnet",
             "spatial_dims": 3,
             "n_classes": 2,
             "in_channels": 1,
@@ -128,6 +129,8 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "torch_seed": 0,
         "mode": mode,
         "patch_size": "160,160,160",
+        "window_size": "160,160,160",
+        "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
     }
 
     return config
@@ -144,11 +147,8 @@ def train_model(
     Returns the model, the training losses and the validation losses
 
     """
-    # Get the model params
-    model_params = model.model_params(config["model_params"])
-
     # Create a model and optimiser
-    net = model.monai_unet(params=model_params)
+    net = model.model(config["model_params"])
     device = "cuda"
     net = net.to(device)
 
@@ -287,14 +287,16 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
                 "No existing directories found- nothing to continue or restart (don't specify either)"
             )
 
-    # NB we are still using the patch_size defined in userconf
     rng = np.random.default_rng()
-    # TODO - un-hard-code the dicom dir
+
+    # We'll get the configuration file here, just because that tells us where the dicom dir is
+    # (which mirrors the structure of the "actual" config)
     train_subjects, val_subjects, test_subject = data.get_data(
-        {"dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/"}, rng
+        _config(rng, mode=mode), rng
     )
 
-    # We want to test on the validation subject as well...
+    # We want to test on the validation subject as well - it would be a bit naughty to perform the
+    # hyperparameter tuning on the "unseen" testing data
     test_subject = val_subjects[0]
 
     for i in range(start, start + n_steps):

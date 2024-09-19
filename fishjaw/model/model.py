@@ -4,7 +4,6 @@ Define the model
 """
 
 import os
-import warnings
 import importlib
 from math import sqrt
 
@@ -12,9 +11,6 @@ import torch
 import numpy as np
 import torchio as tio
 from tqdm import trange
-from monai.networks.nets import AttentionUnet
-
-from ..util import util
 
 
 def channels(n_layers: int, n_initial_filters: int) -> list[int]:
@@ -28,6 +24,44 @@ def channels(n_layers: int, n_initial_filters: int) -> list[int]:
     """
     start = int(sqrt(n_initial_filters))
     return [2**n for n in range(start, start + n_layers)]
+
+
+def optimiser(config: dict, model: torch.nn.Module) -> torch.optim.Optimizer:
+    """
+    Get the right optimiser by reading the user config file
+
+    :param config: the configuration for the optimiser; must contain the optimiser name and learning rate
+    :param model: the model to optimise
+    :returns: the optimiser
+
+    """
+    return getattr(torch.optim, config["optimiser"])(
+        model.parameters(), config["learning_rate"]
+    )
+
+
+def _load_class(name: str) -> type:
+    """
+    Load a class from a string.
+
+    :param name: the name of the class to load. Should be in the format module.class,
+                 where module can also contain "."s
+    :returns: the class object
+
+    """
+    module_path, class_name = name.rsplit(".", 1)
+
+    module = importlib.import_module(module_path)
+
+    return getattr(module, class_name)
+
+
+def lossfn(config: dict) -> torch.nn.modules.Module:
+    """
+    Get the loss function from the config file
+
+    """
+    return _load_class(config["loss"])(**config["loss_options"])
 
 
 def model_params(in_params: dict) -> dict:
@@ -69,42 +103,22 @@ def model_params(in_params: dict) -> dict:
     return out_params
 
 
-def optimiser(config: dict, model: AttentionUnet) -> torch.optim.Optimizer:
-    """
-    Get the right optimiser by reading the user config file
-
-    :param config: the configuration for the optimiser; must contain the optimiser name and learning rate
-    :param model: the model to optimise
-    :returns: the optimiser
-
-    """
-    return getattr(torch.optim, config["optimiser"])(
-        model.parameters(), config["learning_rate"]
-    )
-
-
-def lossfn(config: dict) -> torch.nn.modules.Module:
-    """
-    Get the loss function from the config file
-
-    """
-    module_path, class_name = config["loss"].rsplit(".", 1)
-    options: dict = config["loss_options"]
-
-    module = importlib.import_module(module_path)
-
-    return getattr(module, class_name)(**options)
-
-
-def monai_unet(*, params: dict) -> AttentionUnet:
+def model(config: dict) -> torch.nn.Module:
     """
     U-Net model for segmentation
 
-    :param params: the parameters for the model, as might be returned by model_params
+    :param params: the configuration needed, as might be read from the model_params dict in userconf.yml
+                   Must contain the following keys:
+                     - model_name: the name of the model to use
+                     - all the params needed for the model
+    :returns: the model
 
     """
-    warnings.warn("remember to refactor this to just read the config")
-    return AttentionUnet(**params)
+    # Find which model to use
+    classname = _load_class(config["model_name"])
+
+    # Parse the parameters from the config
+    return classname(**model_params(config))
 
 
 def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
@@ -121,17 +135,17 @@ def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
 
 
 def train_step(
-    model: AttentionUnet,
+    net: torch.nn.Module,
     optim: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
     train_data: torch.utils.data.DataLoader,
     *,
     device: torch.device,
-) -> tuple[AttentionUnet, list[float]]:
+) -> tuple[torch.nn.Module, list[float]]:
     """
     Train the model for one epoch, on the given batches of data provided as a dataloader
 
-    :param model: the model to train
+    :param net: the model to train
     :param optim: the optimiser to use
     :param loss_fn: the loss function to use
     :param train_data: the training data
@@ -153,7 +167,7 @@ def train_step(
     #     print(total_norm ** 0.5)
     max_grad = np.inf
 
-    model.train()
+    net.train()
 
     train_losses = []
     for data in train_data:
@@ -162,29 +176,29 @@ def train_step(
         input_, target = x.to(device), y.to(device)
 
         optim.zero_grad()
-        out = model(input_)
+        out = net(input_)
 
         loss = loss_fn(out, target)
         train_losses.append(loss.item())
 
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad)
+        torch.nn.utils.clip_grad_norm_(net.parameters(), max_grad)
         optim.step()
 
-    return model, train_losses
+    return net, train_losses
 
 
 def validation_step(
-    model: AttentionUnet,
+    net: torch.nn.Module,
     loss_fn: torch.nn.Module,
     validation_data: torch.utils.data.DataLoader,
     *,
     device: torch.device,
-) -> tuple[AttentionUnet, list[float]]:
+) -> tuple[torch.nn.Module, list[float]]:
     """
     Find the loss on the validation data
 
-    :param model: the model to train
+    :param net: the model that is being trained
     :param loss_fn: the loss function to use
     :param train_data: the validation data
     :param device: the device to run the model on
@@ -193,7 +207,7 @@ def validation_step(
     :returns: validation loss for each batch
 
     """
-    model.eval()
+    net.eval()
 
     losses = np.ones(len(validation_data)) * np.nan
 
@@ -202,15 +216,15 @@ def validation_step(
 
         batch_img, batch_label = x.to(device), y.to(device)
         with torch.no_grad():
-            out = model(batch_img)
+            out = net(batch_img)
             loss = loss_fn(out, batch_label)
             losses[i] = loss.item()
 
-    return model, losses
+    return net, losses
 
 
 def _save_checkpoint(
-    model: AttentionUnet,
+    model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     epoch: int,
     checkpoint_dir: str = "checkpoints",
@@ -238,7 +252,7 @@ def _save_checkpoint(
 
 
 def train(
-    model: AttentionUnet,
+    model: torch.nn.Module,
     optim: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
     train_data: torch.utils.data.DataLoader,
@@ -248,7 +262,7 @@ def train(
     epochs: int,
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler = None,
     checkpoint: bool = False,
-) -> tuple[AttentionUnet, list[list[float], list[list[float]]]]:
+) -> tuple[torch.nn.Module, list[list[float], list[list[float]]]]:
     """
     Train the model for the given number of epochs
 
@@ -299,7 +313,7 @@ def train(
 
 
 def _predict_patches(
-    model: torch.nn.Module,
+    net: torch.nn.Module,
     patches: tio.data.sampler.PatchSampler,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
@@ -314,12 +328,12 @@ def _predict_patches(
         tensors.append(patch[tio.IMAGE][tio.DATA].unsqueeze(0))
         locations.append(patch[tio.LOCATION])
 
-    device = next(model.parameters()).device
+    device = next(net.parameters()).device
 
     tensors = torch.cat(tensors, dim=0).to(device)
     locations = torch.stack(locations)
 
-    return model(tensors).to("cpu").detach(), locations
+    return net(tensors).to("cpu").detach(), locations
 
 
 def predict(

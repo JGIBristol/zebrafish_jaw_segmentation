@@ -1,13 +1,6 @@
 # User-defined configuration file; things here depend on where your files are etc.
-rdsf_dir: '/home/mh19137/zebrafish_rdsf/'
-dicom_dir: '/home/mh19137/zebrafish_jaw_segmentation/dicoms/'
-
-# Options for the model that you might want to change
-window_size: 192,192,192  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
-patch_size: 160,160,160
-batch_size: 2
-epochs: 150
-lr_lambda: 0.99 # Exponential decay factor
+rdsf_dir: "/home/mh19137/zebrafish_rdsf/"
+dicom_dir: "/home/mh19137/zebrafish_jaw_segmentation/dicoms/"
 
 # Optimiser options
 optimiser: "Adam"  # Must be one of the torch.optim optimisers
@@ -31,7 +24,17 @@ loss_options: {
 torch_seed: 0
 test_train_seed: 1
 
+# Options for the model that you might want to change
+# These are sort of like meta-parameters so they're not in the model_params section but maybe they should be
+window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
+patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
+batch_size: 2
+epochs: 25
+lr_lambda: 0.99 # Exponential decay factor (multiplicative with each epoch)
+
 model_params:
+  model_name: "monai.networks.nets.AttentionUnet"
+
   # Things you probably won't need to change - I just kept them here to keep all the params in one place
   spatial_dims: 3
   n_classes: 2  # n bones + background

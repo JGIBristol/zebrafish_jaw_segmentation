@@ -17,12 +17,12 @@ from ..util import files
 
 def ints2float(int_arr: np.ndarray) -> np.ndarray:
     """
-    Scale an array from 16-bit integer values to 16-bit float values in [0, 1]
+    Scale an array from 16-bit integer values to float values in [0, 1]
 
     :param int_arr: The array to scale. Should be 16-bit integers - might be stored as a 32-bit
                     datatype, but the values should be in the range of a 16-bit integer
 
-    :returns: The scaled array, with values between 0 and 1 using a float16 datatype
+    :returns: The scaled array, with values between 0 and 1
 
     :raises: ValueError if the max value is less than the max value of a uint8 or greater than the max value of a uint16
     :raises: ValueError if the array is not of integer type
@@ -42,7 +42,7 @@ def ints2float(int_arr: np.ndarray) -> np.ndarray:
     if not np.issubdtype(int_arr.dtype, np.integer):
         raise ValueError(f"Array is not of integer type, but {int_arr.dtype}")
 
-    return int_arr.astype(np.float16) / uint16max
+    return int_arr / uint16max
 
 
 def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
@@ -65,7 +65,7 @@ def subject(
 ) -> tio.Subject:
     """
     Create a subject from a DICOM file
-    Optionally, crop the image with the provided centre and size
+    Optionally, crop the image with the provided centre and window_size
 
     :param dicom_path: Path to the DICOM file
     :param centre: The centre of the window.
@@ -76,12 +76,13 @@ def subject(
     """
     if (centre is None) != (window_size is None):
         raise ValueError(
-            f"Exactly one of centre ({centre}) and window_size ({window_size}) must be specified"
+            f"Must specify either both or neither centre ({centre}) and window_size ({window_size})"
         )
 
     image, mask = io.read_dicom(dicom_path)
 
     if centre is not None:
+        # We know implicitly that window_size is not None
         image = transform.crop(image, centre, window_size)
         mask = transform.crop(mask, centre, window_size)
 
@@ -233,7 +234,7 @@ def get_data(
     # Read in data + convert to subjects
     dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [
-        subject(path, centre=centre(path))
+        subject(path, centre=centre(path), window_size=transform.window_size(config))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")
     ]
 

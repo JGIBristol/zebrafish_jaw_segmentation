@@ -23,7 +23,7 @@ def _load_model(config: dict) -> torch.nn.Module:
     Load the model from disk
 
     """
-    net = model.monai_unet(params=model.model_params(config["model_params"]))
+    net = model.model(model.model_params(config["model_params"]))
 
     # Load the state dict
     path = files.model_path()

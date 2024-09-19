@@ -45,7 +45,7 @@ def train_model(
 
     """
     # Create a model and optimiser
-    net = model.monai_unet(params=model.model_params(config["model_params"]))
+    net = model.model(config["model_params"])
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == "cpu":
@@ -116,7 +116,6 @@ def main(*, save: bool):
         output_dir.mkdir()
     with open(output_dir / "test_subject.pkl", "wb") as f:
         pickle.dump(test_subject, f)
-
 
     (net, train_losses, val_losses), optimiser = train_model(
         config, train_subjects, val_subjects
