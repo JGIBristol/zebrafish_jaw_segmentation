@@ -289,10 +289,13 @@ def main(*, mode: str, n_steps: int, continue_run: bool, restart_run: bool):
 
     rng = np.random.default_rng()
 
+    # We only really want to do the data augmentation if we're doing the fine search
+    transforms = "default" if mode == "fine" else "none"
+
     # We'll get the configuration file here, just because that tells us where the dicom dir is
     # (which mirrors the structure of the "actual" config)
     train_subjects, val_subjects, test_subject = data.get_data(
-        _config(rng, mode=mode), rng
+        _config(rng, mode=mode), rng, transforms=transforms
     )
 
     # We want to test on the validation subject as well - it would be a bit naughty to perform the
