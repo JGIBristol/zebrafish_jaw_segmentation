@@ -4,6 +4,7 @@ Loading, pre-processing, etc. the data for the model
 """
 
 import pathlib
+from typing import Union
 
 import torch
 import torch.utils
@@ -215,7 +216,11 @@ def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
 
 
 def get_data(
-    config: dict, rng: np.random.Generator, *, train_frac: float = 0.95
+    config: dict,
+    rng: np.random.Generator,
+    *,
+    train_frac: float = 0.95,
+    transforms: Union[str | tio.transforms.Transform] = "default",
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
@@ -225,12 +230,30 @@ def get_data(
     :param config: The configuration, e.g. from userconf.yml
     :param rng: A random number generator to use for test/train/split
     :param train_frac: The fraction of the data to use for training (roughly)
+    :param transforms: whether to apply transforms to the training data.
+                       "default" applies the transforms in transforms();
+                       "none" applies no transforms;
+                       otherwise applies the transforms provided
 
     :return: subjects for training
     :return: subjects for validation
     :return: a subject, for testing
 
+    :raises: ValueError if transforms is not "default", "none" or a tio.transforms.Transform
+
     """
+    # Choose the transforms
+    if isinstance(transforms, (str, tio.transforms.Transform)):
+        if transforms == "default":
+            transforms = transforms()
+        elif transforms == "none":
+            # This will apply no transforms when passed to the SubjectsDataset
+            transforms = None
+    else:
+        raise ValueError(
+            f"transforms must be 'default', 'none' or a tio.transforms.Transform, not {transforms}"
+        )
+
     # Read in data + convert to subjects
     dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [
