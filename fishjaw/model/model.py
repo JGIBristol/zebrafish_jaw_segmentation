@@ -251,6 +251,43 @@ def _save_checkpoint(
     )
 
 
+def _early_stop(
+    patience: int, val_losses: list[list[float]], train_losses: list[list[float]]
+) -> bool:
+    """
+    Whether to stop training early, depending on our losses
+
+    Will stop if:
+        - the validation loss is NaN
+        - the validation loss has been worse than the training loss
+        - the validation loss has not decreased for `patience` epochs
+
+    """
+    assert len(val_losses) == len(train_losses)
+
+    # We haven't trained for long enough to stop
+    if len(val_losses) < patience:
+        return False
+
+    # Check if the validation loss is NaN
+    mean_val_loss = np.mean(val_losses, axis=1)
+    mean_train_loss = np.mean(train_losses, axis=1)
+    if np.isnan(mean_val_loss[-1]):
+        return True
+
+    # Check if the validation loss has been worse than the training loss for the last few epochs
+    overfit_threshhold = 1.5
+    if (mean_val_loss > overfit_threshhold * mean_train_loss)[-patience:].all():
+        return True
+
+    # Check if the validation loss has not decreased for the last few epochs
+    best_val_loss = np.min(mean_val_loss, axis=1)
+    if (mean_val_loss[-patience:] <= best_val_loss).all():
+        return True
+
+    return False
+
+
 def train(
     model: torch.nn.Module,
     optim: torch.optim.Optimizer,
@@ -262,7 +299,8 @@ def train(
     epochs: int,
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler = None,
     checkpoint: bool = False,
-) -> tuple[torch.nn.Module, list[list[float], list[list[float]]]]:
+    early_stopping: bool = False,
+) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
     Train the model for the given number of epochs
 
@@ -275,6 +313,8 @@ def train(
     :param epochs: the number of epochs to train for
     :param lr_scheduler: optional learning rate scheduler to use
     :param checkpoint: whether to checkpoint the model after each epoch
+    :param early_stopping: whether to stop training early,
+                           if the validation loss stops decreasing or is clearly bad
 
     :returns: the trained model
     :returns: list of training batch losses
@@ -283,6 +323,12 @@ def train(
     """
     train_batch_losses = []
     val_batch_losses = []
+
+    # How often to checkpoint the model
+    checkpoint_interval = 5
+
+    # How many epochs to wait before stopping training
+    patience = 10
 
     progress_bar = trange(epochs, desc="Training")
     for epoch in progress_bar:
@@ -297,7 +343,6 @@ def train(
         val_batch_losses.append(val_batch_loss)
 
         # Checkpoint the model
-        checkpoint_interval = 5
         if checkpoint and not (epoch) % checkpoint_interval:
             _save_checkpoint(model, optim, epoch)
 
@@ -307,6 +352,13 @@ def train(
                 lr_scheduler.step(np.mean(val_batch_losses[-1]))
             else:
                 lr_scheduler.step()
+
+        # Early stopping
+        if early_stopping and _early_stop(
+            patience, val_batch_losses, train_batch_losses
+        ):
+            break
+
         progress_bar.set_description(f"Val loss: {np.mean(val_batch_losses[-1]):.4f}")
 
     return model, train_batch_losses, val_batch_losses

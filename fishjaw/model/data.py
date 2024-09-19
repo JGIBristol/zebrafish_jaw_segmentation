@@ -172,7 +172,7 @@ def test_loader(
     )
 
 
-def transforms() -> tio.transforms.Transform:
+def _transforms() -> tio.transforms.Transform:
     """
     Define the transforms to apply to the training data
 
@@ -245,7 +245,7 @@ def get_data(
     # Choose the transforms
     if isinstance(transforms, (str, tio.transforms.Transform)):
         if transforms == "default":
-            transforms = transforms()
+            transforms = _transforms()
         elif transforms == "none":
             # This will apply no transforms when passed to the SubjectsDataset
             transforms = None
@@ -276,7 +276,7 @@ def get_data(
     print(f"Test: {test_idx=}")
 
     train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=transforms()
+        [subjects[i] for i in train_idx], transform=_transforms()
     )
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
     test_subject = subjects[test_idx]
