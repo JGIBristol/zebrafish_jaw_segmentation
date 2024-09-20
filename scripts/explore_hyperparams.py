@@ -60,7 +60,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         lr_range = (-6, 1)
     elif mode == "fine":
         # From centering around a value that seems to broadly work
-        lr_range = (-4, 2)
+        lr_range = (-5, 0)
     else:
         raise ValueError(f"Unknown mode {mode}")
 
@@ -69,7 +69,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
 
 def _batch_size(rng: np.random.Generator, mode: str) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
-    return int(rng.integers(2, 10))
+    return int(rng.integers(1, 11))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
@@ -77,7 +77,7 @@ def _epochs(rng: np.random.Generator, mode: str) -> int:
         return 5
     if mode == "med":
         return 15
-    return int(rng.integers(25, 250))
+    return int(rng.integers(25, 500))
 
 
 def _alpha(rng: np.random.Generator, mode: str) -> float:
@@ -85,7 +85,7 @@ def _alpha(rng: np.random.Generator, mode: str) -> float:
 
 
 def _n_filters(rng: np.random.Generator, mode: str) -> int:
-    return int(rng.integers(3, 9))
+    return int(rng.integers(3, 16))
 
 
 def _lambda(rng: np.random.Generator, mode: str) -> float:
@@ -202,7 +202,7 @@ def step(
     if config["mode"] != "coarse":
         # Plot a training patch
         patch = next(iter(train_subjects))
-        fig, axis = images_3d.plot_slices(
+        fig, _ = images_3d.plot_slices(
             patch[tio.IMAGE][tio.DATA].squeeze().numpy(),
             patch[tio.LABEL][tio.DATA].squeeze().numpy(),
         )
@@ -211,6 +211,8 @@ def step(
 
         # Plot the loss
         fig = training.plot_losses(train_losses, val_losses)
+        fig.suptitle(f"Trained for {len(train_losses)} epochs of {config['epochs']}")
+        fig.tight_layout()
         fig.savefig(str(out_dir / "loss.png"))
         plt.close(fig)
 
