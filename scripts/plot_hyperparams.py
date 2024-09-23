@@ -286,13 +286,34 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     """
     fig, axes = plt.subplots(3, 3, figsize=(12, 8))
 
-    axes[0, 0].hist([run.score for run in run_infos], bins=20)
-    axes[0, 0].set_title("Scores")
-
     # Identify the top n
     n = 5
     scores = [run.score for run in run_infos]
     top_scores = set(sorted(scores, reverse=True)[:n])
+
+    # Identify the top few
+    top_chunk = set(sorted(scores, reverse=True)[: 2 * len(scores) // 5])
+
+    # Histogram of scores
+    _, bins, _ = axes[0, 0].hist([run.score for run in run_infos], bins=20, label="All")
+    axes[0, 0].set_title("Scores")
+
+    # Plot the top quintile 
+    axes[0, 0].hist(
+        [run.score for run in run_infos if run.score in top_chunk],
+        bins=bins,
+        color="y",
+        label="Top 40%",
+    )
+
+    # Plot the top n again
+    axes[0, 0].hist(
+        [run.score for run in run_infos if run.score in top_scores],
+        bins=bins,
+        color="r",
+        label="Top 5",
+    )
+    axes[0, 0].legend()
 
     for axis, field in zip(axes.flat[1:], fields(RunInfo)[1:]):
         attr_name = field.name
@@ -300,6 +321,11 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
         axis.set_title(attr_name)
 
         # Plot the top N again in a different colour
+        axis.plot(
+            [getattr(run, attr_name) for run in run_infos if run.score in top_chunk],
+            [run.score for run in run_infos if run.score in top_chunk],
+            "y.",
+        )
         axis.plot(
             [getattr(run, attr_name) for run in run_infos if run.score in top_scores],
             [run.score for run in run_infos if run.score in top_scores],
@@ -315,6 +341,7 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
         axis.axis("off")
 
     fig.suptitle(f"N runs {len(run_infos)}")
+    fig.tight_layout()
 
     return fig
 
