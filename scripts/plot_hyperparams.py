@@ -12,7 +12,6 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-
 from fishjaw.images import metrics
 
 
@@ -24,6 +23,7 @@ class RunInfo:
     batch_size: int
     alpha: float
     epochs: int
+    one_minus_lambda: float
 
 
 def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
@@ -174,6 +174,7 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
                 params["batch_size"],
                 params["loss_options"]["alpha"],
                 params["epochs"],
+                1 - params["lr_lambda"],
             )
         )
 
@@ -264,8 +265,9 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         pred = np.load(results_dir / "val_pred.npy")
         truth = np.load(results_dir / "val_truth.npy").squeeze()
 
-        # Scale the prediction to 0 or 1
-        pred = 1 / (1 + np.exp(-1 * pred))
+        # The prediction should already be scaled to be between 0 and 1
+        if not pred.min() >= 0 and pred.max() <= 1:
+            raise ValueError("Prediction should be scaled to between 0 and 1")
 
         # Get the DICE score
         score = metrics.dice_score(truth, pred)
@@ -282,14 +284,14 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     Plot histograms of the DICE scores and scatter plots
 
     """
-    fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+    fig, axes = plt.subplots(3, 3, figsize=(12, 8))
 
     axes[0, 0].hist([run.score for run in run_infos], bins=20)
     axes[0, 0].set_title("Scores")
 
-    scores = [run.score for run in run_infos]
     # Identify the top n
     n = 5
+    scores = [run.score for run in run_infos]
     top_scores = set(sorted(scores, reverse=True)[:n])
 
     for axis, field in zip(axes.flat[1:], fields(RunInfo)[1:]):
@@ -304,8 +306,15 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
             "r.",
         )
 
-    # Log scale for learning rate
+    # Log scale for learning rate and lambda
     axes[0, 1].set_xscale("log")
+    axes[2, 0].set_xscale("log")
+
+    # Turn the other axes off
+    for axis in axes.flat[-2:]:
+        axis.axis("off")
+
+    fig.suptitle(f"N runs {len(run_infos)}")
 
     return fig
 
