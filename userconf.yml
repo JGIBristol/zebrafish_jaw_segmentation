@@ -41,6 +41,8 @@ model_params:
   in_channels: 1  # Our images are greyscale
 
   # Things you might want to change
+  # At the moment, I can't have more than 6 layers in the model because the receptive field
+  # gets halved and ends up being an odd number, and then when we upsample we get a size mismatch
   n_layers: 6  # 6?
   n_initial_filters: 14  # 6 would be sensible
   kernel_size: 3
