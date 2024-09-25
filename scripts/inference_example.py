@@ -10,11 +10,14 @@ import argparse
 import torch
 import tifffile
 import numpy as np
+from stl import mesh
 import torchio as tio
+from skimage import measure
+import matplotlib.pyplot as plt
 
 from fishjaw.util import files, util
 from fishjaw.model import model, data
-from fishjaw.images import io, transform, metrics
+from fishjaw.images import transform, metrics
 from fishjaw.visualisation import images_3d
 
 
@@ -89,6 +92,74 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     return _get_subject(img)
 
 
+def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
+    """
+    Visualize the mesh from three different angles
+
+    """
+    vertices = stl_mesh.vectors.reshape(-1, 3)
+    faces = np.arange(vertices.shape[0]).reshape(-1, 3)
+
+    fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
+
+    plot_kw = {"cmap": "bone_r", "edgecolor": "k", "lw": 0.05}
+    # First subplot: view from the front
+    axes[0].plot_trisurf(
+        vertices[:, 0],
+        vertices[:, 1],
+        vertices[:, 2],
+        triangles=faces,
+        **plot_kw,
+    )
+    axes[0].view_init(elev=0, azim=0)
+
+    # Second subplot: view from the top
+    axes[1].plot_trisurf(
+        vertices[:, 0],
+        vertices[:, 1],
+        vertices[:, 2],
+        triangles=faces,
+        **plot_kw,
+    )
+    axes[1].view_init(elev=90, azim=0)
+
+    # Third subplot: view from the side
+    axes[2].plot_trisurf(
+        vertices[:, 0],
+        vertices[:, 1],
+        vertices[:, 2],
+        triangles=faces,
+        **plot_kw,
+    )
+    axes[2].view_init(elev=0, azim=90)
+
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
+
+    return fig
+
+
+def _save_mesh(segmentation: np.ndarray, subject_name: str, threshold: float) -> None:
+    """
+    Turn a segmentation into a mesh and save it
+
+    """
+    # Marching cubes
+    verts, faces, *_ = measure.marching_cubes(segmentation, level=threshold)
+
+    # Save as STL
+    stl_mesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+    stl_mesh.vectors = verts[faces]
+
+    stl_mesh.save(f"inference/{subject_name}_mesh_{threshold:.3f}.stl")
+
+    # Save projections
+    fig = _mesh_projections(stl_mesh)
+    fig.savefig(f"inference/{subject_name}_mesh_{threshold:.3f}_projections.png")
+
+
 def _make_plots(
     args: argparse.Namespace,
     net: torch.nn.Module,
@@ -136,6 +207,11 @@ def _make_plots(
         fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
 
     fig.savefig(out_dir / f"{prefix}_slices.png")
+
+    # Save the mesh
+    if args.mesh:
+        for threshold in np.arange(0.1, 1, 0.1):
+            _save_mesh(prediction, args.subject, threshold)
 
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
@@ -200,5 +276,7 @@ if __name__ == "__main__":
     group.add_argument(
         "--all", help="Perform inference on all subjects", action="store_true"
     )
+
+    parser.add_argument("--mesh", help="Save the mesh", action="store_true")
 
     main(parser.parse_args())
