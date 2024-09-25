@@ -138,6 +138,7 @@ def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
         ax.set_yticks([])
         ax.set_zticks([])
 
+    fig.tight_layout()
     return fig
 
 
@@ -158,6 +159,7 @@ def _save_mesh(segmentation: np.ndarray, subject_name: str, threshold: float) ->
     # Save projections
     fig = _mesh_projections(stl_mesh)
     fig.savefig(f"inference/{subject_name}_mesh_{threshold:.3f}_projections.png")
+    plt.close(fig)
 
 
 def _make_plots(
@@ -207,6 +209,7 @@ def _make_plots(
         fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
 
     fig.savefig(out_dir / f"{prefix}_slices.png")
+    plt.close(fig)
 
     # Save the mesh
     if args.mesh:
