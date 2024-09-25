@@ -23,7 +23,7 @@ def _load_model(config: dict) -> torch.nn.Module:
     Load the model from disk
 
     """
-    net = model.model(model.model_params(config["model_params"]))
+    net = model.model(config["model_params"])
 
     # Load the state dict
     path = files.model_path()
@@ -63,7 +63,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
         with open("train_output/test_subject.pkl", "rb") as f:
             return pickle.load(f)
     else:
-        window_size = transform.window_size(config["window_size"])
+        window_size = transform.window_size(config)
 
     # Create a subject from the chosen image
     # Read the chosen image
@@ -72,9 +72,13 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
 
     # Crop it to the jaw
     crop_lookup = {
-        247: (1710, 431, 290),
-        273: (1685, 221, 286),
-        274: (1413, 174, 240),
+        218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
+        219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
+        247: (1710, 431, 290),  # 14month het sp7 sp7+/-
+        273: (1685, 221, 286),  # 9month het sp7 sp7 het
+        274: (1413, 174, 240),  # 9month hom sp7 sp7 mut
+        120: (1595, 251, 398),  # 10month wt giantin giantin sib
+        37: (1746, 431, 405),  # 7month wt wt col2:mcherry
     }
     img = transform.crop(img, crop_lookup[img_n], window_size)
 
@@ -85,28 +89,16 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     return _get_subject(img)
 
 
-def main(args):
+def _make_plots(
+    args: argparse.Namespace,
+    net: torch.nn.Module,
+    subject: tio.Subject,
+    config: dict,
+    activation: str,
+) -> None:
     """
-    Load the model, read the chosen image and perform inference
-    Save the output image
-
+    Make the inference plots using a model and subject
     """
-    config = util.userconf()
-    subject = _subject(config, args)
-
-    # Load the model
-    net = _load_model(config)
-    net.to("cuda")
-
-    # Find which activation function to use from the config file
-    # This assumes this was the same activation function used during training...
-    if config["loss_options"].get("softmax", False):
-        activation = "softmax"
-    elif config["loss_options"].get("sigmoid", False):
-        activation = "sigmoid"
-    else:
-        raise ValueError("No activation found")
-
     # Perform inference
     prediction = model.predict(
         net,
@@ -146,6 +138,49 @@ def main(args):
     fig.savefig(out_dir / f"{prefix}_slices.png")
 
 
+def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
+    """
+    Do the inference, save the plots
+
+    """
+    # Find which activation function to use from the config file
+    # This assumes this was the same activation function used during training...
+    if config["loss_options"].get("softmax", False):
+        activation = "softmax"
+    elif config["loss_options"].get("sigmoid", False):
+        activation = "sigmoid"
+    else:
+        raise ValueError("No activation found")
+
+    # Either iterate over all subjects or just do the one
+    if args.all:
+        # Bad, should read these from a single place
+        for subject in [273, 274, 218, 219, 120, 37]:
+            print(f"Performing inference on subject {subject}")
+            args.subject = subject
+            _make_plots(args, net, _subject(config, args), config, activation)
+    else:
+        _make_plots(args, net, _subject(config, args), config, activation)
+
+
+def main(args):
+    """
+    Load the model, read the chosen image and perform inference
+    Save the output image
+
+    """
+    if args.subject == 247:
+        raise RuntimeError("I think this one was in the training dataset...")
+
+    config = util.userconf()
+
+    # Load the model
+    net = _load_model(config)
+    net.to("cuda")
+
+    _inference(args, net, config)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Perform inference on an out-of-sample subject"
@@ -156,11 +191,14 @@ if __name__ == "__main__":
         "subject",
         nargs="?",
         help="The subject to perform inference on",
-        choices={247, 273, 274},
+        choices={247, 273, 274, 218, 219, 120, 37},
         type=int,
     )
     group.add_argument(
         "--test", help="Perform inference on the test data", action="store_true"
+    )
+    group.add_argument(
+        "--all", help="Perform inference on all subjects", action="store_true"
     )
 
     main(parser.parse_args())
