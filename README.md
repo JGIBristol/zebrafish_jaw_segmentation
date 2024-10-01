@@ -1,5 +1,5 @@
 # zebrafish_jaw_segmentation
-![Pylint](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/pylint.yml/badge.svg?branch=main)
+![Pylint](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/pylint.yml/badge.svg?branch=main)  
 Segmentation of Zebrafish Jawbones from uCT scans using a U-Net
 
 TODO
@@ -8,7 +8,7 @@ TODO
 - [ ] GitHub actions - tests, lint, typing
 - [x] Model train script + example notebook
 - [x] config files for hard-coded config, user config
-- [ ] hyperparameter tuning script + example notebook
+- [x] hyperparameter tuning script + example notebook
 - [ ] mesh script + example notebook
 - [ ] compare accuracy to a sensible baseline
 - [ ] latex paper with build script
