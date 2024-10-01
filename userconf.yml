@@ -1,5 +1,10 @@
 # User-defined configuration file; things here depend on where your files are etc.
+
+# Where the RDSF is mounted - for reading the data + creating DICOMs
+# The create_dicoms.py script creates these
 rdsf_dir: "/home/mh19137/zebrafish_rdsf/"
+
+# Where the DICOMs are stored - this is where the training data lives
 dicom_dir: "/home/mh19137/zebrafish_jaw_segmentation/dicoms/"
 
 # Optimiser options
