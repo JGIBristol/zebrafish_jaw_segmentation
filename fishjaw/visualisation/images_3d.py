@@ -7,7 +7,6 @@ import torch
 import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
-from scipy.special import softmax
 
 from ..model import model
 

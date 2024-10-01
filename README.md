@@ -1,4 +1,5 @@
 # zebrafish_jaw_segmentation
+![Pylint](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/pylint.yml/badge.svg?branch=main)
 Segmentation of Zebrafish Jawbones from uCT scans using a U-Net
 
 TODO

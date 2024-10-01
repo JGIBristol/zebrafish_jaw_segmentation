@@ -21,8 +21,7 @@ def call_once(func: Callable) -> Callable:
         if not wrapper.called:
             wrapper.called = True
             return func(*args, **kwargs)
-        else:
-            raise RuntimeError(f"{func.__name__} has already been called")
+        raise RuntimeError(f"{func.__name__} has already been called")
 
     wrapper.called = False
     return wrapper
@@ -52,7 +51,7 @@ def userconf() -> dict:
     :raises: RuntimeError if called more than once
 
     """
-    with open(rootdir() / "userconf.yml", "r") as f:
+    with open(rootdir() / "userconf.yml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -63,5 +62,5 @@ def config() -> dict:
     :returns: The config
 
     """
-    with open(rootdir() / "config.yml", "r") as f:
+    with open(rootdir() / "config.yml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)

@@ -6,11 +6,25 @@ Define the model
 import os
 import importlib
 from math import sqrt
+from dataclasses import dataclass
 
 import torch
 import numpy as np
 import torchio as tio
 from tqdm import trange
+
+from .data import DataConfig
+
+
+@dataclass
+class TrainingConfig:
+    """The stuff needed to train a model"""
+
+    device: torch.device
+    epochs: int
+    lr_scheduler: torch.optim.lr_scheduler.LRScheduler = None
+    checkpoint: bool = False
+    early_stopping: bool = False
 
 
 def channels(n_layers: int, n_initial_filters: int) -> list[int]:
@@ -26,17 +40,18 @@ def channels(n_layers: int, n_initial_filters: int) -> list[int]:
     return [2**n for n in range(start, start + n_layers)]
 
 
-def optimiser(config: dict, model: torch.nn.Module) -> torch.optim.Optimizer:
+def optimiser(config: dict, net: torch.nn.Module) -> torch.optim.Optimizer:
     """
     Get the right optimiser by reading the user config file
 
-    :param config: the configuration for the optimiser; must contain the optimiser name and learning rate
-    :param model: the model to optimise
+    :param config: the configuration for the optimiser;
+                   must contain the optimiser name and learning rate
+    :param net: the model to optimise
     :returns: the optimiser
 
     """
     return getattr(torch.optim, config["optimiser"])(
-        model.parameters(), config["learning_rate"]
+        net.parameters(), config["learning_rate"]
     )
 
 
@@ -54,6 +69,25 @@ def _load_class(name: str) -> type:
     module = importlib.import_module(module_path)
 
     return getattr(module, class_name)
+
+
+def activation_name(config: dict) -> str:
+    """
+    Get the name of the activation function
+
+    I can't be bothered to do the refactor but it would be better if this returned the
+    actual function wouldn't it
+
+    :param config: the configuration, e.g. from userconf.yml
+    :returns: the name of the activation function
+    :raises ValueError: if no valid activation function is found in the config
+
+    """
+    if config["loss_options"].get("softmax", False):
+        return "softmax"
+    if config["loss_options"].get("sigmoid", False):
+        return "sigmoid"
+    raise ValueError("No activation found")
 
 
 def lossfn(config: dict) -> torch.nn.modules.Module:
@@ -107,8 +141,8 @@ def model(config: dict) -> torch.nn.Module:
     """
     U-Net model for segmentation
 
-    :param params: the configuration needed, as might be read from the model_params dict in userconf.yml
-                   Must contain the following keys:
+    :param params: the configuration needed, as might be read from the model_params dict in
+                   userconf.yml. Must contain the following keys:
                      - model_name: the name of the model to use
                      - all the params needed for the model
     :returns: the model
@@ -224,7 +258,7 @@ def validation_step(
 
 
 def _save_checkpoint(
-    model: torch.nn.Module,
+    net: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     epoch: int,
     checkpoint_dir: str = "checkpoints",
@@ -232,7 +266,7 @@ def _save_checkpoint(
     """
     Save the model and optimizer state dictionaries to a checkpoint file.
 
-    :param model: The model to save.
+    :param net: The model to save.
     :param optimizer: The optimizer to save.
     :param epoch: The current epoch number.
     :param checkpoint_dir: The directory to save the checkpoint file.
@@ -244,7 +278,7 @@ def _save_checkpoint(
     torch.save(
         {
             "epoch": epoch,
-            "model_state_dict": model.state_dict(),
+            "model_state_dict": net.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
         },
         checkpoint_path,
@@ -289,32 +323,20 @@ def _early_stop(
 
 
 def train(
-    model: torch.nn.Module,
+    net: torch.nn.Module,
     optim: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
-    train_data: torch.utils.data.DataLoader,
-    validation_data: torch.utils.data.DataLoader,
-    *,
-    device: torch.device,
-    epochs: int,
-    lr_scheduler: torch.optim.lr_scheduler.LRScheduler = None,
-    checkpoint: bool = False,
-    early_stopping: bool = False,
+    data_config: DataConfig,
+    train_config: TrainingConfig,
 ) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
     Train the model for the given number of epochs
 
-    :param model: the model to train
+    :param net: the model to train
     :param optimiser: the optimiser to use
     :param loss_fn: the loss function to use
-    :param train_data: the training data
-    :param validation_data: the validation data
-    :param device: the device to run the model on
-    :param epochs: the number of epochs to train for
-    :param lr_scheduler: optional learning rate scheduler to use
-    :param checkpoint: whether to checkpoint the model after each epoch
-    :param early_stopping: whether to stop training early,
-                           if the validation loss stops decreasing or is clearly bad
+    :param data_config: the data to train on
+    :param train_config: the configuration for training
 
     :returns: the trained model
     :returns: list of training batch losses
@@ -330,38 +352,40 @@ def train(
     # How many epochs to wait before stopping training
     patience = 10
 
-    progress_bar = trange(epochs, desc="Training")
+    progress_bar = trange(train_config.epochs, desc="Training")
     for epoch in progress_bar:
-        model, train_batch_loss = train_step(
-            model, optim, loss_fn, train_data, device=device
+        net, train_batch_loss = train_step(
+            net, optim, loss_fn, data_config.train_data, device=train_config.device
         )
         train_batch_losses.append(train_batch_loss)
 
-        model, val_batch_loss = validation_step(
-            model, loss_fn, validation_data, device=device
+        net, val_batch_loss = validation_step(
+            net, loss_fn, data_config.val_data, device=train_config.device
         )
         val_batch_losses.append(val_batch_loss)
 
         # Checkpoint the model
-        if checkpoint and not (epoch) % checkpoint_interval:
-            _save_checkpoint(model, optim, epoch)
+        if train_config.checkpoint and not (epoch) % checkpoint_interval:
+            _save_checkpoint(net, optim, epoch)
 
         # We might want to adjust the learning rate during training
-        if lr_scheduler:
-            if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                lr_scheduler.step(np.mean(val_batch_losses[-1]))
+        if train_config.lr_scheduler:
+            if isinstance(
+                train_config.lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau
+            ):
+                train_config.lr_scheduler.step(np.mean(val_batch_losses[-1]))
             else:
-                lr_scheduler.step()
+                train_config.lr_scheduler.step()
 
         # Early stopping
-        if early_stopping and _early_stop(
+        if train_config.early_stopping and _early_stop(
             patience, val_batch_losses, train_batch_losses
         ):
             break
 
         progress_bar.set_description(f"Val loss: {np.mean(val_batch_losses[-1]):.4f}")
 
-    return model, train_batch_losses, val_batch_losses
+    return net, train_batch_losses, val_batch_losses
 
 
 def _predict_patches(
@@ -389,7 +413,7 @@ def _predict_patches(
 
 
 def predict(
-    model: torch.nn.Module,
+    net: torch.nn.Module,
     subject: tio.Subject,
     *,
     patch_size: tuple[int, int, int],
@@ -399,7 +423,7 @@ def predict(
     """
     Make a prediction on a subject using the provided model
 
-    :param model: the model to use
+    :param net: the model to use
     :param subject: the subject to predict on
     :param patch_size: the size of the patches to use
     :param patch_overlap: the overlap between patches. Uses a hann window
@@ -410,7 +434,7 @@ def predict(
 
     # Make predictions on the patches
     sampler = tio.GridSampler(subject, patch_size, patch_overlap=patch_overlap)
-    prediction, locations = _predict_patches(model, sampler)
+    prediction, locations = _predict_patches(net, sampler)
 
     # Apply the activation function
     if activation == "softmax":

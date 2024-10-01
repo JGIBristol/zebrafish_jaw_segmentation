@@ -17,7 +17,6 @@ def test_call_once() -> None:
     @util.call_once
     def test_func() -> None:
         """Test function"""
-        pass
 
     test_func()
     with pytest.raises(RuntimeError):

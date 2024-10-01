@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 
 from fishjaw.util import files, util
 from fishjaw.model import data, model
-from fishjaw.images import io
 from fishjaw.visualisation import images_3d, training
 
 
@@ -33,8 +32,7 @@ def _plot_example(batch: dict[str, torch.Tensor]):
 
 def train_model(
     config: dict,
-    train_subjects: torch.utils.data.DataLoader,
-    val_subjects: torch.utils.data.DataLoader,
+    data_config: data.DataConfig,
 ) -> tuple[
     tuple[torch.nn.Module, list[list[float]], list[list[float]], torch.optim.Optimizer]
 ]:
@@ -58,35 +56,19 @@ def train_model(
 
     optimiser = model.optimiser(config, net)
 
-    # Create dataloaders
-    patch_size = data.patch_size(config)
-    batch_size = config["batch_size"]
-    train_loader = data.train_val_loader(
-        train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
-    )
-    val_loader = data.train_val_loader(
-        val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
-    )
-
     # Plot an example of the training data (which has been augmented)
-    _plot_example(next(iter(train_loader)))
+    _plot_example(next(iter(data_config.train_data)))
 
     # Define loss function
     loss = model.lossfn(config)
 
+    train_config = model.TrainingConfig(
+        device,
+        config["epochs"],
+        torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=config["lr_lambda"]),
+    )
     return (
-        model.train(
-            net,
-            optimiser,
-            loss,
-            train_loader,
-            val_loader,
-            device=device,
-            epochs=config["epochs"],
-            lr_scheduler=torch.optim.lr_scheduler.ExponentialLR(
-                optimiser, gamma=config["lr_lambda"]
-            ),
-        ),
+        model.train(net, optimiser, loss, data_config, train_config),
         optimiser,
     )
 
@@ -101,25 +83,19 @@ def main(*, save: bool):
     rng = np.random.default_rng(seed=config["test_train_seed"])
 
     # Find the activation - we'll need this for inference
-    if config["loss_options"].get("softmax", False):
-        activation = "softmax"
-    elif config["loss_options"].get("sigmoid", False):
-        activation = "sigmoid"
-    else:
-        raise ValueError("No activation found")
+    activation = model.activation_name(config)
 
-    train_subjects, val_subjects, test_subject = data.get_data(config, rng)
+    # Read the data from disk (from the DICOMs created by create_dicoms.py)
+    data_config = data.DataConfig(config, rng)
 
     # Save the testing subject
     output_dir = pathlib.Path("train_output")
     if not output_dir.is_dir():
         output_dir.mkdir()
     with open(output_dir / "test_subject.pkl", "wb") as f:
-        pickle.dump(test_subject, f)
+        pickle.dump(data_config.test_data, f)
 
-    (net, train_losses, val_losses), optimiser = train_model(
-        config, train_subjects, val_subjects
-    )
+    (net, train_losses, val_losses), optimiser = train_model(config, data_config)
 
     if save:
         torch.save(
@@ -138,8 +114,8 @@ def main(*, save: bool):
     # Plot the testing image
     fig = images_3d.plot_inference(
         net,
-        test_subject,
-        patch_size=data.patch_size(config),
+        data_config.test_data,
+        patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
     )
@@ -147,7 +123,7 @@ def main(*, save: bool):
     plt.close(fig)
 
     # Plot the ground truth for this image
-    fig, _ = images_3d.plot_subject(test_subject)
+    fig, _ = images_3d.plot_subject(data_config.test_data)
     fig.savefig(str(output_dir / "test_truth.png"))
     plt.close(fig)
 

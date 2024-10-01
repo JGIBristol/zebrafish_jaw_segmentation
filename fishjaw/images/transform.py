@@ -9,8 +9,6 @@ from functools import cache
 import numpy as np
 import pandas as pd
 
-from ..util import util
-
 
 @cache
 def _jaw_centres() -> pd.DataFrame:
@@ -43,15 +41,15 @@ def window_size(config: dict) -> tuple[int, int, int]:
 
 def crop(
     img: np.ndarray,
-    centre: tuple[int, int, int],
-    window_size: tuple[int, int, int],
+    jaw_centre: tuple[int, int, int],
+    crop_size: tuple[int, int, int],
 ) -> np.ndarray:
     """
     Crop an image around a given centre
 
     """
-    d, w, h = window_size
-    z, y, x = centre
+    d, w, h = crop_size
+    z, y, x = jaw_centre
 
     return img[
         z - d // 2 : z + d // 2, x - h // 2 : x + h // 2, y - w // 2 : y + w // 2

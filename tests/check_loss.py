@@ -4,10 +4,10 @@ chance and perfect performance
 
 """
 
-import torch
 import numpy as np
 from tqdm import trange
 import matplotlib.pyplot as plt
+import torch
 import torch.nn.functional as F
 
 from fishjaw.model import model

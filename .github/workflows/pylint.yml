@@ -1,0 +1,49 @@
+name: Pylint
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+    - name: Run Pylint
+      id: pylint
+      run:
+        # ignore import errors because I don't want to spend ages installing dependencies here
+        |
+        pylint $(git ls-files '*.py') --disable=E0401 > pylint_report.txt 2>&1 || true
+        cat pylint_report.txt
+    - name: Check Pylint score
+      id: check_score
+      run: |
+        score=$(tail -n 2 pylint_report.txt | head -n 1 | awk '{print $7}')
+        numeric_score=$(echo $score | cut -d'/' -f1)
+        echo "Pylint score: $score"
+        echo "name=$numeric_score" >> GITHUB_OUTPUT
+        if grep -qE "fatal|error" pylint_report.txt; then
+          echo "Pylint found errors"
+          exit 1
+        fi
+    - name: Set Status
+      run: |
+        score=${{ steps.check_score.outputs.pylint_score }}
+        if (( $(echo "$score < 9.0" | bc -l) )); then
+          echo "Pylint score is less than 9.0; failing"
+          echo "::error title='Pylint Fail'::Pylint score is less than 9.0: $score"
+        elif (( $(echo "$score < 10.0" | bc -l) )); then
+          echo "::warning title='Pylint Warning'::Pylint score is less than 10.0: $score"
+        else
+          echo "::notice title=Pass::Pylint passing"
+        fi

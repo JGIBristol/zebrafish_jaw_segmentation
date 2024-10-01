@@ -16,6 +16,109 @@ from ..images import io, transform
 from ..util import files
 
 
+def get_patch_size(config: dict) -> tuple[int, int, int]:
+    """
+    Get the patch size from the configuration
+
+    :param config: The configuration, that might be from userconf.yml
+    :returns: The patch size as a tuple of ints ZYX
+
+    """
+    return tuple(int(x) for x in config["patch_size"].split(","))
+
+
+class DataConfig:
+    """
+    Create a DataConfig object, which holds the training, validation and test data
+
+    This reads the data from the DICOMs stored on disk and creates DataLoaders for the
+    training and validation data, and reserves a single Subject for testing.
+
+    :param config: the configuration for the data,
+                   as might be read from the data dict in userconf.yml
+    :param rng: the random number generator to use for test/train shuffling
+
+    """
+
+    def __init__(self, config: dict, rng: np.random.Generator):
+        """Constructor"""
+        # Get the subjects we'll train on
+        train_subjects, val_subjects, test_subject = get_data(config, rng)
+
+        self._patch_size = get_patch_size(config)
+        self._batch_size = config["batch_size"]
+        train_loader = self._train_val_loader(train_subjects, train=True)
+        val_loader = self._train_val_loader(val_subjects, train=False)
+
+        # Assign class variables
+        self._train_data = train_loader
+        self._val_data = val_loader
+        self._test_data = test_subject
+
+    def _train_val_loader(
+        self,
+        subjects: tio.SubjectsDataset,
+        *,
+        train: bool,
+    ) -> torch.utils.data.DataLoader:
+        """
+        Create a dataloader from a SubjectsDataset
+
+        Training data is shuffled and has the last batch dropped; validation data is not
+
+        :param subjects: The dataset. Training data should have random transforms applied
+        :param train: If we're training or not
+        :param patch_size: The size of the patches to extract
+        :param batch_size: The batch size
+
+        :returns: The loader
+
+        """
+        shuffle = train is True
+        drop_last = train is True
+
+        # Even probability of the patches being centred on each value
+        label_probs = {0: 1, 1: 1}
+        patch_sampler = tio.LabelSampler(
+            patch_size=self._patch_size, label_probabilities=label_probs
+        )
+
+        patches = tio.Queue(
+            subjects,
+            max_length=10000,  # Not sure if this matters
+            samples_per_volume=1,
+            sampler=patch_sampler,
+            num_workers=0,
+            shuffle_patches=True,
+            shuffle_subjects=True,
+        )
+
+        return torch.utils.data.DataLoader(
+            patches,
+            batch_size=self._batch_size,
+            shuffle=shuffle,
+            num_workers=0,  # Load the data in the main process
+            # No idea why I have to set this to False, otherwise we get obscure errors
+            pin_memory=False,
+            drop_last=drop_last,
+        )
+
+    @property
+    def train_data(self) -> torch.utils.data.DataLoader:
+        """Get the training data"""
+        return self._train_data
+
+    @property
+    def val_data(self) -> torch.utils.data.DataLoader:
+        """Get the validation data"""
+        return self._val_data
+
+    @property
+    def test_data(self) -> tio.Subject:
+        """Get the test data"""
+        return self._test_data
+
+
 def ints2float(int_arr: np.ndarray) -> np.ndarray:
     """
     Scale an array from 16-bit integer values to float values in [0, 1]
@@ -25,18 +128,21 @@ def ints2float(int_arr: np.ndarray) -> np.ndarray:
 
     :returns: The scaled array, with values between 0 and 1
 
-    :raises: ValueError if the max value is less than the max value of a uint8 or greater than the max value of a uint16
+    :raises: ValueError if the max value is less than the max value of a uint8 or greater
+             than the max value of a uint16
     :raises: ValueError if the array is not of integer type
 
     """
     # Check that the values are in the right range
     if (max_val := int_arr.max()) < np.iinfo(np.uint8).max:
         raise ValueError(
-            f"Max value {max_val} is less than can be stored by a uint8 - are you sure this is 16-bit data?"
+            f"Max value {max_val} is less than can be stored by a uint8 - "
+            "are you sure this is 16-bit data?"
         )
-    elif max_val > (uint16max := np.iinfo(np.uint16).max):
+    if max_val > (uint16max := np.iinfo(np.uint16).max):
         raise ValueError(
-            f"Max value {max_val} is greater than can be stored by a uint16 - are you sure this is 16-bit data?"
+            f"Max value {max_val} is greater than can be stored by a uint16 -"
+            "are you sure this is 16-bit data?"
         )
 
     # Check that the values are of integer type
@@ -61,7 +167,7 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
 def subject(
     dicom_path: pathlib.Path,
     *,
-    centre: tuple[int, int, int] = None,  # Shadowing whoops
+    centre: tuple[int, int, int] = None,
     window_size: tuple[int, int, int] = None,
 ) -> tio.Subject:
     """
@@ -100,55 +206,6 @@ def subject(
     )
 
 
-def train_val_loader(
-    subjects: tio.SubjectsDataset,
-    *,
-    train: bool,
-    patch_size: tuple[int, int, int],
-    batch_size: int,
-) -> torch.utils.data.DataLoader:
-    """
-    Create a dataloader from a SubjectsDataset
-
-    Training data is shuffled and has the last batch dropped; validation data is not
-
-    :param subjects: The dataset. Training data should have random transforms applied
-    :param train: If we're training or not
-    :param patch_size: The size of the patches to extract
-    :param batch_size: The batch size
-
-    :returns: The loader
-
-    """
-    shuffle = train is True
-    drop_last = train is True
-
-    # Even probability of the patches being centred on each value
-    label_probs = {0: 1, 1: 1}
-    patch_sampler = tio.LabelSampler(
-        patch_size=patch_size, label_probabilities=label_probs
-    )
-
-    patches = tio.Queue(
-        subjects,
-        max_length=10000,  # Not sure if this matters
-        samples_per_volume=1,
-        sampler=patch_sampler,
-        num_workers=0,
-        shuffle_patches=True,
-        shuffle_subjects=True,
-    )
-
-    return torch.utils.data.DataLoader(
-        patches,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=0,  # Load the data in the main process
-        pin_memory=False,  # No idea why I have to set this to False, otherwise we get obscure errors
-        drop_last=drop_last,
-    )
-
-
 def test_loader(
     patches: tio.GridSampler, *, batch_size: int
 ) -> torch.utils.data.DataLoader:
@@ -156,7 +213,7 @@ def test_loader(
     Create a dataloader for testing - this samples patches from the image in a grid
     such that we can reconstruct the entire image
 
-    :param patches: patches from a subject, created with e.g. tio.GridSampler(subject, patch_size, patch_overlap=(4, 4, 4))
+    :param patches: patches from a subject, created with e.g. tio.GridSampler
     :param patch_size: The size of the patches to extract
     :param batch_size: The batch size
 
@@ -195,18 +252,7 @@ def _transforms() -> tio.transforms.Transform:
     )
 
 
-def patch_size(config: dict) -> tuple[int, int, int]:
-    """
-    Get the patch size from the configuration
-
-    :param config: The configuration, that might be from userconf.yml
-    :returns: The patch size as a tuple of ints ZYX
-
-    """
-    return tuple(int(x) for x in config["patch_size"].split(","))
-
-
-def centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
+def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
     """
     Get the centre of the jaw for a given fish
 
@@ -257,7 +303,7 @@ def get_data(
     # Read in data + convert to subjects
     dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [
-        subject(path, centre=centre(path), window_size=transform.window_size(config))
+        subject(path, centre=_centre(path), window_size=transform.window_size(config))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")
     ]
 
@@ -265,8 +311,8 @@ def get_data(
     # This is a bit of a hack
     indices = np.arange(len(subjects))
     rng.shuffle(indices)
-    train_idx, val_idx, test_idx = np.split(
-        indices, [int(train_frac * len(indices)), len(indices) - 1]
+    train_idx, val_idx, test_idx = (  # pylint: disable=unbalanced-tuple-unpacking
+        np.split(indices, [int(train_frac * len(indices)), len(indices) - 1])
     )
     assert len(test_idx) == 1
     test_idx = test_idx[0]

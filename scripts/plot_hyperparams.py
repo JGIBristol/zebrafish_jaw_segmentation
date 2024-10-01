@@ -17,6 +17,10 @@ from fishjaw.images import metrics
 
 @dataclass
 class RunInfo:
+    """
+    The interesting parameters and results from a run
+
+    """
     score: float
     lr: float
     n_filters: int
@@ -27,6 +31,10 @@ class RunInfo:
 
 
 def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
+    """
+    Plot the training and validation losses, colour coded by batch size
+
+    """
     fig, axes = plt.subplots(1, 2, sharey=True)
     cmap = plt.get_cmap("viridis")
 
@@ -38,7 +46,7 @@ def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
             continue
 
         # Get the batch size
-        with open(path / "config.yaml") as f:
+        with open(path / "config.yaml", encoding="utf-8") as f:
             params = yaml.safe_load(f)
         batch_size = params["batch_size"]
 
@@ -75,11 +83,9 @@ def _lr_plot(paths: list[pathlib.Path]) -> plt.Figure:
             continue
 
         # Get the LR and n filters
-        with open(path / "config.yaml") as f:
+        with open(path / "config.yaml", encoding="utf-8") as f:
             params = yaml.safe_load(f)
         lr = params["learning_rate"]
-        n_filters = params["model_params"]["n_initial_filters"]
-        batch_size = params["batch_size"]
 
         # Scale to between 0 and 1
         scaled_lr = (np.log10(lr) + 6) / 7
@@ -116,7 +122,7 @@ def _filter_plot(paths: list[pathlib.Path]) -> plt.Figure:
             continue
 
         # Get the LR and n filters
-        with open(path / "config.yaml") as f:
+        with open(path / "config.yaml", encoding="utf-8") as f:
             params = yaml.safe_load(f)
         n_filters = params["model_params"]["n_initial_filters"]
 
@@ -164,7 +170,8 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
         else:
             raise ValueError("metric must be either 'dice' or 'loss'")
 
-        params = yaml.safe_load(open(dir_ / "config.yaml"))
+        with open(dir_ / "config.yaml", encoding="utf-8") as f:
+            params = yaml.safe_load(f)
 
         runs.append(
             RunInfo(
@@ -272,10 +279,10 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         # Get the DICE score
         score = metrics.dice_score(truth, pred)
 
-        with open(dice_file, "w") as f:
+        with open(dice_file, "w", encoding="utf-8") as f:
             f.write(str(score))
 
-    with open(dice_file) as f:
+    with open(dice_file, encoding="utf-8") as f:
         return float(f.read().strip())
 
 
@@ -298,7 +305,7 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     _, bins, _ = axes[0, 0].hist([run.score for run in run_infos], bins=20, label="All")
     axes[0, 0].set_title("Scores")
 
-    # Plot the top quintile 
+    # Plot the top quintile
     axes[0, 0].hist(
         [run.score for run in run_infos if run.score in top_chunk],
         bins=bins,
@@ -363,6 +370,7 @@ def _plot_fine():
 
 
 def main(mode: str):
+    """ Choose the granularity of the search to plot """
     if mode == "coarse":
         _plot_coarse()
     elif mode == "med":

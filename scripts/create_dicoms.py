@@ -5,6 +5,7 @@ Create DICOM files from the data on RDSF so we have everything nicely paired up 
 
 import pathlib
 import datetime
+from dataclasses import dataclass
 
 import pydicom
 import tifffile
@@ -14,21 +15,24 @@ from tqdm import tqdm
 from fishjaw.util import files, util
 
 
+@dataclass
 class Dicom:
     """
     Create a DICOM file from an image and label
 
     """
 
-    def __init__(
-        self, image_path: np.ndarray, label_path: np.ndarray, *, binarise: bool
-    ):
-        self.label = tifffile.imread(label_path)
-        if binarise:
+    image_path: pathlib.Path
+    label_path: pathlib.Path
+    binarise: bool
+
+    def __post_init__(self):
+        self.label = tifffile.imread(self.label_path)
+        if self.binarise:
             # These are the labels that Wahab used
             self.label[np.isin(self.label, [2, 3, 4, 5])] = 1
 
-        self.image = tifffile.imread(image_path)
+        self.image = tifffile.imread(self.image_path)
 
         if self.image.shape != self.label.shape:
             raise ValueError(
@@ -38,67 +42,69 @@ class Dicom:
         if not set(np.unique(self.label)) == {0, 1}:
             raise ValueError(f"Label must be binary, got {np.unique(self.label)}")
 
-        self.fish_label = image_path.name.split(".")[0]
+        self.fish_label = self.image_path.name.split(".")[0]
 
-    def write(self, out_path: pathlib.Path):
-        """
-        Write to file
 
-        """
-        file_meta = pydicom.dataset.FileMetaDataset()
-        ds = pydicom.dataset.FileDataset(
-            str(out_path), {}, file_meta=file_meta, preamble=b"\0" * 128
-        )
+def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
+    """
+    Write a dicom to file
 
-        # DICOM metadata
-        ds.PatientName = self.fish_label
-        ds.PatientID = self.fish_label
-        ds.Modality = "CT"
-        ds.SeriesInstanceUID = pydicom.uid.generate_uid()
-        ds.StudyInstanceUID = pydicom.uid.generate_uid()
-        ds.SOPInstanceUID = pydicom.uid.generate_uid()
-        ds.SOPClassUID = pydicom.uid.CTImageStorage
+    :param dicom: Dicom object
+    :param out_path: Path to save the dicom to
 
-        # Image data
-        ds.NumberOfFrames, ds.Rows, ds.Columns = self.image.shape
-        ds.PixelData = self.image.tobytes()
+    """
+    file_meta = pydicom.dataset.FileMetaDataset()
+    ds = pydicom.dataset.FileDataset(
+        str(out_path), {}, file_meta=file_meta, preamble=b"\0" * 128
+    )
 
-        # Ensure the pixel data type is set to 16-bit
-        ds.BitsAllocated = 16
-        ds.BitsStored = 16
-        ds.HighBit = 15
-        ds.PixelRepresentation = 0 if self.image.dtype.kind == "u" else 1
+    # DICOM metadata
+    ds.PatientName = dicom.fish_label
+    ds.PatientID = dicom.fish_label
+    ds.Modality = "CT"
+    ds.SeriesInstanceUID = pydicom.uid.generate_uid()
+    ds.StudyInstanceUID = pydicom.uid.generate_uid()
+    ds.SOPInstanceUID = pydicom.uid.generate_uid()
+    ds.SOPClassUID = pydicom.uid.CTImageStorage
 
-        # Set required attributes for pixel data conversion
-        ds.SamplesPerPixel = 1
-        ds.PhotometricInterpretation = "MONOCHROME2"
+    # Image data
+    ds.NumberOfFrames, ds.Rows, ds.Columns = dicom.image.shape
+    ds.PixelData = dicom.image.tobytes()
 
-        # Set Window Center and Window Width, so that the image is displayed correctly
-        min_pixel_value = np.min(self.image)
-        max_pixel_value = np.max(self.image)
-        window_center = (max_pixel_value + min_pixel_value) / 2
-        window_width = max_pixel_value - min_pixel_value
-        ds.WindowCenter = window_center
-        ds.WindowWidth = window_width
+    # Ensure the pixel data type is set to 16-bit
+    ds.BitsAllocated = 16
+    ds.BitsStored = 16
+    ds.HighBit = 15
+    ds.PixelRepresentation = 0 if dicom.image.dtype.kind == "u" else 1
 
-        # Label data
-        private_creator_tag = 0x00BBB000
-        ds.add_new(private_creator_tag, "LO", "LabelData")
-        label_data_tag = 0x00BBB001
-        ds.add_new(label_data_tag, "OB", self.label.tobytes())
+    # Set required attributes for pixel data conversion
+    ds.SamplesPerPixel = 1
+    ds.PhotometricInterpretation = "MONOCHROME2"
 
-        # More crap
-        ds.is_little_endian = True
-        ds.is_implicit_VR = True
-        ds.ContentDate = str(datetime.date.today()).replace("-", "")
-        ds.ContentTime = (
-            str(datetime.datetime.now().time())
-            .replace(":", "")
-            .split(".", maxsplit=1)[0]
-        )
+    # Set Window Center and Window Width, so that the image is displayed correctly
+    min_pixel_value = np.min(dicom.image)
+    max_pixel_value = np.max(dicom.image)
+    window_center = (max_pixel_value + min_pixel_value) / 2
+    window_width = max_pixel_value - min_pixel_value
+    ds.WindowCenter = window_center
+    ds.WindowWidth = window_width
 
-        ds.save_as(out_path, write_like_original=False)
-        print(f"Saved to {out_path}")
+    # Label data
+    private_creator_tag = 0x00BBB000
+    ds.add_new(private_creator_tag, "LO", "LabelData")
+    label_data_tag = 0x00BBB001
+    ds.add_new(label_data_tag, "OB", dicom.label.tobytes())
+
+    # More crap
+    ds.is_little_endian = True
+    ds.is_implicit_VR = True
+    ds.ContentDate = str(datetime.date.today()).replace("-", "")
+    ds.ContentTime = (
+        str(datetime.datetime.now().time()).replace(":", "").split(".", maxsplit=1)[0]
+    )
+
+    ds.save_as(out_path, write_like_original=False)
+    print(f"Saved to {out_path}")
 
 
 def create_wahab_dicoms(config: dict) -> None:
@@ -135,7 +141,7 @@ def create_wahab_dicoms(config: dict) -> None:
             print(f"Skipping {img_path} and {label_path}: {e}")
             continue
 
-        dicom.write(out_path)
+        write_dicom(dicom, out_path)
 
 
 def create_felix_second_dicoms(config: dict):
@@ -169,7 +175,7 @@ def create_felix_second_dicoms(config: dict):
             print(f"Skipping {img_path} and {label_path}: {e}")
             continue
 
-        dicom.write(out_path)
+        write_dicom(dicom, out_path)
 
 
 def main():

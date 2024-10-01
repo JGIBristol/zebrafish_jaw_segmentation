@@ -22,14 +22,14 @@ def test_model_params() -> None:
     """
     in_params = {
         "model_name": "monai.networks.nets.AttentionUnet",
+        "n_classes": 2,
+        "n_layers": 6,
+        "in_channels": 1,
         "spatial_dims": 3,
-        "n_classes": 2,  # n bones + background
-        "in_channels": 1,  # Our images are greyscale
-        "n_layers": 6,  # 6?
-        "n_initial_filters": 8,  # 6 would be sensible
         "kernel_size": 3,
-        "stride": 2,  # 2
-        "dropout": 0.0,
+        "n_initial_filters": 14,
+        "stride": 3,
+        "dropout": 0.2,
     }
 
     # Will raise an exception if something has gone wrong

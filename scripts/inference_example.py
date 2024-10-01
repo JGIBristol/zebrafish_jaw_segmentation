@@ -176,7 +176,7 @@ def _make_plots(
     prediction = model.predict(
         net,
         subject,
-        patch_size=data.patch_size(config),
+        patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
     )
@@ -224,12 +224,7 @@ def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> 
     """
     # Find which activation function to use from the config file
     # This assumes this was the same activation function used during training...
-    if config["loss_options"].get("softmax", False):
-        activation = "softmax"
-    elif config["loss_options"].get("sigmoid", False):
-        activation = "sigmoid"
-    else:
-        raise ValueError("No activation found")
+    activation = model.activation_name(config)
 
     # Either iterate over all subjects or just do the one
     if args.all:

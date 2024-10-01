@@ -8,9 +8,6 @@ import pathlib
 import pydicom
 import numpy as np
 
-from ..util import util
-
-
 
 def read_dicom(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
     """
