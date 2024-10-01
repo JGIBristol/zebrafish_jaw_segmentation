@@ -30,7 +30,9 @@ def _to_prediction(img: torch.Tensor) -> torch.Tensor:
     Add the right number of channels such that this represents a onehot prediction
 
     """
-    return F.one_hot(img.squeeze(dim=0)).permute(0, 4, 1, 2, 3)  # pylint: disable=not-callable
+    return F.one_hot(img.squeeze(dim=0)).permute(
+        0, 4, 1, 2, 3
+    )  # pylint: disable=not-callable
 
 
 def main():

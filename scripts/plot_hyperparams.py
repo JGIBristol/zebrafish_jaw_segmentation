@@ -21,6 +21,7 @@ class RunInfo:
     The interesting parameters and results from a run
 
     """
+
     score: float
     lr: float
     n_filters: int
@@ -370,7 +371,7 @@ def _plot_fine():
 
 
 def main(mode: str):
-    """ Choose the granularity of the search to plot """
+    """Choose the granularity of the search to plot"""
     if mode == "coarse":
         _plot_coarse()
     elif mode == "med":
