@@ -25,3 +25,4 @@ Other Stuff
 ----
 `mesh.py`: example showing the conversion from tiff (which is what the segmentation model creates) to a mesh
     [ ] TODO make this useful
+`arch_summary.py`: summarise the architecture of the model (at the moment just prints the feature map sizes)
