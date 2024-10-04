@@ -5,6 +5,9 @@ Test that we can create and train a model from the config file
 
 from functools import cache
 
+import torch
+import torchio as tio
+
 from ...util import util
 from ...model import model
 
@@ -41,9 +44,19 @@ def test_train_model() -> None:
     net = model.model(config["model_params"])
 
     # Create some toy data
+    window_size = [int(x) for x in config["window_size"].split(",")]
+    subject = tio.Subject(
+        tio.Image(tensor=torch.ones(1, *window_size), type=tio.INTENSITY),
+        label=tio.Image(tensor=torch.ones(1, *window_size), type=tio.LABEL),
+    )
+
+    # Refactor the DataConfig to take subjects
+    # Pass the subject to the DataConfig
 
     # Train the model for 1 epoch
     loss_fn = model.lossfn(config)
     optim = model.optimiser(config, net)
     train_options = model.TrainingConfig(device="cpu", epochs=1)
+
+    config["epochs"] = 1
     model.train(net, optim, loss_fn, data, train_options)
