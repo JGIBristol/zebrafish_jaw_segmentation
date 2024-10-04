@@ -6,6 +6,7 @@ Test that we can create and train a model from the config file
 from functools import cache
 
 from ...util import util
+from ...model import model
 
 
 @cache
@@ -27,6 +28,7 @@ def test_create_model() -> None:
     config = _config()
 
     # Create a model from it
+    model.model(config["model_params"])
 
 
 def test_train_model() -> None:
