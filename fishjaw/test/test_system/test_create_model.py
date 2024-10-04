@@ -36,9 +36,14 @@ def test_train_model() -> None:
     Check that we can train a model, at least for a bit
 
     """
-    # Read config file
+    # Create a model
     config = _config()
+    net = model.model(config["model_params"])
 
-    # Create a model from it
     # Create some toy data
+
     # Train the model for 1 epoch
+    loss_fn = model.lossfn(config)
+    optim = model.optimiser(config, net)
+    train_options = model.TrainingConfig(device="cpu", epochs=1)
+    model.train(net, optim, loss_fn, data, train_options)
