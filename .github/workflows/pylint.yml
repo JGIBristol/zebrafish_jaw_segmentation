@@ -31,8 +31,7 @@ jobs:
         score=$(tail -n 2 pylint_report.txt | head -n 1 | awk '{print $7}')
         numeric_score=$(echo $score | cut -d'/' -f1)
         echo "Pylint score: $score"
-        echo "numeric_score=$numeric_score" >> GITHUB_OUTPUT
-        cat GITHUB_OUTPUT
+        echo "numeric_score=$numeric_score" >> "$GITHUB_OUTPUT"
         if grep -qE "fatal|error" pylint_report.txt; then
           echo "Pylint found errors"
           exit 1
