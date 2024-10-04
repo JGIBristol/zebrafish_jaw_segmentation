@@ -38,7 +38,7 @@ jobs:
         fi
     - name: Set Status
       run: |
-        score=${{ steps.check_score.outputs.pylint_score }}
+        score=${{ steps.check_score.outputs.numeric_score }}
         if (( $(echo "$score < 9.0" | bc -l) )); then
           echo "Pylint score is less than 9.0; failing"
           echo "::error title='Pylint Fail'::Pylint score is less than 9.0: $score"
