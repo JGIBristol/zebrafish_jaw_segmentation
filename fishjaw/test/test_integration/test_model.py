@@ -6,6 +6,7 @@ Integration tests for the model
 from ...model import model
 
 
+# How is this not a unit test
 def test_channels() -> None:
     """
     Check we get the right sequence of channels from a given number
