@@ -18,17 +18,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        conda env create -f environment.yml
-        conda activate zebrafish_jaw_segmentation
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        environment-file: environment.yml
+        activate_environment: zebrafish_jaw_segmentation
 
     - name: Run Unit Tests
       run: |
-        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_unit
 
     - name: Run Integration Tests
       run: |
-        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_integration
