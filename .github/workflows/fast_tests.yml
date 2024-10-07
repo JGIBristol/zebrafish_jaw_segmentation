@@ -5,18 +5,10 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.12]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
 
     # NB I kept having mamba issues so this is how i'm doing it
     - name: Set up environment
@@ -25,8 +17,10 @@ jobs:
 
     - name: Run Unit Tests
       run: |
+        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_unit
 
     - name: Run Integration Tests
       run: |
+        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_integration
