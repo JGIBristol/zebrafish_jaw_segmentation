@@ -1,0 +1,32 @@
+name: zebrafish_jaw_segmentation
+channels:
+  - defaults
+  - conda-forge
+  - nvidia
+dependencies:
+  - python=3.12
+  - pip
+  - cudatoolkit
+  - cudnn
+  - pytorch
+  - torchvision
+  - monai
+  - numpy
+  - scikit-learn
+  - matplotlib
+  - opencv
+  - tqdm
+  - jupyter
+  - pydicom
+  - tifffile
+  - trimesh
+  - scikit-image
+  - pytest
+  - pylint
+  - black
+  - pyyaml
+  - pathlib
+  - argparse
+  - pip:
+      - pickle-mixin
+      - torchio

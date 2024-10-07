@@ -20,13 +20,15 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pytest
+        conda env create -f environment.yml
+        conda activate zebrafish_jaw_segmentation
 
     - name: Run Unit Tests
       run: |
+        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_unit
 
     - name: Run Integration Tests
       run: |
+        conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_integration
