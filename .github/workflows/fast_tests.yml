@@ -24,7 +24,7 @@ jobs:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yml
-        activate_environment: zebrafish_jaw_segmentation
+        activate-environment: zebrafish_jaw_segmentation
 
     - name: Run Unit Tests
       run: |
