@@ -18,13 +18,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-        environment-file: environment.yml
-        activate-environment: zebrafish_jaw_segmentation
+    # NB I kept having mamba issues so this is how i'm doing it
+    - name: Set up environment
+      run: |
+        ./install_env.sh
 
     - name: Run Unit Tests
       run: |

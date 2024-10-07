@@ -4,8 +4,7 @@ channels:
   - conda-forge
   - nvidia
 dependencies:
-  - python=3.12
-  - pip
+  - python=3.11
   - cudatoolkit
   - cudnn
   - pytorch
@@ -14,7 +13,6 @@ dependencies:
   - numpy
   - scikit-learn
   - matplotlib
-  - opencv
   - tqdm
   - jupyter
   - pydicom
@@ -25,8 +23,7 @@ dependencies:
   - pylint
   - black
   - pyyaml
-  - pathlib
-  - argparse
   - pip:
       - pickle-mixin
       - torchio
+      - opencv-python
