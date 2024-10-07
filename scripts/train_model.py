@@ -86,7 +86,8 @@ def main(*, save: bool):
     activation = model.activation_name(config)
 
     # Read the data from disk (from the DICOMs created by create_dicoms.py)
-    data_config = data.DataConfig(config, rng)
+    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config, rng)
+    data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject
     output_dir = pathlib.Path("train_output")
@@ -114,7 +115,7 @@ def main(*, save: bool):
     # Plot the testing image
     fig = images_3d.plot_inference(
         net,
-        data_config.test_data,
+        test_subject,
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
