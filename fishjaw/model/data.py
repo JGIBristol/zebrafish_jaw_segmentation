@@ -273,7 +273,7 @@ def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
     return transform.centre(n)
 
 
-def get_data(
+def read_dicoms_from_disk(
     config: dict,
     rng: np.random.Generator,
     *,

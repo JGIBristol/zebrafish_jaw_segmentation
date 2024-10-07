@@ -255,16 +255,27 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
         start = 0
 
     # Get the data we need for training
+    rng = np.random.default_rng()
+
+    # We need this information to get the data
+    example_config = {
+        _config(rng, mode=mode)[item]
+        for item in ["patch_size", "window_size", "dicom_dir"]
+    }
+
+    # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
+    train_subjects, val_subjects, _ = data.read_dicoms_from_disk(
+        example_config,
+        rng,
+        # Use the same transforms as we would for training
+        # TODO this should really be in the config
+        transforms="default",
+    )
+
     # I think this might be doing something slightly wrong - we're getting the data which means,
     # when we train our models we're not using exactly the same data to train the models each time
     # (as the dataloading picks random patches). This is probably fine, but it's worth noting
-    rng = np.random.default_rng()
-    data_config = data.DataConfig(
-        # We'll get the configuration file here, just because that tells us where the dicom dir is
-        # (which mirrors the structure of the "actual" config)
-        _config(rng, mode=mode),
-        rng,
-    )
+    data_config = data.DataConfig(example_config, train_subjects, val_subjects)
 
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
