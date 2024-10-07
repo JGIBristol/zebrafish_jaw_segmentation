@@ -1,0 +1,30 @@
+name: UT/IT
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # NB I kept having mamba issues so this is how i'm doing it
+    - name: Set up environment
+      run: |
+        ./install_env.sh
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
+        conda update -n base -c conda-forge conda
+
+    - name: Run Unit Tests
+      run: |
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
+        conda activate zebrafish_jaw_segmentation
+        python -m pytest fishjaw/test/test_unit
+
+    - name: Run Integration Tests
+      run: |
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
+        conda activate zebrafish_jaw_segmentation
+        python -m pytest fishjaw/test/test_integration

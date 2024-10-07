@@ -86,14 +86,15 @@ def main(*, save: bool):
     activation = model.activation_name(config)
 
     # Read the data from disk (from the DICOMs created by create_dicoms.py)
-    data_config = data.DataConfig(config, rng)
+    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config, rng)
+    data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject
     output_dir = pathlib.Path("train_output")
     if not output_dir.is_dir():
         output_dir.mkdir()
     with open(output_dir / "test_subject.pkl", "wb") as f:
-        pickle.dump(data_config.test_data, f)
+        pickle.dump(test_subject, f)
 
     (net, train_losses, val_losses), optimiser = train_model(config, data_config)
 
@@ -114,7 +115,7 @@ def main(*, save: bool):
     # Plot the testing image
     fig = images_3d.plot_inference(
         net,
-        data_config.test_data,
+        test_subject,
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
@@ -123,7 +124,7 @@ def main(*, save: bool):
     plt.close(fig)
 
     # Plot the ground truth for this image
-    fig, _ = images_3d.plot_subject(data_config.test_data)
+    fig, _ = images_3d.plot_subject(test_subject)
     fig.savefig(str(output_dir / "test_truth.png"))
     plt.close(fig)
 

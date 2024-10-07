@@ -31,14 +31,19 @@ jobs:
         score=$(tail -n 2 pylint_report.txt | head -n 1 | awk '{print $7}')
         numeric_score=$(echo $score | cut -d'/' -f1)
         echo "Pylint score: $score"
-        echo "name=$numeric_score" >> GITHUB_OUTPUT
+        echo "numeric_score=$numeric_score" >> "$GITHUB_OUTPUT"
         if grep -qE "fatal|error" pylint_report.txt; then
           echo "Pylint found errors"
           exit 1
         fi
     - name: Set Status
       run: |
-        score=${{ steps.check_score.outputs.pylint_score }}
+        score=${{ steps.check_score.outputs.numeric_score }}
+        if [ -z "$score" ]; then
+          echo "Pylint score is empty; failing"
+          exit 1
+        fi
+
         if (( $(echo "$score < 9.0" | bc -l) )); then
           echo "Pylint score is less than 9.0; failing"
           echo "::error title='Pylint Fail'::Pylint score is less than 9.0: $score"

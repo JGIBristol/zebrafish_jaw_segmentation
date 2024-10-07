@@ -1,6 +1,8 @@
 # zebrafish_jaw_segmentation
 Segmentation of Zebrafish Jawbones from uCT scans using a U-Net
 
+![UT/IT](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/fast_tests.yml/badge.svg?branch=main)
+![Tests](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/system_tests.yml/badge.svg?branch=main)
 ![Pylint](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/pylint.yml/badge.svg?branch=main)
 ![Format](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/format.yml/badge.svg?branch=main)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)

@@ -34,32 +34,49 @@ class DataConfig:
     This reads the data from the DICOMs stored on disk and creates DataLoaders for the
     training and validation data, and reserves a single Subject for testing.
 
-    :param config: the configuration for the data,
-                   as might be read from the data dict in userconf.yml
-    :param rng: the random number generator to use for test/train shuffling
+    :param config: model training configuration, e.g. read from userconf.yml
+    :param train_subjects: The training subjects
+    :param val_subjects: The validation subjects
 
     """
 
-    def __init__(self, config: dict, rng: np.random.Generator):
-        """Constructor"""
-        # Get the subjects we'll train on
-        train_subjects, val_subjects, test_subject = get_data(config, rng)
+    def __init__(
+        self,
+        config: dict,
+        train_subjects: tio.SubjectsDataset,
+        val_subjects: tio.SubjectsDataset,
+    ):
+        """
+        Constructor
 
-        self._patch_size = get_patch_size(config)
-        self._batch_size = config["batch_size"]
-        train_loader = self._train_val_loader(train_subjects, train=True)
-        val_loader = self._train_val_loader(val_subjects, train=False)
+        Turns the training and validation subjects into DataLoaders, since they'll
+        be passed to the model for training. Leaves the test subject alone, since
+        it'll be passed to the model for testing.
+
+        TODO the test subject should maybe also accept multiple, in case I want to test
+        on multiple things. OR, it shouldn't be here at all - this is data that the model
+        cares about, which doesn't include the testing subject
+
+        """
+        # Get some info from the config
+        patch_size = get_patch_size(config)
+        batch_size = config["batch_size"]
 
         # Assign class variables
-        self._train_data = train_loader
-        self._val_data = val_loader
-        self._test_data = test_subject
+        self._train_data = self._train_val_loader(
+            train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
+        )
+        self._val_data = self._train_val_loader(
+            val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
+        )
 
     def _train_val_loader(
         self,
         subjects: tio.SubjectsDataset,
         *,
         train: bool,
+        patch_size: tuple[int, int, int] = None,
+        batch_size: int,
     ) -> torch.utils.data.DataLoader:
         """
         Create a dataloader from a SubjectsDataset
@@ -80,7 +97,7 @@ class DataConfig:
         # Even probability of the patches being centred on each value
         label_probs = {0: 1, 1: 1}
         patch_sampler = tio.LabelSampler(
-            patch_size=self._patch_size, label_probabilities=label_probs
+            patch_size=patch_size, label_probabilities=label_probs
         )
 
         patches = tio.Queue(
@@ -95,7 +112,7 @@ class DataConfig:
 
         return torch.utils.data.DataLoader(
             patches,
-            batch_size=self._batch_size,
+            batch_size=batch_size,
             shuffle=shuffle,
             num_workers=0,  # Load the data in the main process
             # No idea why I have to set this to False, otherwise we get obscure errors
@@ -112,11 +129,6 @@ class DataConfig:
     def val_data(self) -> torch.utils.data.DataLoader:
         """Get the validation data"""
         return self._val_data
-
-    @property
-    def test_data(self) -> tio.Subject:
-        """Get the test data"""
-        return self._test_data
 
 
 def ints2float(int_arr: np.ndarray) -> np.ndarray:
@@ -261,7 +273,7 @@ def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
     return transform.centre(n)
 
 
-def get_data(
+def read_dicoms_from_disk(
     config: dict,
     rng: np.random.Generator,
     *,
