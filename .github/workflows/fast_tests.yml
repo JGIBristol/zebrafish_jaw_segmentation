@@ -17,10 +17,12 @@ jobs:
 
     - name: Run Unit Tests
       run: |
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
         conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_unit
 
     - name: Run Integration Tests
       run: |
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
         conda activate zebrafish_jaw_segmentation
         python -m pytest fishjaw/test/test_integration
