@@ -46,12 +46,13 @@ def test_train_model() -> None:
     # Create some toy data
     window_size = [int(x) for x in config["window_size"].split(",")]
     subject = tio.Subject(
-        tio.Image(tensor=torch.ones(1, *window_size), type=tio.INTENSITY),
+        image=tio.Image(tensor=torch.ones(1, *window_size), type=tio.INTENSITY),
         label=tio.Image(tensor=torch.ones(1, *window_size), type=tio.LABEL),
     )
+    subjects_dataset = tio.SubjectsDataset([subject])
 
-    # Refactor the DataConfig to take subjects
-    # Pass the subject to the DataConfig
+    # Create a dataconfig object
+    data = model.DataConfig(config, subjects_dataset, subjects_dataset)
 
     # Train the model for 1 epoch
     loss_fn = model.lossfn(config)
