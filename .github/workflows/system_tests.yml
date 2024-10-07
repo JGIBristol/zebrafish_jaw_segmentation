@@ -1,6 +1,6 @@
-name: UT/IT
+name: System Tests
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   test:
@@ -17,14 +17,8 @@ jobs:
         source "${HOME}/fishconda/etc/profile.d/conda.sh"
         conda update -n base -c conda-forge conda
 
-    - name: Run Unit Tests
+    - name: Run Tests
       run: |
         source "${HOME}/fishconda/etc/profile.d/conda.sh"
         conda activate zebrafish_jaw_segmentation
-        python -m pytest fishjaw/test/test_unit
-
-    - name: Run Integration Tests
-      run: |
-        source "${HOME}/fishconda/etc/profile.d/conda.sh"
-        conda activate zebrafish_jaw_segmentation
-        python -m pytest fishjaw/test/test_integration
+        python -m pytest fishjaw/test/test_system
