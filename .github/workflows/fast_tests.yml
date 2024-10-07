@@ -14,6 +14,8 @@ jobs:
     - name: Set up environment
       run: |
         ./install_env.sh
+        source "${HOME}/fishconda/etc/profile.d/conda.sh"
+        conda update conda
 
     - name: Run Unit Tests
       run: |
