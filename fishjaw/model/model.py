@@ -16,6 +16,23 @@ from tqdm import trange
 from .data import DataConfig
 
 
+@dataclass(frozen=True)
+class ModelState:
+    """The state of the model"""
+
+    model_state_dict: dict
+    optimizer_state_dict: dict
+
+    # The configuration used to train the model, as read from the userconf.yml file
+    config: dict
+
+    def load_model(self) -> torch.nn.Module:
+        """
+        Load the model state
+
+        """
+
+
 @dataclass
 class TrainingConfig:
     """The stuff needed to train a model"""
