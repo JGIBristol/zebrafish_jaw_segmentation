@@ -67,9 +67,14 @@ def felix_labels_2_dir(config: dict) -> pathlib.Path:
 
 def model_path() -> pathlib.Path:
     """
-    Get the path to the cached, as created by scripts/train_model.py
+    Get the path to the cached model, as created by scripts/train_model.py
+
+    This is intended to be used with the model.ModelState class, so that we
+    can keep the model state (weights, biases), the optimiser state and the
+    configuration used to initialise the model/define the architecture and
+    training parameters all in one place.
 
     :returns: Path to the model
 
     """
-    return pathlib.Path(__file__).parents[2] / "model" / "state_dict.pth"
+    return pathlib.Path(__file__).parents[2] / "model" / "model_state.pkl"

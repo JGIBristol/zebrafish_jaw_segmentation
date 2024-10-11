@@ -104,13 +104,11 @@ def main():
     (net, train_losses, val_losses), optimiser = train_model(config, data_config)
 
     # Save the model
-    torch.save(
-        {
-            "model": net.state_dict(),
-            "optimiser": optimiser.state_dict(),
-        },
-        str(files.model_path()),
-    )
+    with open(str(model_path), "wb") as f:
+        pickle.dump(
+            model.ModelState(net.state_dict(), optimiser.state_dict(), config),
+            f,
+        )
 
     # Plot the loss
     fig = training.plot_losses(train_losses, val_losses)

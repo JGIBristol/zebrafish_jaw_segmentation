@@ -28,6 +28,7 @@ dependencies:
   - black
   - pyyaml
   - numpy-stl
+  - prettytable
   - pip:
       - pickle-mixin
       - torchio

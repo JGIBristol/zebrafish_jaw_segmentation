@@ -3,12 +3,27 @@ Summarise the architecture of the model
 
 """
 
+import pickle
 import argparse
 
 import torch
+from prettytable import PrettyTable
 
-from fishjaw.util import files, util
+from fishjaw.util import files
 from fishjaw.model import model
+
+
+def count_parameters(net: torch.nn.Module):
+    table = PrettyTable(["Modules", "Parameters"])
+    total_params = 0
+    for name, parameter in net.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        params = parameter.numel()
+        table.add_row([name, params])
+        total_params += params
+    print(table)
+    print(f"Total Trainable Params: {total_params}")
 
 
 class ReceptiveFieldTracker(torch.nn.Module):
@@ -45,21 +60,16 @@ def replace_layers_with_tracker(net: torch.nn.Module):
             replace_layers_with_tracker(layer)
 
 
-def _load_model(config: dict) -> torch.nn.Module:
+def _load_model() -> torch.nn.Module:
     """
     Load the model from disk
 
     """
-    net = model.model(config["model_params"])
 
     # Load the state dict
-    path = files.model_path()
-    state_dict = torch.load(path)
-
-    net.load_state_dict(state_dict["model"])
-    net.eval()
-
-    return net
+    with open(str(files.model_path()), "rb") as f:
+        model_state: model.ModelState = pickle.load(f)
+    return model_state.load_model(set_eval=True)
 
 
 def main():
@@ -68,14 +78,17 @@ def main():
     Save the output image
 
     """
-    config = util.userconf()
-
     # Load the model
-    net = _load_model(config)
+    net = _load_model()
     net.to("cuda")
 
-    replace_layers_with_tracker(net)
+    # Print the number of trainable parameters
+    print(count_parameters(net))
 
+    # Track the size of the receptive field throughout the model
+    replace_layers_with_tracker(net)
+    # This should really use the architecture to find the size of the input
+    # At the moment it's hard coded
     dummy_input = torch.randn(1, 1, 160, 160, 160).to("cuda")
     net(dummy_input)
 

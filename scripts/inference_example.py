@@ -15,27 +15,10 @@ import torchio as tio
 from skimage import measure
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files, util
+from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import transform, metrics
 from fishjaw.visualisation import images_3d
-
-
-def _load_model(config: dict) -> torch.nn.Module:
-    """
-    Load the model from disk
-
-    """
-    net = model.model(config["model_params"])
-
-    # Load the state dict
-    path = files.model_path()
-    state_dict = torch.load(path)
-
-    net.load_state_dict(state_dict["model"])
-    net.eval()
-
-    return net
 
 
 def _read_img(config: dict, img_n: int) -> np.ndarray:
@@ -246,10 +229,13 @@ def main(args):
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
 
-    config = util.userconf()
+    # Load the model and training-time config
+    with open(str(files.model_path()), "rb") as f:
+        model_state: model.ModelState = pickle.load(f)
 
-    # Load the model
-    net = _load_model(config)
+    config = model_state.config
+    net = model_state.load_model(set_eval=True)
+
     net.to("cuda")
 
     _inference(args, net, config)
