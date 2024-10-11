@@ -4,6 +4,7 @@ Define the model
 """
 
 import os
+import pickle
 import importlib
 from math import sqrt
 from dataclasses import dataclass
@@ -26,7 +27,7 @@ class ModelState:
     # The configuration used to train the model, as read from the userconf.yml file
     config: dict
 
-    def load_model(self, *, eval=True) -> torch.nn.Module:
+    def load_model(self, *, set_eval=True) -> torch.nn.Module:
         """
         Load the model
 
@@ -39,7 +40,7 @@ class ModelState:
         net = model(self.config["model_params"])
         net.load_state_dict(self.model_state_dict)
 
-        if eval:
+        if set_eval:
             net.eval()
 
         return net
@@ -290,6 +291,7 @@ def _save_checkpoint(
     net: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     epoch: int,
+    config: dict,
     checkpoint_dir: str = "checkpoints",
 ):
     """
@@ -299,19 +301,19 @@ def _save_checkpoint(
     :param optimizer: The optimizer to save.
     :param epoch: The current epoch number.
     :param checkpoint_dir: The directory to save the checkpoint file.
+    :param config: the configuration used to train the model, as read from the userconf.yml file
+
     """
+    # At the moment this function isn't used
+    return NotImplemented
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch}.pth")
-    torch.save(
-        {
-            "epoch": epoch,
-            "model_state_dict": net.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-        },
-        checkpoint_path,
-    )
+    checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch}.pkl")
+    model_state = ModelState(net.state_dict(), optimizer.state_dict(), config)
+
+    with open(checkpoint_path, "wb") as f:
+        pickle.dump(model_state, f)
 
 
 def _early_stop(
@@ -392,10 +394,6 @@ def train(
             net, loss_fn, data_config.val_data, device=train_config.device
         )
         val_batch_losses.append(val_batch_loss)
-
-        # Checkpoint the model
-        if train_config.checkpoint and not (epoch) % checkpoint_interval:
-            _save_checkpoint(net, optim, epoch)
 
         # We might want to adjust the learning rate during training
         if train_config.lr_scheduler:
