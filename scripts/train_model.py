@@ -73,11 +73,16 @@ def train_model(
     )
 
 
-def main(*, save: bool):
+def main():
     """
     Get the right data, train the model and create some outputs
 
     """
+    # If the model is already cached, don't train it again
+    model_path = files.model_path()
+    if model_path.is_file():
+        raise FileExistsError(f"Model already exists at {model_path}")
+
     config = util.userconf()
     torch.manual_seed(config["torch_seed"])
     rng = np.random.default_rng(seed=config["test_train_seed"])
@@ -98,14 +103,14 @@ def main(*, save: bool):
 
     (net, train_losses, val_losses), optimiser = train_model(config, data_config)
 
-    if save:
-        torch.save(
-            {
-                "model": net.state_dict(),
-                "optimiser": optimiser.state_dict(),
-            },
-            str(files.model_path()),
-        )
+    # Save the model
+    torch.save(
+        {
+            "model": net.state_dict(),
+            "optimiser": optimiser.state_dict(),
+        },
+        str(files.model_path()),
+    )
 
     # Plot the loss
     fig = training.plot_losses(train_losses, val_losses)
@@ -131,5 +136,4 @@ def main(*, save: bool):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model to segment the jawbone")
-    parser.add_argument("--save", help="Save the model", action="store_true")
     main(**vars(parser.parse_args()))
