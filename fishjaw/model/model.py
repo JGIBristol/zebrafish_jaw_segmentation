@@ -26,11 +26,23 @@ class ModelState:
     # The configuration used to train the model, as read from the userconf.yml file
     config: dict
 
-    def load_model(self) -> torch.nn.Module:
+    def load_model(self, *, eval=True) -> torch.nn.Module:
         """
-        Load the model state
+        Load the model
+
+        Initialises the architecture from the config and loads the state dict into it
+        Turns the model into evaluation mode by default
+
+        :param eval: whether to put the model into evaluation mode
 
         """
+        net = model(self.config["model_params"])
+        net.load_state_dict(self.model_state_dict)
+
+        if eval:
+            net.eval()
+
+        return net
 
 
 @dataclass
