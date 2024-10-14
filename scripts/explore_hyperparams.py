@@ -111,6 +111,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
             "stride": 2,
             "dropout": 0.0,
         },
+        "device": "cuda",
         "learning_rate": _lr(rng, mode),
         "optimiser": "Adam",
         "batch_size": _batch_size(rng),
@@ -146,7 +147,7 @@ def train_model(
     """
     # Create a model and optimiser
     net = model.model(config["model_params"])
-    device = "cuda"
+    device = config["device"]
     net = net.to(device)
 
     # Get the loss options

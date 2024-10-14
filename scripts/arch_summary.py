@@ -14,6 +14,7 @@ from fishjaw.model import model
 
 
 def count_parameters(net: torch.nn.Module):
+    """Count the number of trainable parameters in the model"""
     table = PrettyTable(["Modules", "Parameters"])
     total_params = 0
     for name, parameter in net.named_parameters():

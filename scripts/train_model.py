@@ -5,7 +5,6 @@ Train a model to segment the jawbone from labelled DICOM images
 
 import pickle
 import pathlib
-import warnings
 import argparse
 
 import torch
@@ -45,13 +44,7 @@ def train_model(
     # Create a model and optimiser
     net = model.model(config["model_params"])
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device == "cpu":
-        # Yellow text
-        yellow = "\033[33m"
-        clear = "\033[0m"
-        warnings.warn(f"{yellow}This might not be what you want!{clear}")
-    print(f"Using {device} device")
+    device = config["device"]
     net = net.to(device)
 
     optimiser = model.optimiser(config, net)
