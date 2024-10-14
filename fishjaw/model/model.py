@@ -13,6 +13,7 @@ import torch
 import numpy as np
 import torchio as tio
 from tqdm import trange
+from torch.cuda.amp import autocast, GradScaler
 
 from .data import DataConfig
 
@@ -203,6 +204,7 @@ def train_step(
     optim: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
     train_data: torch.utils.data.DataLoader,
+    scaler: GradScaler,
     *,
     device: torch.device,
 ) -> tuple[torch.nn.Module, list[float]]:
@@ -213,24 +215,13 @@ def train_step(
     :param optim: the optimiser to use
     :param loss_fn: the loss function to use
     :param train_data: the training data
+    :param scaler: the gradient scaler for mixed precision training
     :param device: the device to run the model on
 
     :returns: the trained model
     :returns: list of training batch losses
 
     """
-    # If the gradient is too large, we might want to clip it
-    # Setting this to some reasonable value might help
-    # (find with this, put after loss.backward():)
-    # total_norm = 0
-    # for p in model.parameters():
-    #    if p.grad is not None:
-    #        param_norm = p.grad.data.norm(2)
-    #        total_norm += param_norm.item() ** 2
-    # if total_norm ** 0.5 > max_grad:
-    #     print(total_norm ** 0.5)
-    max_grad = np.inf
-
     net.train()
 
     train_losses = []
@@ -240,14 +231,15 @@ def train_step(
         input_, target = x.to(device), y.to(device)
 
         optim.zero_grad()
-        out = net(input_)
+        with autocast():
+            out = net(input_)
+            loss = loss_fn(out, target)
 
-        loss = loss_fn(out, target)
+        scaler.scale(loss).backward()
+        scaler.step(optim)
+        scaler.update()
+
         train_losses.append(loss.item())
-
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(net.parameters(), max_grad)
-        optim.step()
 
     return net, train_losses
 
@@ -380,10 +372,18 @@ def train(
     # How many epochs to wait before stopping training
     patience = 10
 
+    # Gradient scaler for mixed precision training
+    scaler = GradScaler()
+
     progress_bar = trange(train_config.epochs, desc="Training")
     for _ in progress_bar:
         net, train_batch_loss = train_step(
-            net, optim, loss_fn, data_config.train_data, device=train_config.device
+            net,
+            optim,
+            loss_fn,
+            data_config.train_data,
+            scaler,
+            device=train_config.device,
         )
         train_batch_losses.append(train_batch_loss)
 
