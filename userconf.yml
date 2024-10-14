@@ -31,6 +31,7 @@ test_train_seed: 1
 
 # Options for the model that you might want to change
 # These are sort of like meta-parameters so they're not in the model_params section but maybe they should be
+device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
 batch_size: 2

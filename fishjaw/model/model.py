@@ -377,14 +377,11 @@ def train(
     train_batch_losses = []
     val_batch_losses = []
 
-    # How often to checkpoint the model
-    checkpoint_interval = 5
-
     # How many epochs to wait before stopping training
     patience = 10
 
     progress_bar = trange(train_config.epochs, desc="Training")
-    for epoch in progress_bar:
+    for _ in progress_bar:
         net, train_batch_loss = train_step(
             net, optim, loss_fn, data_config.train_data, device=train_config.device
         )
