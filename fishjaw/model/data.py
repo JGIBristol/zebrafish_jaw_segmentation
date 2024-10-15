@@ -77,7 +77,7 @@ class DataConfig:
         train: bool,
         patch_size: tuple[int, int, int] = None,
         batch_size: int,
-    ) -> torch.utils.data.DataLoader:
+    ) -> tio.SubjectsLoader:
         """
         Create a dataloader from a SubjectsDataset
 
@@ -94,11 +94,7 @@ class DataConfig:
         shuffle = train is True
         drop_last = train is True
 
-        # Even probability of the patches being centred on each value
-        label_probs = {0: 1, 1: 1}
-        patch_sampler = tio.LabelSampler(
-            patch_size=patch_size, label_probabilities=label_probs
-        )
+        patch_sampler = tio.UniformSampler(patch_size=patch_size)
 
         patches = tio.Queue(
             subjects,
@@ -110,23 +106,21 @@ class DataConfig:
             shuffle_subjects=True,
         )
 
-        return torch.utils.data.DataLoader(
+        return tio.SubjectsLoader(
             patches,
             batch_size=batch_size,
             shuffle=shuffle,
-            num_workers=0,  # Load the data in the main process
-            # No idea why I have to set this to False, otherwise we get obscure errors
-            pin_memory=False,
+            num_workers=6,  # TODO make this a config option
             drop_last=drop_last,
         )
 
     @property
-    def train_data(self) -> torch.utils.data.DataLoader:
+    def train_data(self) -> tio.SubjectsLoader:
         """Get the training data"""
         return self._train_data
 
     @property
-    def val_data(self) -> torch.utils.data.DataLoader:
+    def val_data(self) -> tio.SubjectsLoader:
         """Get the validation data"""
         return self._val_data
 

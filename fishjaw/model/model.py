@@ -203,7 +203,7 @@ def train_step(
     net: torch.nn.Module,
     optim: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
-    train_data: torch.utils.data.DataLoader,
+    train_data: tio.SubjectsLoader,
     scaler: GradScaler,
     *,
     device: torch.device,
@@ -228,7 +228,9 @@ def train_step(
     for data in train_data:
         x, y = _get_data(data)
 
-        input_, target = x.to(device), y.to(device)
+        input_, target = x.to(device, non_blocking=True), y.to(
+            device, non_blocking=True
+        )
 
         optim.zero_grad()
         with autocast():
@@ -247,7 +249,7 @@ def train_step(
 def validation_step(
     net: torch.nn.Module,
     loss_fn: torch.nn.Module,
-    validation_data: torch.utils.data.DataLoader,
+    validation_data: tio.SubjectsLoader,
     *,
     device: torch.device,
 ) -> tuple[torch.nn.Module, list[float]]:
