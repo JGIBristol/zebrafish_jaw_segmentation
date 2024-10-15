@@ -228,7 +228,9 @@ def train_step(
     for data in train_data:
         x, y = _get_data(data)
 
-        input_, target = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
+        input_, target = x.to(device, non_blocking=True), y.to(
+            device, non_blocking=True
+        )
 
         optim.zero_grad()
         with autocast():
