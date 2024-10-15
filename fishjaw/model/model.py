@@ -13,7 +13,7 @@ import torch
 import numpy as np
 import torchio as tio
 from tqdm import trange
-from torch.amp import autocast, GradScaler
+from torch.cuda.amp import autocast, GradScaler
 
 from .data import DataConfig
 
@@ -228,10 +228,10 @@ def train_step(
     for data in train_data:
         x, y = _get_data(data)
 
-        input_, target = x.to(device), y.to(device)
+        input_, target = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
 
         optim.zero_grad()
-        with autocast(device):
+        with autocast():
             out = net(input_)
             loss = loss_fn(out, target)
 
@@ -373,7 +373,7 @@ def train(
     patience = 10
 
     # Gradient scaler for mixed precision training
-    scaler = GradScaler(train_config.device)
+    scaler = GradScaler()
 
     progress_bar = trange(train_config.epochs, desc="Training")
     for _ in progress_bar:
