@@ -1,6 +1,9 @@
 # You shouldn't need to change this
 # User-defined configuration is in userconf.yml
 
+# Where random stuff from the scripts goes
+script_output: "script_output/"
+
 # This contains directories of 2d tifs
 wahabs_old_tifs: "DATABASE/uCT/Wahab_clean_dataset/low_res_clean_v3/"
 felix_old_labels_dir: "1Felix and Rich make models/Training dataset Tiffs"
