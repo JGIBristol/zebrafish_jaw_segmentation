@@ -235,7 +235,7 @@ def test_loader(
     )
 
 
-def _transforms() -> tio.transforms.Transform:
+def _transforms(config: dict) -> tio.transforms.Transform:
     """
     Define the transforms to apply to the training data
 
@@ -272,20 +272,16 @@ def read_dicoms_from_disk(
     rng: np.random.Generator,
     *,
     train_frac: float = 0.95,
-    transforms: Union[str | tio.transforms.Transform] = "default",
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
-    This reads in the DICOMs created by `scripts/create_dicoms.py`
-    Prints a progress bar
+    This reads in the DICOMs created by `scripts/create_dicoms.py`.
+    Transforms are applied as defined in the configuration (see userconf.yml).
+    Prints a progress bar.
 
     :param config: The configuration, e.g. from userconf.yml
     :param rng: A random number generator to use for test/train/split
     :param train_frac: The fraction of the data to use for training (roughly)
-    :param transforms: whether to apply transforms to the training data.
-                       "default" applies the transforms in transforms();
-                       "none" applies no transforms;
-                       otherwise applies the transforms provided
 
     :return: subjects for training
     :return: subjects for validation
@@ -294,18 +290,6 @@ def read_dicoms_from_disk(
     :raises: ValueError if transforms is not "default", "none" or a tio.transforms.Transform
 
     """
-    # Choose the transforms
-    if isinstance(transforms, (str, tio.transforms.Transform)):
-        if transforms == "default":
-            transforms = _transforms()
-        elif transforms == "none":
-            # This will apply no transforms when passed to the SubjectsDataset
-            transforms = None
-    else:
-        raise ValueError(
-            f"transforms must be 'default', 'none' or a tio.transforms.Transform, not {transforms}"
-        )
-
     # Read in data + convert to subjects
     dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [

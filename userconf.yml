@@ -38,6 +38,17 @@ batch_size: 27
 epochs: 10
 lr_lambda: 0.9999 # Exponential decay factor (multiplicative with each epoch)
 
+# These must be torchio transforms
+# Options should be passed
+transforms:
+  RandomFlip:
+    - axes: [0, 1, 2]
+    - flip_probability: 0.5
+  RandomAffine:
+    - p: 0.25
+    - degrees: 10
+    - scales: 0.2
+
 model_params:
   model_name: "monai.networks.nets.AttentionUnet"
 
