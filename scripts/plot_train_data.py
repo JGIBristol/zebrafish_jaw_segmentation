@@ -16,9 +16,9 @@ from fishjaw.model import data
 from fishjaw.visualisation import images_3d
 
 
-def main(*, step: int, epochs: int):
+def _data_config() -> data.DataConfig:
     """
-    Read the DICOMs from disk () Create the data config
+    Get the training data configuration
 
     """
     # Create training config
@@ -27,8 +27,14 @@ def main(*, step: int, epochs: int):
     rng = np.random.default_rng(seed=config["test_train_seed"])
 
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(config, rng)
-    data_config = data.DataConfig(config, train_subjects, val_subjects)
+    return data.DataConfig(config, train_subjects, val_subjects)
 
+
+def main(*, step: int, epochs: int):
+    """
+    Read the DICOMs from disk () Create the data config
+
+    """
     output_dir = (
         pathlib.Path(__file__).parents[1]
         / util.config()["script_output"]
@@ -36,6 +42,8 @@ def main(*, step: int, epochs: int):
     )
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
+
+    data_config = _data_config()
 
     # Epochs
     for epoch in range(0, epochs, step):
