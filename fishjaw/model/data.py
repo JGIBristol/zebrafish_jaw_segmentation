@@ -4,7 +4,6 @@ Loading, pre-processing, etc. the data for the model
 """
 
 import pathlib
-from typing import Union
 
 import torch
 import torch.utils
@@ -235,26 +234,22 @@ def test_loader(
     )
 
 
+def _load_transform(transform: dict) -> tio.transforms.Transform:
+    """
+    Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
+
+    """
+    if not isinstance(transform, dict):
+        raise ValueError(f"Transform {transform} is not a dict")
+
+
 def _transforms(config: dict) -> tio.transforms.Transform:
     """
     Define the transforms to apply to the training data
 
     """
     return tio.Compose(
-        [
-            tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),
-            tio.RandomAffine(
-                p=0.25,
-                degrees=10,
-                scales=0.2,
-            ),
-            # tio.RandomBlur(p=0.3),
-            # tio.RandomBiasField(0.4, p=0.5),
-            # tio.RandomNoise(0.1, 0.01, p=0.25),
-            # tio.RandomGamma((-0.3, 0.3), p=0.25),
-            # tio.ZNormalization(),
-            # tio.RescaleIntensity(percentiles=(0.5, 99.5)),
-        ]
+        [_load_transform(transform_fcn) for transform_fcn in config["transforms"]]
     )
 
 
