@@ -49,7 +49,9 @@ def main(*, step: int, epochs: int):
                     output_dir / f"traindata_epoch_{epoch}_batch_{i}_img_{j}.png"
                 )
 
-                fig, _ = images_3d.plot_slices(image.squeeze().numpy(), mask.squeeze().numpy())
+                fig, _ = images_3d.plot_slices(
+                    image.squeeze().numpy(), mask.squeeze().numpy()
+                )
                 fig.savefig(out_path)
                 plt.close(fig)
 
