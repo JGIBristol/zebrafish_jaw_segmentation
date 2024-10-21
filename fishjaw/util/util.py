@@ -69,10 +69,10 @@ def config() -> dict:
 
 def load_class(name: str) -> type:
     """
-    Load a class from a string.
+    Load a class from a module given a string.
 
     :param name: the name of the class to load. Should be in the format module.class,
-                 where module can also contain "."s
+                 where module can also contain "."s (e.g. module.submodule.class)
     :returns: the class object
 
     """

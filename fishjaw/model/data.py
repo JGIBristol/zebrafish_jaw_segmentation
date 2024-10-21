@@ -12,7 +12,7 @@ import torchio as tio
 from tqdm import tqdm
 
 from ..images import io, transform
-from ..util import files
+from ..util import files, util
 
 
 def get_patch_size(config: dict) -> tuple[int, int, int]:
@@ -234,22 +234,24 @@ def test_loader(
     )
 
 
-def _load_transform(transform: dict) -> tio.transforms.Transform:
+def _load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
     """
     Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
 
     """
-    if not isinstance(transform, dict):
-        raise ValueError(f"Transform {transform} is not a dict")
+    return util.load_class(transform_name)(**args)
 
 
-def _transforms(config: dict) -> tio.transforms.Transform:
+def _transforms(transform_dict: dict) -> tio.transforms.Transform:
     """
     Define the transforms to apply to the training data
 
     """
     return tio.Compose(
-        [_load_transform(transform_fcn) for transform_fcn in config["transforms"]]
+        [
+            _load_transform(transform_name, args)
+            for transform_name, args in transform_dict.items()
+        ]
     )
 
 
@@ -308,7 +310,7 @@ def read_dicoms_from_disk(
     print(f"Test: {test_idx=}")
 
     train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=_transforms()
+        [subjects[i] for i in train_idx], transform=_transforms(config["transforms"])
     )
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
     test_subject = subjects[test_idx]

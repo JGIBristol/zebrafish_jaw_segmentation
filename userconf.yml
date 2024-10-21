@@ -40,20 +40,20 @@ lr_lambda: 0.9999 # Exponential decay factor (multiplicative with each epoch)
 
 # Options should be passed
 transforms:
-  tio.RandomFlip:
-    - axes: [0, 1, 2]
-    - flip_probability: 0.5
-  tio.RandomAffine:
-    - p: 0.25
-    - degrees: 10
-    - scales: 0.2
+  torchio.RandomFlip:
+    axes: [0, 1, 2]
+    flip_probability: 0.5
+  torchio.RandomAffine:
+    p: 0.25
+    degrees: 10
+    scales: 0.2
 # Other options might be
-# tio.RandomBlur(p=0.3),
-# tio.RandomBiasField(0.4, p=0.5),
-# tio.RandomNoise(0.1, 0.01, p=0.25),
-# tio.RandomGamma((-0.3, 0.3), p=0.25),
-# tio.ZNormalization(),
-# tio.RescaleIntensity(percentiles=(0.5, 99.5)),
+# torchio.RandomBlur(p=0.3),
+# torchio.RandomBiasField(0.4, p=0.5),
+# torchio.RandomNoise(0.1, 0.01, p=0.25),
+# torchio.RandomGamma((-0.3, 0.3), p=0.25),
+# torchio.ZNormalization(),
+# torchio.RescaleIntensity(percentiles=(0.5, 99.5)),
 
 model_params:
   model_name: "monai.networks.nets.AttentionUnet"
