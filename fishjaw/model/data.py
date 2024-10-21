@@ -294,6 +294,7 @@ def read_dicoms_from_disk(
 
     # Choose some indices to act as train, validation and test
     # This is a bit of a hack
+    # TODO the images to use for training/testing should be in the config
     indices = np.arange(len(subjects))
     rng.shuffle(indices)
     train_idx, val_idx, test_idx = (  # pylint: disable=unbalanced-tuple-unpacking

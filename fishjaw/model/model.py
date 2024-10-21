@@ -5,7 +5,6 @@ Define the model
 
 import os
 import pickle
-import importlib
 from math import sqrt
 from dataclasses import dataclass
 
@@ -16,6 +15,7 @@ from tqdm import trange
 from torch.cuda.amp import autocast, GradScaler
 
 from .data import DataConfig
+from ..util import util
 
 
 @dataclass(frozen=True)
@@ -86,21 +86,6 @@ def optimiser(config: dict, net: torch.nn.Module) -> torch.optim.Optimizer:
     )
 
 
-def _load_class(name: str) -> type:
-    """
-    Load a class from a string.
-
-    :param name: the name of the class to load. Should be in the format module.class,
-                 where module can also contain "."s
-    :returns: the class object
-
-    """
-    module_path, class_name = name.rsplit(".", 1)
-
-    module = importlib.import_module(module_path)
-
-    return getattr(module, class_name)
-
 
 def activation_name(config: dict) -> str:
     """
@@ -126,7 +111,7 @@ def lossfn(config: dict) -> torch.nn.modules.Module:
     Get the loss function from the config file
 
     """
-    return _load_class(config["loss"])(**config["loss_options"])
+    return util.load_class(config["loss"])(**config["loss_options"])
 
 
 def model_params(in_params: dict) -> dict:
@@ -180,7 +165,7 @@ def model(config: dict) -> torch.nn.Module:
 
     """
     # Find which model to use
-    classname = _load_class(config["model_name"])
+    classname = util.load_class(config["model_name"])
 
     # Parse the parameters from the config
     return classname(**model_params(config))
