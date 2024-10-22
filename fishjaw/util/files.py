@@ -45,12 +45,20 @@ def dicom_dirs() -> list:
 
 def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     """
-    Get the path to the corresponding image for a mask
+    Get the path to the corresponding image for a mask.
+    These both live on the RDSF, so we just need to replace some directories with
+    where Wahab stored his 3D tiffs.
 
     :param mask_path: Path to the mask
     :returns: Path to the image
 
     """
+    # Take the name from mask_path
+    file_name = mask_path.name.replace(".labels.tif", ".tif")
+
+    # We've hard-coded the number of dirs to strip off which is bad - if we later move
+    # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break, but hopefully that won't happen
+    return mask_path.parents[3] / util.config()["wahabs_3d_tifs"] / file_name
 
 
 def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:

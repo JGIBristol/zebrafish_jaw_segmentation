@@ -236,7 +236,8 @@ def test_loader(
 
 def load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
     """
-    Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
+    Load a transform from the configuration, which should be provided as a dict
+    of {"name": {"arg1": value1, ...}}
 
     """
     return util.load_class(transform_name)(**args)
