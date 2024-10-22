@@ -104,7 +104,6 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     )
 
     ds.save_as(out_path, write_like_original=False)
-    print(f"Saved to {out_path}")
 
 
 def create_set_1(config: dict) -> None:
@@ -112,26 +111,31 @@ def create_set_1(config: dict) -> None:
     Create DICOMs from Training set 1 - Wahab's segmented images
 
     """
+    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][0])
     label_paths = sorted(
-        list(util.config()["label_dirs"][0].glob("*.tif")), key=lambda x: x.name
+        list(label_dir.glob("*.tif")),
+        key=lambda x: x.name,
     )
-    dicom_dir = util.config()["dicom_dirs"][0]
 
-    # Find the corresponding images
+    dicom_dir = files.dicom_dirs()[0]
+    if not dicom_dir.is_dir():
+        dicom_dir.mkdir(parents=True)
+
+    # Find the corresponding CT scan images
     img_paths = [files.image_path(label_path) for label_path in label_paths]
     for label_path, img_path in tqdm(
         zip(label_paths, img_paths), desc="Creating DICOMs from Wahab's segmentations"
     ):
         if not img_path.exists():
             print(
-                f"Could not find corresponding image at {img_path} for label at {label_path}"
+                f"Image at {img_path} not found, but {label_path} was"
             )
             continue
 
-        out_path = dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
+        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
-        if out_path.exists():
-            print(f"Skipping {out_path}, already exists")
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
             continue
 
         try:
@@ -141,7 +145,7 @@ def create_set_1(config: dict) -> None:
             print(f"Skipping {img_path} and {label_path}: {e}")
             continue
 
-        write_dicom(dicom, out_path)
+        write_dicom(dicom, dicom_path)
 
 
 def create_felix_second_dicoms(config: dict):
@@ -184,9 +188,6 @@ def main():
 
     """
     config = util.userconf()
-
-    if not (dicom_dir := files.dicom_dir(config)).is_dir():
-        dicom_dir.mkdir()
 
     # We should really check here that there's no overlap between Felix and Wahab's images
 
