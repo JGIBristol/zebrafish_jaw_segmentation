@@ -107,28 +107,28 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     print(f"Saved to {out_path}")
 
 
-def create_wahab_dicoms(config: dict) -> None:
+def create_set_1(config: dict) -> None:
     """
-    Create DICOMs from Wahab's segmented images
+    Create DICOMs from Training set 1 - Wahab's segmented images
 
     """
     label_paths = sorted(
-        list(files.wahab_labels_dir(config).glob("*.tif")), key=lambda x: x.name
+        list(util.config()["label_dirs"][0].glob("*.tif")), key=lambda x: x.name
     )
+    dicom_dir = util.config()["dicom_dirs"][0]
 
     # Find the corresponding images
-    wahab_tif_dir = files.wahab_3d_tifs_dir(config)
-    for label_path in tqdm(
-        label_paths[2:], desc="Creating DICOMs from Wahab's segmentations"
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    for label_path, img_path in tqdm(
+        zip(label_paths, img_paths), desc="Creating DICOMs from Wahab's segmentations"
     ):
-        img_path = wahab_tif_dir / f"ak_{label_path.name}"
         if not img_path.exists():
             print(
                 f"Could not find corresponding image at {img_path} for label at {label_path}"
             )
             continue
 
-        out_path = files.dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
+        out_path = dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
 
         if out_path.exists():
             print(f"Skipping {out_path}, already exists")
@@ -190,7 +190,7 @@ def main():
 
     # We should really check here that there's no overlap between Felix and Wahab's images
 
-    create_wahab_dicoms(config)
+    create_set_1(config)
     create_felix_second_dicoms(config)
 
 
