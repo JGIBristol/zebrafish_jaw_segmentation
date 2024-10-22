@@ -86,7 +86,6 @@ def optimiser(config: dict, net: torch.nn.Module) -> torch.optim.Optimizer:
     )
 
 
-
 def activation_name(config: dict) -> str:
     """
     Get the name of the activation function
