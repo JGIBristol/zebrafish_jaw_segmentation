@@ -57,7 +57,8 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     file_name = mask_path.name.replace(".labels.tif", ".tif")
 
     # We've hard-coded the number of dirs to strip off which is bad - if we later move
-    # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break, but hopefully that won't happen
+    # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
+    # but hopefully that won't happen
     return mask_path.parents[3] / util.config()["wahabs_3d_tifs"] / file_name
 
 
