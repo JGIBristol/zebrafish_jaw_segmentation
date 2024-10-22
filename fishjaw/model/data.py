@@ -234,7 +234,7 @@ def test_loader(
     )
 
 
-def _load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
+def load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
     """
     Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
 
@@ -249,7 +249,7 @@ def _transforms(transform_dict: dict) -> tio.transforms.Transform:
     """
     return tio.Compose(
         [
-            _load_transform(transform_name, args)
+            load_transform(transform_name, args)
             for transform_name, args in transform_dict.items()
         ]
     )
