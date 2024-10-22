@@ -27,6 +27,7 @@ def dicom_dir(config: dict) -> pathlib.Path:
     :returns: Path to the directory
 
     """
+    raise NotImplementedError
     return pathlib.Path(config["dicom_dir"])
 
 
@@ -50,6 +51,7 @@ def wahab_labels_dir(config: dict) -> pathlib.Path:
     :returns: Path to the directory
 
     """
+    raise NotImplementedError
     return rdsf_dir(config) / util.config()["wahab_labels_dir"]
 
 
@@ -62,6 +64,7 @@ def felix_labels_2_dir(config: dict) -> pathlib.Path:
     :returns: Path to the directory
 
     """
+    raise NotImplementedError
     return rdsf_dir(config) / util.config()["felix_labels_dir_2"]
 
 
