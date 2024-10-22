@@ -4,6 +4,7 @@ Very general utilities
 """
 
 import pathlib
+import importlib
 from typing import Callable
 from functools import wraps
 
@@ -64,3 +65,19 @@ def config() -> dict:
     """
     with open(rootdir() / "config.yml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def load_class(name: str) -> type:
+    """
+    Load a class from a module given a string.
+
+    :param name: the name of the class to load. Should be in the format module.class,
+                 where module can also contain "."s (e.g. module.submodule.class)
+    :returns: the class object
+
+    """
+    module_path, class_name = name.rsplit(".", 1)
+
+    module = importlib.import_module(module_path)
+
+    return getattr(module, class_name)

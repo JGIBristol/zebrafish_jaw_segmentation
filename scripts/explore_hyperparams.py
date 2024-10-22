@@ -268,9 +268,6 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(
         example_config,
         rng,
-        # Use the same transforms as we would for training
-        # TODO this should really be in the config
-        transforms="default",
     )
 
     # I think this might be doing something slightly wrong - we're getting the data which means,

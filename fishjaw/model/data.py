@@ -4,7 +4,6 @@ Loading, pre-processing, etc. the data for the model
 """
 
 import pathlib
-from typing import Union
 
 import torch
 import torch.utils
@@ -13,7 +12,7 @@ import torchio as tio
 from tqdm import tqdm
 
 from ..images import io, transform
-from ..util import files
+from ..util import files, util
 
 
 def get_patch_size(config: dict) -> tuple[int, int, int]:
@@ -235,25 +234,23 @@ def test_loader(
     )
 
 
-def _transforms() -> tio.transforms.Transform:
+def load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
+    """
+    Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
+
+    """
+    return util.load_class(transform_name)(**args)
+
+
+def _transforms(transform_dict: dict) -> tio.transforms.Transform:
     """
     Define the transforms to apply to the training data
 
     """
     return tio.Compose(
         [
-            tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),
-            tio.RandomAffine(
-                p=0.25,
-                degrees=10,
-                scales=0.2,
-            ),
-            # tio.RandomBlur(p=0.3),
-            # tio.RandomBiasField(0.4, p=0.5),
-            # tio.RandomNoise(0.1, 0.01, p=0.25),
-            # tio.RandomGamma((-0.3, 0.3), p=0.25),
-            # tio.ZNormalization(),
-            # tio.RescaleIntensity(percentiles=(0.5, 99.5)),
+            load_transform(transform_name, args)
+            for transform_name, args in transform_dict.items()
         ]
     )
 
@@ -272,20 +269,16 @@ def read_dicoms_from_disk(
     rng: np.random.Generator,
     *,
     train_frac: float = 0.95,
-    transforms: Union[str | tio.transforms.Transform] = "default",
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
-    This reads in the DICOMs created by `scripts/create_dicoms.py`
-    Prints a progress bar
+    This reads in the DICOMs created by `scripts/create_dicoms.py`.
+    Transforms are applied as defined in the configuration (see userconf.yml).
+    Prints a progress bar.
 
     :param config: The configuration, e.g. from userconf.yml
     :param rng: A random number generator to use for test/train/split
     :param train_frac: The fraction of the data to use for training (roughly)
-    :param transforms: whether to apply transforms to the training data.
-                       "default" applies the transforms in transforms();
-                       "none" applies no transforms;
-                       otherwise applies the transforms provided
 
     :return: subjects for training
     :return: subjects for validation
@@ -294,18 +287,6 @@ def read_dicoms_from_disk(
     :raises: ValueError if transforms is not "default", "none" or a tio.transforms.Transform
 
     """
-    # Choose the transforms
-    if isinstance(transforms, (str, tio.transforms.Transform)):
-        if transforms == "default":
-            transforms = _transforms()
-        elif transforms == "none":
-            # This will apply no transforms when passed to the SubjectsDataset
-            transforms = None
-    else:
-        raise ValueError(
-            f"transforms must be 'default', 'none' or a tio.transforms.Transform, not {transforms}"
-        )
-
     # Read in data + convert to subjects
     dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
     subjects = [
@@ -315,6 +296,7 @@ def read_dicoms_from_disk(
 
     # Choose some indices to act as train, validation and test
     # This is a bit of a hack
+    # TODO the images to use for training/testing should be in the config
     indices = np.arange(len(subjects))
     rng.shuffle(indices)
     train_idx, val_idx, test_idx = (  # pylint: disable=unbalanced-tuple-unpacking
@@ -328,7 +310,7 @@ def read_dicoms_from_disk(
     print(f"Test: {test_idx=}")
 
     train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=_transforms()
+        [subjects[i] for i in train_idx], transform=_transforms(config["transforms"])
     )
     val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
     test_subject = subjects[test_idx]
