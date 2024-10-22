@@ -26,7 +26,7 @@ def mask_dirs(config: dict) -> list:
     :returns: List of paths to the directories
 
     """
-    # return [rdsf_dir(config) / mask_dir for mask_dir in util.config()["mask_dirs"]]
+    return [rdsf_dir(config) / mask_dir for mask_dir in util.config()["label_dirs"]]
 
 
 def dicom_dirs() -> list:
@@ -44,19 +44,6 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     :returns: Path to the image
 
     """
-
-
-def dicom_dir(config: dict) -> pathlib.Path:
-    """
-    Get the directory where the DICOMs are stored
-
-    :param config: the configuration that tells us where the DICOMs are stored.
-                   Might e.g. be from userconf.yml
-    :returns: Path to the directory
-
-    """
-    raise NotImplementedError
-    return pathlib.Path(config["dicom_dir"])
 
 
 def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:
