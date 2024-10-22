@@ -33,7 +33,14 @@ def dicom_dirs() -> list:
     """
     Get the directories where the DICOMs are stored
 
+    :returns: List of paths to the directories storing the DICOM files
+
     """
+    # The directory where all the DICOMs live
+    rootdir = pathlib.Path(__file__).parents[2] / "dicoms"
+
+    label_dirs = util.config()["label_dirs"]
+    return [rootdir / pathlib.Path(label_dir).name for label_dir in label_dirs]
 
 
 def image_path(mask_path: pathlib.Path) -> pathlib.Path:
