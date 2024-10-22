@@ -236,7 +236,8 @@ def test_loader(
 
 def load_transform(transform_name: str, args: dict) -> tio.transforms.Transform:
     """
-    Load a transform from the configuration, which should be provided as a dict of {"name": {"arg1": value1, ...}}
+    Load a transform from the configuration, which should be provided as a dict
+    of {"name": {"arg1": value1, ...}}
 
     """
     return util.load_class(transform_name)(**args)
@@ -288,7 +289,7 @@ def read_dicoms_from_disk(
 
     """
     # Read in data + convert to subjects
-    dicom_paths = sorted(list(files.dicom_dir(config).glob("*.dcm")))
+    dicom_paths = files.dicom_paths()
     subjects = [
         subject(path, centre=_centre(path), window_size=transform.window_size(config))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")

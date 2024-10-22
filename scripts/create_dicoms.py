@@ -104,34 +104,38 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     )
 
     ds.save_as(out_path, write_like_original=False)
-    print(f"Saved to {out_path}")
 
 
-def create_wahab_dicoms(config: dict) -> None:
+def create_set_1(config: dict) -> None:
     """
-    Create DICOMs from Wahab's segmented images
+    Create DICOMs from Training set 1 - Wahab's segmented images
 
     """
+    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][0])
     label_paths = sorted(
-        list(files.wahab_labels_dir(config).glob("*.tif")), key=lambda x: x.name
+        list(label_dir.glob("*.tif")),
+        key=lambda x: x.name,
     )
 
-    # Find the corresponding images
-    wahab_tif_dir = files.wahab_3d_tifs_dir(config)
-    for label_path in tqdm(
-        label_paths[2:], desc="Creating DICOMs from Wahab's segmentations"
+    dicom_dir = files.dicom_dirs()[0]
+    if not dicom_dir.is_dir():
+        dicom_dir.mkdir(parents=True)
+
+    # Find the corresponding CT scan images
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    for label_path, img_path in tqdm(
+        zip(label_paths, img_paths),
+        desc="Creating DICOMs from Wahab's segmentations",
+        total=len(label_paths),
     ):
-        img_path = wahab_tif_dir / f"ak_{label_path.name}"
         if not img_path.exists():
-            print(
-                f"Could not find corresponding image at {img_path} for label at {label_path}"
-            )
+            print(f"Image at {img_path} not found, but {label_path} was")
             continue
 
-        out_path = files.dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
+        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
-        if out_path.exists():
-            print(f"Skipping {out_path}, already exists")
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
             continue
 
         try:
@@ -141,41 +145,91 @@ def create_wahab_dicoms(config: dict) -> None:
             print(f"Skipping {img_path} and {label_path}: {e}")
             continue
 
-        write_dicom(dicom, out_path)
+        write_dicom(dicom, dicom_path)
 
 
-def create_felix_second_dicoms(config: dict):
+def create_set_2(config: dict):
     """
-    Create DICOMs from Felix's second set of segmented images
+    Create DICOMs from training set 2 - the first set of images that Felix segmented
 
     """
-    # Find the paths for the labels
-    label_paths = list(files.felix_labels_2_dir(config).glob("*.tif"))
+    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][1])
+    label_paths = sorted(
+        list(label_dir.glob("*.tif")),
+        key=lambda x: x.name,
+    )
 
-    # Find the corresponding images
-    wahab_tif_dir = files.wahab_3d_tifs_dir(config)
-    for label_path in tqdm(
-        label_paths, desc="Creating DICOMs from Felix's first segmentations"
+    dicom_dir = files.dicom_dirs()[1]
+    if not dicom_dir.is_dir():
+        dicom_dir.mkdir(parents=True)
+
+    # Find the corresponding CT scan images
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    for label_path, img_path in tqdm(
+        zip(label_paths, img_paths),
+        desc="Creating DICOMs from Felix's first segmentations",
+        total=len(label_paths),
     ):
-        img_path = wahab_tif_dir / label_path.name.replace(".labels", "")
         if not img_path.exists():
-            raise FileNotFoundError(
-                f"Could not find corresponding image for {label_path}"
-            )
+            print(f"Image at {img_path} not found, but {label_path} was")
+            continue
 
-        out_path = files.dicom_dir(config) / img_path.name.replace(".tif", ".dcm")
+        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
-        if out_path.exists():
-            print(f"Skipping {out_path}, already exists")
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
             continue
 
         try:
+            # These contain different labels for the different bones
             dicom = Dicom(img_path, label_path, binarise=False)
         except ValueError as e:
             print(f"Skipping {img_path} and {label_path}: {e}")
             continue
 
-        write_dicom(dicom, out_path)
+        write_dicom(dicom, dicom_path)
+
+
+def create_set_3(config: dict):
+    """
+    Create DICOMs from training set 3 - the rear jaw images that Felix segmented
+
+    """
+    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][2])
+    label_paths = sorted(
+        list(label_dir.glob("*.tif")),
+        key=lambda x: x.name,
+    )
+
+    dicom_dir = files.dicom_dirs()[2]
+    if not dicom_dir.is_dir():
+        dicom_dir.mkdir(parents=True)
+
+    # Find the corresponding CT scan images
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    for label_path, img_path in tqdm(
+        zip(label_paths, img_paths),
+        desc="Creating DICOMs from rear jaw segmentations",
+        total=len(label_paths),
+    ):
+        if not img_path.exists():
+            print(f"Image at {img_path} not found, but {label_path} was")
+            continue
+
+        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
+
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
+            continue
+
+        try:
+            # These contain different labels for the different bones
+            dicom = Dicom(img_path, label_path, binarise=False)
+        except ValueError as e:
+            print(f"Skipping {img_path} and {label_path}: {e}")
+            continue
+
+        write_dicom(dicom, dicom_path)
 
 
 def main():
@@ -185,13 +239,11 @@ def main():
     """
     config = util.userconf()
 
-    if not (dicom_dir := files.dicom_dir(config)).is_dir():
-        dicom_dir.mkdir()
-
     # We should really check here that there's no overlap between Felix and Wahab's images
 
-    create_wahab_dicoms(config)
-    create_felix_second_dicoms(config)
+    create_set_1(config)
+    create_set_2(config)
+    create_set_3(config)
 
 
 if __name__ == "__main__":
