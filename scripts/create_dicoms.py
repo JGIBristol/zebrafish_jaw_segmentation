@@ -124,12 +124,12 @@ def create_set_1(config: dict) -> None:
     # Find the corresponding CT scan images
     img_paths = [files.image_path(label_path) for label_path in label_paths]
     for label_path, img_path in tqdm(
-        zip(label_paths, img_paths), desc="Creating DICOMs from Wahab's segmentations"
+        zip(label_paths, img_paths),
+        desc="Creating DICOMs from Wahab's segmentations",
+        total=len(label_paths),
     ):
         if not img_path.exists():
-            print(
-                f"Image at {img_path} not found, but {label_path} was"
-            )
+            print(f"Image at {img_path} not found, but {label_path} was")
             continue
 
         dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
