@@ -43,6 +43,16 @@ def dicom_dirs() -> list:
     return [rootdir / pathlib.Path(label_dir).name for label_dir in label_dirs]
 
 
+def dicom_paths() -> list:
+    """
+    Get a list of all the DICOM files
+
+    """
+    return sorted(
+        [path for dicom_dir in dicom_dirs() for path in dicom_dir.glob("*.dcm")]
+    )
+
+
 def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     """
     Get the path to the corresponding image for a mask.

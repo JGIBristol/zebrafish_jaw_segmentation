@@ -14,7 +14,7 @@ from fishjaw.visualisation import images_3d
 from fishjaw.images import transform, io
 
 
-def plot_dicom(dicom_path: pathlib.Path, crop: bool, window_size: tuple[int, int, int]):
+def plot_dicom(dicom_path: pathlib.Path, window_size: tuple[int, int, int] = None):
     """
     Given a path to a DICOM file, plot it and save
 
@@ -24,7 +24,7 @@ def plot_dicom(dicom_path: pathlib.Path, crop: bool, window_size: tuple[int, int
     image, label = io.read_dicom(dicom_path)
 
     # Optionally crop
-    if crop:
+    if window_size is not None:
         # Extract N from the filename
         n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
 
@@ -48,12 +48,8 @@ def main(*, crop: bool):
     Plot the DICOMs that we've cached
 
     """
-    config = util.userconf()
-    dicom_dir = files.dicom_dir(config)
-
-    window_size = (160, 160, 160)
-    for dicom_path in tqdm(sorted(list(dicom_dir.glob("*.dcm")))):
-        plot_dicom(dicom_path, crop, window_size)
+    for dicom_path in tqdm(files.dicom_paths()):
+        plot_dicom(dicom_path, util.userconf["window_size"] if crop else None)
 
 
 if __name__ == "__main__":
@@ -63,6 +59,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--crop",
         action="store_true",
-        help="Crop the images to the bounding box of the label",
+        help="Crop the images to the bounding box of the label."
+        "Uses the window size in userconf.yml",
     )
     main(**vars(parser.parse_args()))

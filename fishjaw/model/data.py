@@ -289,9 +289,7 @@ def read_dicoms_from_disk(
 
     """
     # Read in data + convert to subjects
-    dicom_paths = sorted(
-        [path for dicom_dir in files.dicom_dirs() for path in dicom_dir.glob("*.dcm")]
-    )
+    dicom_paths = files.dicom_paths()
     subjects = [
         subject(path, centre=_centre(path), window_size=transform.window_size(config))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")
