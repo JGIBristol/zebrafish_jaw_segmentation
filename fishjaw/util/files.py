@@ -18,6 +18,34 @@ def rdsf_dir(config: dict) -> pathlib.Path:
     return pathlib.Path(config["rdsf_dir"])
 
 
+def mask_dirs(config: dict) -> list:
+    """
+    Get the directories where the masks are stored
+
+    :param config: the configuration, e.g. from userconf.yml
+    :returns: List of paths to the directories
+
+    """
+    # return [rdsf_dir(config) / mask_dir for mask_dir in util.config()["mask_dirs"]]
+
+
+def dicom_dirs() -> list:
+    """
+    Get the directories where the DICOMs are stored
+
+    """
+
+
+def image_path(mask_path: pathlib.Path) -> pathlib.Path:
+    """
+    Get the path to the corresponding image for a mask
+
+    :param mask_path: Path to the mask
+    :returns: Path to the image
+
+    """
+
+
 def dicom_dir(config: dict) -> pathlib.Path:
     """
     Get the directory where the DICOMs are stored
