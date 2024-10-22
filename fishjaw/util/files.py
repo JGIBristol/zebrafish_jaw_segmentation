@@ -70,32 +70,6 @@ def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:
     return rdsf_dir(config) / util.config()["wahabs_3d_tifs"]
 
 
-def wahab_labels_dir(config: dict) -> pathlib.Path:
-    """
-    Get the directory where Felix's second set of labelled images are stored
-    Should be used with wahab_3d_tifs_dir() to get the corresponding images
-
-    :param config: the configuration, e.g. from userconf.yml
-    :returns: Path to the directory
-
-    """
-    raise NotImplementedError
-    return rdsf_dir(config) / util.config()["wahab_labels_dir"]
-
-
-def felix_labels_2_dir(config: dict) -> pathlib.Path:
-    """
-    Get the directory where Felix's second set of labelled images are stored
-    Should be used with wahab_3d_tifs_dir() to get the corresponding images
-
-    :param config: the configuration, e.g. from userconf.yml
-    :returns: Path to the directory
-
-    """
-    raise NotImplementedError
-    return rdsf_dir(config) / util.config()["felix_labels_dir_2"]
-
-
 def model_path() -> pathlib.Path:
     """
     Get the path to the cached model, as created by scripts/train_model.py
