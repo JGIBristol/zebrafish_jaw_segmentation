@@ -190,6 +190,48 @@ def create_set_2(config: dict):
         write_dicom(dicom, dicom_path)
 
 
+def create_set_3(config: dict):
+    """
+    Create DICOMs from training set 3 - the rear jaw images that Felix segmented
+
+    """
+    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][2])
+    label_paths = sorted(
+        list(label_dir.glob("*.tif")),
+        key=lambda x: x.name,
+    )
+
+    dicom_dir = files.dicom_dirs()[2]
+    if not dicom_dir.is_dir():
+        dicom_dir.mkdir(parents=True)
+
+    # Find the corresponding CT scan images
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    for label_path, img_path in tqdm(
+        zip(label_paths, img_paths),
+        desc="Creating DICOMs from rear jaw segmentations",
+        total=len(label_paths),
+    ):
+        if not img_path.exists():
+            print(f"Image at {img_path} not found, but {label_path} was")
+            continue
+
+        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
+
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
+            continue
+
+        try:
+            # These contain different labels for the different bones
+            dicom = Dicom(img_path, label_path, binarise=False)
+        except ValueError as e:
+            print(f"Skipping {img_path} and {label_path}: {e}")
+            continue
+
+        write_dicom(dicom, dicom_path)
+
+
 def main():
     """
     Get the images and labels, create DICOM files and save them to disk
@@ -201,6 +243,7 @@ def main():
 
     create_set_1(config)
     create_set_2(config)
+    create_set_3(config)
 
 
 if __name__ == "__main__":
