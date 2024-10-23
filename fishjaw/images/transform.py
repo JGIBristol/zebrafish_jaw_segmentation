@@ -86,7 +86,7 @@ def crop_from_z(
     d, w, h = crop_size
     z, y, x = jaw_coords
 
-    return img[z : z + d, y - w // 2 : y + w // 2, x - h // 2 : x + h // 2]
+    return img[z - d : z, y - w // 2 : y + w // 2, x - h // 2 : x + h // 2]
 
 
 def crop(
