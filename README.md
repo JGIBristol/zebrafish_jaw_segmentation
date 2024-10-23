@@ -28,8 +28,18 @@ Also, becuase `python` environments are a huge mess, I've elected to prepend eac
 `PYTHONPATH=$(pwd)` which basically tells the python interpreter to look in the current directory for modules
 to import.
 You'll need to do this so it can import the `fishjaw` module, which is where all the code for this project lives.
-This isn't a perfect solution, but it's fine.
-If you don't know how to do this, probably google it idk
+This means that I run scripts by typing e.g.
+
+```
+PYTHONPATH=$(pwd) python my_cool_script.py
+```
+on the command line.
+
+This isn't a perfect solution, but it's passable. Long-term, we might want to publish `fishjaw` as a package on pypi
+but we're not quite there yet.
+
+If you're on Windows and need to type something else, probably google it idk
+
 
 ### Environment
 The code here is written in Python.
