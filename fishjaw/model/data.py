@@ -169,21 +169,29 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
     return torch.as_tensor(arr, dtype=dtype).unsqueeze(0)
 
 
-def subject(
-    dicom_path: pathlib.Path,
-    crop_coords: tuple[int, int, int],
-    window_size: tuple[int, int, int],
-) -> tio.Subject:
+def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
     """
-    Create a subject from a DICOM file, cropping using the provided co-ords
+    Get the centre of the jaw for a given fish
+
+    """
+    # Find the fish number from the path
+    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+
+    # Find the centre from the fish number
+    return transform.centre(n)
+
+
+def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.Subject:
+    """
+    Create a subject from a DICOM file, cropping according to data/jaw_centres.csv
 
     :param dicom_path: Path to the DICOM file
-    :param centre: The centre of the window.
-    :param window_size: the size of the window
+    :param window_size: The size of the window to crop
 
     :returns: The subject
 
     """
+    # Load the image and mask from disk
     image, mask = io.read_dicom(dicom_path)
 
     image = transform.crop_around_centre(image, crop_coords, window_size)
@@ -247,15 +255,6 @@ def _transforms(transform_dict: dict) -> tio.transforms.Transform:
     )
 
 
-def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
-    """
-    Get the centre of the jaw for a given fish
-
-    """
-    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
-    return transform.centre(n)
-
-
 def read_dicoms_from_disk(
     config: dict,
     rng: np.random.Generator,
@@ -281,10 +280,7 @@ def read_dicoms_from_disk(
     """
     # Read in data + convert to subjects
     dicom_paths = files.dicom_paths()
-    subjects = [
-        subject(path, _centre(path), transform.window_size(config))
-        for path in tqdm(dicom_paths, desc="Reading DICOMs")
-    ]
+    subjects = [subject(path) for path in tqdm(dicom_paths, desc="Reading DICOMs")]
 
     # Choose some indices to act as train, validation and test
     # This is a bit of a hack
