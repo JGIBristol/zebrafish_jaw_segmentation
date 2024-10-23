@@ -37,6 +37,8 @@ and let us do some more statistical analyses.
 This might include looking at how the mechanical properties of the jawbone change between young, aged, wildtype and
 mutant fish to investigate whether bone degeneration is the same in aged and mutant fish.
 
+It's heavily based on the work performed by Wahab Kawafi in his PhD thesis[^1].
+
 The segmentation model is implemented in `pytorch`, using the `monai` `AttentionUnet` architecture.
 
 ## Usage
@@ -59,3 +61,6 @@ There are two config files for this project - `config.yml` and `userconf.yml`.
 
 ### For Developers
 i am the developer
+
+## Footnotes
+[^1] Kawafi, A., 2023. Quantitative 3D Bioimaging Using Machine Learning (Doctoral dissertation, University of Bristol).t:
