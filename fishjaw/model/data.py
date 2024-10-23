@@ -169,18 +169,6 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
     return torch.as_tensor(arr, dtype=dtype).unsqueeze(0)
 
 
-def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
-    """
-    Get the centre of the jaw for a given fish
-
-    """
-    # Find the fish number from the path
-    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
-
-    # Find the centre from the fish number
-    return transform.centre(n)
-
-
 def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.Subject:
     """
     Create a subject from a DICOM file, cropping according to data/jaw_centres.csv
