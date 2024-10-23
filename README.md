@@ -63,4 +63,4 @@ There are two config files for this project - `config.yml` and `userconf.yml`.
 i am the developer
 
 ## Footnotes
-[^1] Kawafi, A., 2023. Quantitative 3D Bioimaging Using Machine Learning (Doctoral dissertation, University of Bristol).t:
+[^1]: Kawafi, A., 2023. Quantitative 3D Bioimaging Using Machine Learning (Doctoral dissertation, University of Bristol).t:
