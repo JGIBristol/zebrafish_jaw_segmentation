@@ -194,8 +194,13 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
     # Load the image and mask from disk
     image, mask = io.read_dicom(dicom_path)
 
-    image = transform.crop_around_centre(image, crop_coords, window_size)
-    mask = transform.crop_around_centre(mask, crop_coords, window_size)
+    # Find the co-ords and how to crop- either use this as the centre, or from the Z provided
+    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+    crop_coords = transform.centre(n)
+    around_centre = transform.around_centre(n)
+
+    image = transform.crop(image, crop_coords, window_size, around_centre)
+    mask = transform.crop(mask, crop_coords, window_size, around_centre)
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors
