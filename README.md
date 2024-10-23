@@ -44,7 +44,18 @@ If you're on Windows and need to type something else, probably google it idk
 ### Environment
 The code here is written in Python.
 
-I used `conda` to manage my python environment
+I use `conda` to manage my python environment.
+
+```
+conda env create -f environment.yml
+```
+
+You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA.
+
+Old versions of conda are painfully, unusably slow, but modern `conda` versions are fast at solving
+the environment so are useful for rapidly getting stuff done.
+If it is taking you a long time to create an environment or install things in your `conda` environment,
+try updating or creating a fresh install of `conda` (consider using miniconda).
 
 ### Setting up the data
 The first thing to do is convert the labelled data to DICOM files.
