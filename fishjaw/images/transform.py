@@ -38,7 +38,7 @@ def around_centre(n: int) -> bool:
     :returns: whether to crop around the centre or from the given Z index
 
     """
-    return _jaw_centres().loc[n, "around_centre"]
+    return _jaw_centres().loc[n, "crop_around_centre"]
 
 
 def window_size(config: dict) -> tuple[int, int, int]:
@@ -71,20 +71,20 @@ def crop_around_centre(
 
 def crop_from_z(
     img: np.ndarray,
-    jaw_centre: tuple[int, int, int],
+    jaw_coords: tuple[int, int, int],
     crop_size: tuple[int, int, int],
 ) -> np.ndarray:
     """
     Crop an image around the centre of (x, y) and from z to z + d
 
     :param img: The input image
-    :param jaw_centre: The centre coordinates (z, y, x)
+    :param jaw_coords: The coordinates to crop from (z, y, x)
     :param crop_size: The size of the crop (d, w, h)
 
     :returns: The cropped image as a numpy array
     """
     d, w, h = crop_size
-    z, y, x = jaw_centre
+    z, y, x = jaw_coords
 
     return img[z : z + d, y - w // 2 : y + w // 2, x - h // 2 : x + h // 2]
 

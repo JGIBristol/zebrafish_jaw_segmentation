@@ -29,9 +29,10 @@ def plot_dicom(dicom_path: pathlib.Path, window_size: tuple[int, int, int] = Non
         n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
 
         centre = transform.centre(n)
+        around_centre = transform.around_centre(n)
 
-        image = transform.crop_around_centre(image, centre, window_size)
-        label = transform.crop_around_centre(label, centre, window_size)
+        image = transform.crop(image, centre, window_size, around_centre)
+        label = transform.crop(label, centre, window_size, around_centre)
 
     # Plot the slices
     fig, _ = images_3d.plot_slices(image, mask=label)
@@ -48,8 +49,9 @@ def main(*, crop: bool):
     Plot the DICOMs that we've cached
 
     """
+    config = util.userconf()
     for dicom_path in tqdm(files.dicom_paths()):
-        plot_dicom(dicom_path, util.userconf["window_size"] if crop else None)
+        plot_dicom(dicom_path, transform.window_size(config) if crop else None)
 
 
 if __name__ == "__main__":
