@@ -28,6 +28,19 @@ def centre(n: int) -> tuple[float, float, float]:
     return tuple(int(x) for x in _jaw_centres().loc[n, ["z", "x", "y"]].values)
 
 
+def around_centre(n: int) -> bool:
+    """
+    Whether cropping should use the co-ords as the centre or boundary
+
+    :param n: fish number (using Wahab's new n convention; i.e. this matches
+              the fish in DATABASE/uCT/Wahab_clean_dataset/TIFS)
+
+    :returns: whether to crop around the centre or from the given Z index
+
+    """
+    return _jaw_centres().loc[n, "around_centre"]
+
+
 def window_size(config: dict) -> tuple[int, int, int]:
     """
     Get the size of the window to crop from a dict of config (e.g. userconf.yml)
