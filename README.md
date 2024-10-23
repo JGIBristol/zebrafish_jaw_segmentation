@@ -83,23 +83,43 @@ If you have to deal with TIFF files try to read/write 3D TIFFs where possible in
 with lots of 2d TIFFs, because it's much faster to read one big file than many small ones.
 
 ### Training the model
-- Train the model or load some weights that might be somewhere using `train_model.py`
+Train the model by running the `scripts/train_model.py` script.
+```
+PYTHONPATH=$(pwd) python scripts/train_model.py
+```
+
+This will create some plots showing the training process-- the training and validation loss,
+an example of the training data, an example of inference on some testing data, etc.
+These are saved to the `train_output/` directory.
+
+On an old-ish NVIDIA A6000 GPU (48GB RAM) it took me around 20 minutes to train a model on 27 complete jaws,
+but this is subject to change as we get more data and as I mess with everything.
 
 ### Running inference
-- Perform inference using `inference_example.py`
+Perform inference using `inference_example.py`.
+
+```
+PYTHONPATH=$(pwd) python scripts/train_model.py
+```
 
 ### Going further
-- You can turn the voxels from the inference into a mesh by learning how to do that
+You can turn the voxels from the inference into a mesh by learning how to do that
 
-#### Config File
-There are two config files for this project - `config.yml` and `userconf.yml`.
+#### Configuration and options
+I've tried to make all the assumptions and choices as transparent as possible in this project; because if you don't
+then soon the complexity quickly outruns what you can keep in your head and things end up going wrong, and also
+because I thought it would be fun.
+As such, most of the options and assumptions are encoded explicitly in one of two configuration files, `config.yml`
+and `userconf.yml`.
 
- - You probably don't need to edit anything in `config.yml`.
- - `userconf.yml` contains things that you might want to edit - model parameters etc.
-    The training script reads the parameters from this file before it begins training.
-    The model also gets information from here during inference - which means you can't change
-    it between training + inference. Maybe this is bad and stupid, and I should write a model class
-    that holds the model and the config used to train it?
+You probably don't need to edit anything in `config.yml`; it's for things that would otherwise be hard-coded in the
+source files (e.g. file locations that we don't expect to change, like things stored on the RDSF).
+
+`userconf.yml` contains things that you might want to edit-- things like model hyperparameters (batch size, number
+of epochs etc.) but also the name of the model architecture, the transforms to use and which DICOMs to use as testing
+or validation data.
+
+If you're running this code on your own computer, you'll want to change certain things like where the RDSF is mounted.
 
 ### For Developers
 i am the developer
