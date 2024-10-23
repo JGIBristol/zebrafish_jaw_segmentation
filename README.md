@@ -59,12 +59,14 @@ try updating or creating a fresh install of `conda` (consider using miniconda).
 
 ### Setting up the data
 The first thing to do is convert the labelled data to DICOM files.
+This data lives on the Zebrafish Osteoarthritis group's RDSF drive, so you'll need access to this first.
 
-You can do this by running the `scripts/create_dicoms.py` script:
-
+You can convert the data to DICOMs by running the `scripts/create_dicoms.py` script:
 ```
 PYTHONPATH=$(pwd) python scripts/create_dicoms.py
 ```
+This requires you to have specified the location of your RDSF mount in `userconf.yml`--
+see [below](#configuration-and-options).
 
 #### More background on the data setup
 This is a file format for medical imaging that keeps lots of related things together--
@@ -72,8 +74,6 @@ in our case, it's mostly useful because it lets us store our image and label
 together in one file which will guarantee we won't do anything silly like accidentally
 match up the wrong label to an image.
 
-The raw data lives on the group's RDSF drive.
-You can access this by asking Chrissy, and then by learning how to do that.
 The labels live in the `1Felix and Rich make models/Training dataset Tiffs` directory here.
 The original images live elsewhere - 3D TIFFs are in `DATABASE/uCT/Wahab_clean_dataset/TIFS/`.
 
@@ -105,7 +105,7 @@ PYTHONPATH=$(pwd) python scripts/train_model.py
 ### Going further
 You can turn the voxels from the inference into a mesh by learning how to do that
 
-#### Configuration and options
+### Configuration and options
 I've tried to make all the assumptions and choices as transparent as possible in this project; because if you don't
 then soon the complexity quickly outruns what you can keep in your head and things end up going wrong, and also
 because I thought it would be fun.
