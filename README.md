@@ -21,21 +21,56 @@ It's heavily based on the work performed by Wahab Kawafi in his PhD thesis[^1].
 The segmentation model is implemented in `pytorch`, using the `monai` `AttentionUnet` architecture.
 
 ## Usage
-I haven't made a nice API or anything for a general random person to use this yet. Sorry!
+In the below examples, shell commands are in `bash` on Linux.
+If you're not using linux, things might not work but also they might be fine.
+
+Also, becuase `python` environments are a huge mess, I've elected to prepend each python command with
+`PYTHONPATH=$(pwd)` which basically tells the python interpreter to look in the current directory for modules
+to import.
+You'll need to do this so it can import the `fishjaw` module, which is where all the code for this project lives.
+This isn't a perfect solution, but it's fine.
+If you don't know how to do this, probably google it idk
+
+### Environment
+The code here is written in Python.
+
+I used `conda` to manage my python environment
+
 ### Setting up the data
+The first thing to do is convert the labelled data to DICOM files.
+
+You can do this by running the `scripts/create_dicoms.py` script:
+
+```
+PYTHONPATH=$(pwd) python scripts/create_dicoms.py
+```
+
+#### More background on the data setup
+This is a file format for medical imaging that keeps lots of related things together--
+in our case, it's mostly useful because it lets us store our image and label
+together in one file which will guarantee we won't do anything silly like accidentally
+match up the wrong label to an image.
+
+The raw data lives on the group's RDSF drive.
+You can access this by asking Chrissy, and then by learning how to do that.
+The labels live in the `1Felix and Rich make models/Training dataset Tiffs` directory here.
+The original images live elsewhere - 3D TIFFs are in `DATABASE/uCT/Wahab_clean_dataset/TIFS/`.
+
+There are also some 2D TIFFs in the `DATABASE/uCT/Wahab_clean_dataset/` directory somewhere, but
+I would recommend dealing with DICOMs wherever possible.
+If you have to deal with TIFF files try to read/write 3D TIFFs where possible instead of dealing
+with lots of 2d TIFFs, because it's much faster to read one big file than many small ones.
 
 ### Training the model
+- Train the model or load some weights that might be somewhere using `train_model.py`
 
 ### Running inference
+- Perform inference using `inference_example.py`
 
 ### Going further
-
-### For Users
-- Train the model or load some weights that might be somewhere using `train_model.py`
-- Perform inference using `inference_example.py`
 - You can turn the voxels from the inference into a mesh by learning how to do that
 
-#### Config Files
+#### Config File
 There are two config files for this project - `config.yml` and `userconf.yml`.
 
  - You probably don't need to edit anything in `config.yml`.
