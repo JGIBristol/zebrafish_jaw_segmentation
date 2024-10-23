@@ -121,8 +121,14 @@ or validation data.
 
 If you're running this code on your own computer, you'll want to change certain things like where the RDSF is mounted.
 
-### For Developers
+## For Developers
 i am the developer
+
+### CI
+
+### Tests
+
+### Linting, formatting and typing
 
 ## Footnotes
 [^1]: Kawafi, A., 2023. Quantitative 3D Bioimaging Using Machine Learning (Doctoral dissertation, University of Bristol).t:
