@@ -195,8 +195,8 @@ def subject(
 
     if centre is not None:
         # We know implicitly that window_size is not None
-        image = transform.crop(image, centre, window_size)
-        mask = transform.crop(mask, centre, window_size)
+        image = transform.crop_around_centre(image, centre, window_size)
+        mask = transform.crop_around_centre(mask, centre, window_size)
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors

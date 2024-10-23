@@ -66,7 +66,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
         120: (1595, 251, 398),  # 10month wt giantin giantin sib
         37: (1746, 431, 405),  # 7month wt wt col2:mcherry
     }
-    img = transform.crop(img, crop_lookup[img_n], window_size)
+    img = transform.crop_around_centre(img, crop_lookup[img_n], window_size)
 
     # Scale to [0, 1]
     img = data.ints2float(img)

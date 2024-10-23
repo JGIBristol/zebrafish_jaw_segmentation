@@ -39,7 +39,7 @@ def window_size(config: dict) -> tuple[int, int, int]:
     return tuple(int(x) for x in config["window_size"].split(","))
 
 
-def crop(
+def crop_around_centre(
     img: np.ndarray,
     jaw_centre: tuple[int, int, int],
     crop_size: tuple[int, int, int],

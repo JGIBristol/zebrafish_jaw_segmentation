@@ -30,8 +30,8 @@ def plot_dicom(dicom_path: pathlib.Path, window_size: tuple[int, int, int] = Non
 
         centre = transform.centre(n)
 
-        image = transform.crop(image, centre, window_size)
-        label = transform.crop(label, centre, window_size)
+        image = transform.crop_around_centre(image, centre, window_size)
+        label = transform.crop_around_centre(label, centre, window_size)
 
     # Plot the slices
     fig, _ = images_3d.plot_slices(image, mask=label)
