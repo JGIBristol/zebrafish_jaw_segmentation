@@ -280,7 +280,11 @@ def read_dicoms_from_disk(
     """
     # Read in data + convert to subjects
     dicom_paths = files.dicom_paths()
-    subjects = [subject(path) for path in tqdm(dicom_paths, desc="Reading DICOMs")]
+
+    window_size = transform.window_size(config)
+    subjects = [
+        subject(path, window_size) for path in tqdm(dicom_paths, desc="Reading DICOMs")
+    ]
 
     # Choose some indices to act as train, validation and test
     # This is a bit of a hack
