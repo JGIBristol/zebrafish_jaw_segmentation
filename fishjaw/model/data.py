@@ -171,32 +171,23 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
 
 def subject(
     dicom_path: pathlib.Path,
-    *,
-    centre: tuple[int, int, int] = None,
-    window_size: tuple[int, int, int] = None,
+    crop_coords: tuple[int, int, int],
+    window_size: tuple[int, int, int],
 ) -> tio.Subject:
     """
-    Create a subject from a DICOM file
-    Optionally, crop the image with the provided centre and window_size
+    Create a subject from a DICOM file, cropping using the provided co-ords
 
     :param dicom_path: Path to the DICOM file
     :param centre: The centre of the window.
+    :param window_size: the size of the window
 
     :returns: The subject
-    :raises: ValueError if exactly one of centre and window_size specified
 
     """
-    if (centre is None) != (window_size is None):
-        raise ValueError(
-            f"Must specify either both or neither centre ({centre}) and window_size ({window_size})"
-        )
-
     image, mask = io.read_dicom(dicom_path)
 
-    if centre is not None:
-        # We know implicitly that window_size is not None
-        image = transform.crop_around_centre(image, centre, window_size)
-        mask = transform.crop_around_centre(mask, centre, window_size)
+    image = transform.crop_around_centre(image, crop_coords, window_size)
+    mask = transform.crop_around_centre(mask, crop_coords, window_size)
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors
@@ -291,7 +282,7 @@ def read_dicoms_from_disk(
     # Read in data + convert to subjects
     dicom_paths = files.dicom_paths()
     subjects = [
-        subject(path, centre=_centre(path), window_size=transform.window_size(config))
+        subject(path, _centre(path), transform.window_size(config))
         for path in tqdm(dicom_paths, desc="Reading DICOMs")
     ]
 
