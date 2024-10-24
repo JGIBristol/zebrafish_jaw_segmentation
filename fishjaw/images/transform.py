@@ -105,8 +105,17 @@ def crop(
                     the given Z-co-ord onwards (false)
 
     :returns: The cropped image as a numpy array
+    :raises: ValueError if the cropped array doesn't match the crop size
 
     """
     if centred:
-        return crop_around_centre(img, co_ords, crop_size)
-    return crop_from_z(img, co_ords, crop_size)
+        retval = crop_around_centre(img, co_ords, crop_size)
+    else:
+        retval = crop_from_z(img, co_ords, crop_size)
+
+    if retval.shape != crop_size:
+        raise ValueError(
+            f"Expected cropped image to be {crop_size}, got {retval.shape}"
+        )
+
+    return retval
