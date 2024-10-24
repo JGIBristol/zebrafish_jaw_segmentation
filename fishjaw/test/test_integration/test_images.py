@@ -3,6 +3,9 @@ Tests for stuff in the images.py directory
 
 """
 
+import pytest
+import numpy as np
+
 from ...images import transform
 
 
@@ -37,3 +40,22 @@ def test_find_coords():
 
     """
     assert transform.centre(30) == (1435, 161, 390)
+
+
+@pytest.fixture
+def uniform_slices():
+    """
+    Fixture that provides a 10x10 3D array where each slice has uniform values.
+    The first slice is all zeros, the second slice is all ones, etc.
+    """
+    # Create a 3D array with shape (10, 10, 10)
+    array = np.arange(10)[:, np.newaxis, np.newaxis] * np.ones((10, 10, 10), dtype=int)
+
+    return array
+
+
+def test_central_crop():
+    """
+    Check that we can correctly crop an image around the centre
+
+    """
