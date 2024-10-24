@@ -17,7 +17,7 @@ def test_read_jaw_centres():
     assert table.loc[30, "z"] == 1435
     assert table.loc[30, "x"] == 161
     assert table.loc[30, "y"] == 390
-    assert table.loc[30, "crop_around_centre"] == True
+    assert table.loc[30, "crop_around_centre"]
 
 
 def test_around_centre():
@@ -28,7 +28,7 @@ def test_around_centre():
     assert transform.around_centre(30)
     assert transform.around_centre(107)
 
-    # TODO add one for the false ones
+    assert not transform.around_centre(1)
 
 
 def test_find_coords():
