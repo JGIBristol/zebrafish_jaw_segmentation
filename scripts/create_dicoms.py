@@ -148,7 +148,7 @@ def create_set_1(config: dict) -> None:
         write_dicom(dicom, dicom_path)
 
 
-def create_set_2(config: dict):
+def create_set_2(config: dict, ignore: set) -> None:
     """
     Create DICOMs from training set 2 - the first set of images that Felix segmented
 
@@ -174,6 +174,10 @@ def create_set_2(config: dict):
             print(f"Image at {img_path} not found, but {label_path} was")
             continue
 
+        if int(label_path.stem.split(".")[0][3:]) in ignore:
+            print(f"Skipping {label_path}, fish number in ignore set")
+            continue
+
         dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
         if dicom_path.exists():
@@ -190,9 +194,11 @@ def create_set_2(config: dict):
         write_dicom(dicom, dicom_path)
 
 
-def create_set_3(config: dict):
+def create_set_3(config: dict, ignore: set):
     """
     Create DICOMs from training set 3 - the rear jaw images that Felix segmented
+
+    :param ignore: set of fish numbers to ignore
 
     """
     label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][2])
@@ -212,6 +218,10 @@ def create_set_3(config: dict):
         desc="Creating DICOMs from rear jaw segmentations",
         total=len(label_paths),
     ):
+        if int(label_path.stem.split(".")[0][3:]) in ignore:
+            print(f"Skipping {label_path}, fish number in ignore set")
+            continue
+
         if not img_path.exists():
             print(f"Image at {img_path} not found, but {label_path} was")
             continue
@@ -239,11 +249,18 @@ def main():
     """
     config = util.userconf()
 
-    # We should really check here that there's no overlap between Felix and Wahab's images
+    # Some might be duplicated between the different sets; we only want
+    duplicates = {39}
+
+    # I might know some are broken - this is usually because the label and
+    # Wahab's TIFF are different shapes. Maybe the 3D tiffs are broken?
+    broken = {92, 90, 69, 36, 166}
 
     create_set_1(config)
-    create_set_2(config)
-    create_set_3(config)
+    create_set_2(config, ignore=broken)
+
+    # Ignore the duplicates here
+    create_set_3(config, ignore=duplicates | broken)
 
 
 if __name__ == "__main__":

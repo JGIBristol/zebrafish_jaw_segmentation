@@ -169,34 +169,26 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
     return torch.as_tensor(arr, dtype=dtype).unsqueeze(0)
 
 
-def subject(
-    dicom_path: pathlib.Path,
-    *,
-    centre: tuple[int, int, int] = None,
-    window_size: tuple[int, int, int] = None,
-) -> tio.Subject:
+def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.Subject:
     """
-    Create a subject from a DICOM file
-    Optionally, crop the image with the provided centre and window_size
+    Create a subject from a DICOM file, cropping according to data/jaw_centres.csv
 
     :param dicom_path: Path to the DICOM file
-    :param centre: The centre of the window.
+    :param window_size: The size of the window to crop
 
     :returns: The subject
-    :raises: ValueError if exactly one of centre and window_size specified
 
     """
-    if (centre is None) != (window_size is None):
-        raise ValueError(
-            f"Must specify either both or neither centre ({centre}) and window_size ({window_size})"
-        )
-
+    # Load the image and mask from disk
     image, mask = io.read_dicom(dicom_path)
 
-    if centre is not None:
-        # We know implicitly that window_size is not None
-        image = transform.crop(image, centre, window_size)
-        mask = transform.crop(mask, centre, window_size)
+    # Find the co-ords and how to crop- either use this as the centre, or from the Z provided
+    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+    crop_coords = transform.centre(n)
+    around_centre = transform.around_centre(n)
+
+    image = transform.crop(image, crop_coords, window_size, around_centre)
+    mask = transform.crop(mask, crop_coords, window_size, around_centre)
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors
@@ -256,15 +248,6 @@ def _transforms(transform_dict: dict) -> tio.transforms.Transform:
     )
 
 
-def _centre(dicom_path: pathlib.Path) -> tuple[int, int, int]:
-    """
-    Get the centre of the jaw for a given fish
-
-    """
-    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
-    return transform.centre(n)
-
-
 def read_dicoms_from_disk(
     config: dict,
     rng: np.random.Generator,
@@ -290,9 +273,10 @@ def read_dicoms_from_disk(
     """
     # Read in data + convert to subjects
     dicom_paths = files.dicom_paths()
+
+    window_size = transform.window_size(config)
     subjects = [
-        subject(path, centre=_centre(path), window_size=transform.window_size(config))
-        for path in tqdm(dicom_paths, desc="Reading DICOMs")
+        subject(path, window_size) for path in tqdm(dicom_paths, desc="Reading DICOMs")
     ]
 
     # Choose some indices to act as train, validation and test
