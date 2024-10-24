@@ -42,7 +42,7 @@ def test_find_coords():
     assert transform.centre(30) == (1435, 161, 390)
 
 
-@pytest.fixture
+@pytest.fixture(name="test_img")
 def uniform_slices():
     """
     Fixture that provides a 10x10 3D array where each slice has uniform values.
@@ -54,8 +54,18 @@ def uniform_slices():
     return array
 
 
-def test_central_crop():
+def test_central_crop(test_img: np.ndarray):
     """
     Check that we can correctly crop an image around the centre
 
     """
+    co_ords = (5, 5, 5)
+
+    # Expected output is a 3x3x3 array with values 4, 5
+    expected = np.arange(4, 7)[:, np.newaxis, np.newaxis] * np.ones(
+        (3, 3, 3), dtype=int
+    )
+
+    cropped = transform.crop_around_centre(test_img, co_ords, (3, 3, 3))
+
+    assert (cropped == expected).all()
