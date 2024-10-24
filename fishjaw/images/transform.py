@@ -11,7 +11,7 @@ import pandas as pd
 
 
 @cache
-def _jaw_centres() -> pd.DataFrame:
+def jaw_centres() -> pd.DataFrame:
     """
     Read the location of the jaw centres from file
 
@@ -25,7 +25,7 @@ def centre(n: int) -> tuple[float, float, float]:
     Get the centre of the jaw for a given fish
 
     """
-    return tuple(int(x) for x in _jaw_centres().loc[n, ["z", "x", "y"]].values)
+    return tuple(int(x) for x in jaw_centres().loc[n, ["z", "x", "y"]].values)
 
 
 def around_centre(n: int) -> bool:
@@ -38,7 +38,7 @@ def around_centre(n: int) -> bool:
     :returns: whether to crop around the centre or from the given Z index
 
     """
-    return _jaw_centres().loc[n, "crop_around_centre"]
+    return jaw_centres().loc[n, "crop_around_centre"]
 
 
 def window_size(config: dict) -> tuple[int, int, int]:
