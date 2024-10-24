@@ -2,7 +2,9 @@
 Tests for stuff in the images.py directory
 
 """
+
 from ...images import transform
+
 
 def test_get_window_size():
     """
