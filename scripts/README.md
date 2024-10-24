@@ -1,31 +1,23 @@
 Scripts
 ====
-Some scripts
+These are the shiny face of the code here-- the scripts that actually do stuff, like train the model or plot things.
 
+These scripts are all run from the root of this repository via the command line as follows:
 
-Setup
+```
+PYTHONPATH=$(pwd) python scripts/create_dicoms.py
+```
+
+Contents
 ----
-- `create_dicoms.py`: create DICOM files for each CT scan - label pair
-- `plot_dicoms.py`: create plots visualising these DICOM files
+Roughly in the order that you might run them:
+- `create_dicoms.py`: create DICOM files for each CT scan-label pair.
+- `plot_dicoms.py`: create plots visualising these DICOM files.
+- `plot_train_data.py`: create plots showing the model's training data.
+- `explore_hyperparams.py`: run hyperparameter tuning
+- `plot_hyperparams.py`: visualise the result of the hyperparameter tuning
+- `train_model.py`: train a model
+- `arch_summary.py`: summarise the architecture of the model
+- `inference_example.py`: run inference on some data
+- `mesh.py`: create and visualise a mesh from the inference
 
-Training Models
-----
-- `train_model.py`: train the model
-
-Hyperparameter Tuning
-----
-- `explore_hyperparams.py`: train lots of models with different hyperparameters, to see what's best
-                          This script isn't particularly good or robust - most of the options are defined
-                          by the config `dict` within this script, but there are some other parameters and
-                          extra things (e.g. the transformations that get applied) that are hard-coded in other
-                          places.
-- `plot_hyperparams.py`: plot the result of the hyperparameter tuning
-
-Other Stuff
-----
-- `mesh.py`: example showing the conversion from tiff (which is what the segmentation model creates) to a mesh
-    [ ] TODO make this useful
-- `arch_summary.py`: summarise the architecture of the model (at the moment just prints the feature map sizes)
-- `plot_train_data.py`: plot the training data. Useful to visualising the extent of the data 
-                        augmentation, and for making sure you have the expected number of batches,
-                        images per batch, etc...
