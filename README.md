@@ -125,10 +125,17 @@ If you're running this code on your own computer, you'll want to change certain 
 i am the developer
 
 ### CI
-
-### Tests
+I've used GitHub Actions to run the CI.
 
 ### Linting, formatting and typing
+This is the main QA type stuff that I've set up-- linting with `pylint`, format checking with `black`.
+I also intended to set up type checking with `mypy`, but I haven't done that yet.
+
+### Tests
+These were basically an afterthought.
+Tests are in `fishjaw/tests/`.
+There are unit tests (fast), integration tests (also fast, but rely on interactions between things, reading files etc.)
+and system tests (slow and test a lot functionality at once).
 
 ## Footnotes
 [^1]: Kawafi, A., 2023. Quantitative 3D Bioimaging Using Machine Learning (Doctoral dissertation, University of Bristol).t:
