@@ -17,7 +17,7 @@ def jaw_centres() -> pd.DataFrame:
 
     """
     csv_path = pathlib.Path(__file__).parents[2] / "data" / "jaw_centres.csv"
-    return pd.read_csv(csv_path).set_index("n")
+    return pd.read_csv(csv_path, skiprows=3).set_index("n")
 
 
 def centre(n: int) -> tuple[float, float, float]:
