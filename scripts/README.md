@@ -28,4 +28,7 @@ Some others that you probably won't run at all, because they're basically not in
                  $\frac{1}{1+\frac{1}{2}\alpha + \frac{1}{2}\beta}$ at chance performance,
                  This script doesn't use a sigmoid or softmax activation fcn.
                  Creates a plot named `chance_loss.png`.
-
+- `plot_cropped.py`: check that the cropping code gives us the correct regions.
+                   This is intended to be a check that the cropping code correctly
+                   gives us the correct slices for the rear jaw DICOMs, since it's
+                   important that there's no unlabelled jaw in the training data.
