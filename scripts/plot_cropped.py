@@ -72,7 +72,6 @@ def main(*, n: bool):
     Plot the DICOMs that we've cached
 
     """
-
     # Get the right DICOM
     config = util.userconf()
     dicom_path = _get_dicom(n, config)
@@ -90,7 +89,6 @@ def main(*, n: bool):
         crop_coords = (crop_coords[0] + 1, *crop_coords[1:])
 
     fig, axes = _plot_slices(dicom_path, window_size, crop_coords, not crop_from_edge)
-    print(len(axes))
 
     if crop_from_edge:
         fig.suptitle("Plotted from edge")
