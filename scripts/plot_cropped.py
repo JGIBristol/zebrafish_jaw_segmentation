@@ -48,7 +48,12 @@ def _plot_slices(
 
     # Choose some slices
     n_slices = 5
-    indices = [*[i * label.shape[0] // n_slices for i in range(n_slices - 1)], -1]
+    indices = [*[i * label.shape[0] // (n_slices - 1) for i in range(n_slices - 1)], -1]
+
+    # Plot the one before and after as well if we're cropping from the edge
+    if not around_centre:
+        n_slices += 2
+        indices = [0, 1, *indices[1:-1], -2, -1]
 
     fig, axes = plt.subplots(1, n_slices, figsize=(15, 5))
     # Plot the slices
@@ -82,12 +87,17 @@ def main(*, n: bool):
     crop_from_edge = not transform.around_centre(n)
     if crop_from_edge:
         window_size = (window_size[0] + 1, *window_size[1:])
+        crop_coords = (crop_coords[0] + 1, *crop_coords[1:])
 
     fig, axes = _plot_slices(dicom_path, window_size, crop_coords, not crop_from_edge)
+    print(len(axes))
 
     if crop_from_edge:
         fig.suptitle("Plotted from edge")
+
         axes[0].set_title("Slice before ROI")
+        axes[1].set_title("First slice in ROI")
+        axes[-2].set_title("Last slice in ROI")
         axes[-1].set_title("Slice after ROI")
     else:
         fig.suptitle("Plotted around centre")
