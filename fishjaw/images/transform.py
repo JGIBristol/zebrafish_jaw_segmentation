@@ -63,6 +63,31 @@ def window_size(config: dict) -> tuple[int, int, int]:
     return tuple(int(x) for x in config["window_size"].split(","))
 
 
+def start_and_end(
+    location: int, crop_size: int, *, start_from_loc: bool = False
+) -> tuple[int, int]:
+    """
+    Find the start and end of the crop along one dimension
+
+    :param location: the reference point for the crop
+    :param crop_size: the size of the crop window
+    :param start_from_loc: whether to start from the location and crop backwards (True),
+                           or to use the location as the centre of the crop window (False)
+
+    :returns: the start of the crop window
+    :returns: the end of the crop window
+
+    """
+    # Ceiling so that if the crop_size is odd, our crop is offset backwards by 1
+    # (instead of being offset forwards by 1) which I think is right but also it
+    # doesn't matter all that much Z is either in the middle, or at the start
+    start = (
+        location - crop_size if start_from_loc else location - math.ceil(crop_size / 2)
+    )
+
+    return start, start + crop_size
+
+
 def crop(
     img: np.ndarray,
     co_ords: tuple[int, int, int],
@@ -91,20 +116,14 @@ def crop(
     d, h, w = crop_size
     z, x, y = co_ords
 
-    # Ceiling so that if the crop_size is odd, we start offset backwards
-    # which I think is right but also it doesn't matter all that much
-    # Z is either in the middle, or at the start
-    z_start = z - math.ceil(d / 2) if centred else z - d
-
-    # X and Y are always in the middle
-    x_start = x - math.ceil(h / 2)
-    y_start = y - math.ceil(w / 2)
+    z_start, z_end = start_and_end(z, d, start_from_loc=not centred)
+    x_start, x_end = start_and_end(x, h)
+    y_start, y_end = start_and_end(y, w)
 
     for start, x in zip((z_start, x_start, y_start), "zxy"):
         if start < 0:
             raise ValueError(f"{x.upper()} index is out of bounds: {start}")
 
-    z_end, x_end, y_end = z_start + d, x_start + h, y_start + w
     for end, size, x in zip((z_end, x_end, y_end), img.shape, "zxy"):
         if end > size:
             raise ValueError(f"{x.upper()} index is out of bounds: {end} > {size}")
