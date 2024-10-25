@@ -25,7 +25,7 @@ Some others that you probably won't run at all, because they're basically not in
 - `check_loss.py`: check that the loss function behaves as you might expect,
                  including how it behaves at chance and perfect performance.
                  So that the expected loss is 0.0 at perfect performance and
-                 $\frac{1}{1+\frac{1}{2}\alpha + \frac{1}{2}\beta$ at chance performance,
+                 $\frac{1}{1+\frac{1}{2}\alpha + \frac{1}{2}\beta}$ at chance performance,
                  This script doesn't use a sigmoid or softmax activation fcn.
                  Creates a plot named `chance_loss.png`.
 
