@@ -121,3 +121,18 @@ def test_offset_crop_odd_window(test_img: np.ndarray):
     cropped = transform.crop(test_img, centre, crop_size, centred=False)
 
     assert (cropped == expected).all()
+
+
+def test_crop_larger_than_image():
+    """
+    Check that the right error is raised
+
+    """
+    with pytest.raises(ValueError):
+        transform.crop(np.ones((10, 10, 10)), (5, 5, 5), (10, 10, 11), True)
+
+    with pytest.raises(ValueError):
+        transform.crop(np.ones((10, 10, 10)), (5, 5, 5), (10, 11, 10), True)
+
+    with pytest.raises(ValueError):
+        transform.crop(np.ones((10, 10, 10)), (5, 5, 5), (11, 10, 10), True)

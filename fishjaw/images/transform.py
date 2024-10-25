@@ -69,10 +69,14 @@ def crop(
                     the given Z-co-ord onwards (false)
 
     :returns: The cropped image as a numpy array
-    :raises: ValueError if the cropped array doesn't match the crop size, which should
+    :raises ValueError: if the cropped array doesn't match the crop size, which should
              never happen but its here to prevent regressions
+    :raises ValueError: if the crop size is larger than the image
 
     """
+    if any(x > y for x, y in zip(crop_size, img.shape)):
+        raise ValueError("Crop size is larger than the image")
+
     d, w, h = crop_size
     z, y, x = co_ords
 
