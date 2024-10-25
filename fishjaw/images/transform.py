@@ -105,8 +105,8 @@ def crop(
             raise ValueError(f"{x.upper()} index is out of bounds")
 
     z_end, x_end, y_end = z_start + d, x_start + h, y_start + w
-    for end, size, x in zip((z_start, x_start, y_start), img.shape, "zxy"):
-        if end >= size:
+    for end, size, x in zip((z_end, x_end, y_end), img.shape, "zxy"):
+        if end > size:
             raise ValueError(f"{x.upper()} index is out of bounds")
 
     retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
