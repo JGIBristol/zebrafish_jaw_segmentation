@@ -72,13 +72,14 @@ def crop(
     :raises ValueError: if the cropped array doesn't match the crop size, which should
              never happen but its here to prevent regressions
     :raises ValueError: if the crop size is larger than the image
+    :raises ValueError: if the crop region goes out of bounds
 
     """
     if any(x > y for x, y in zip(crop_size, img.shape)):
         raise ValueError("Crop size is larger than the image")
 
-    d, w, h = crop_size
-    z, y, x = co_ords
+    d, h, w = crop_size
+    z, x, y = co_ords
 
     # Ceiling so that if the crop_size is odd, we start offset backwards
     # which I think is right but also it doesn't matter all that much
@@ -89,7 +90,16 @@ def crop(
     x_start = x - math.ceil(h / 2)
     y_start = y - math.ceil(w / 2)
 
-    retval = img[z_start : z_start + d, x_start : x_start + h, y_start : y_start + w]
+    for start, x in zip((z_start, x_start, y_start), "zxy"):
+        if start < 0:
+            raise ValueError(f"{x.upper()} index is out of bounds")
+
+    z_end, x_end, y_end = z_start + d, x_start + h, y_start + w
+    for end, x in zip((z_start, x_start, y_start), "zxy"):
+        if end < 0:
+            raise ValueError(f"{x.upper()} index is out of bounds")
+
+    retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
 
     if retval.shape != crop_size:
         raise ValueError(
