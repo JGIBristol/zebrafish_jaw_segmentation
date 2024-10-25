@@ -11,6 +11,16 @@ import numpy as np
 import pandas as pd
 
 
+class UnexpectedCropError(Exception):
+    """
+    Raised when the crop size is larger than the image.
+    """
+
+    def __init__(self, message="Unexpected crop size mismatch"):
+        self.message = message
+        super().__init__(self.message)
+
+
 @cache
 def jaw_centres() -> pd.DataFrame:
     """
@@ -95,14 +105,14 @@ def crop(
             raise ValueError(f"{x.upper()} index is out of bounds")
 
     z_end, x_end, y_end = z_start + d, x_start + h, y_start + w
-    for end, x in zip((z_start, x_start, y_start), "zxy"):
-        if end < 0:
+    for end, size, x in zip((z_start, x_start, y_start), img.shape, "zxy"):
+        if end >= size:
             raise ValueError(f"{x.upper()} index is out of bounds")
 
     retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
 
     if retval.shape != crop_size:
-        raise ValueError(
+        raise UnexpectedCropError(
             f"Expected cropped image to be {crop_size}, got {retval.shape}"
         )
 
