@@ -136,3 +136,16 @@ def test_crop_larger_than_image():
 
     with pytest.raises(ValueError):
         transform.crop(np.ones((10, 10, 10)), (5, 5, 5), (11, 10, 10), True)
+
+
+def test_x_overlap(test_img: np.ndarray):
+    """
+    Check the right error is raised
+
+    """
+    crop_size = (4, 4, 4)
+    with pytest.raises(ValueError):
+        transform.crop(test_img, (5, 9, 5), crop_size, True)
+
+    with pytest.raises(ValueError):
+        transform.crop(test_img, (5, 1, 5), crop_size, True)
