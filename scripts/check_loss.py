@@ -71,7 +71,9 @@ def main():
         pred = _to_prediction(img)
         losses[i] = loss(pred, reference_image)
 
-    print(f"Loss at chance performance, no activation (sigmoid or softmax):\n\t{np.mean(losses)}")
+    print(
+        f"Loss at chance performance, no activation (sigmoid or softmax):\n\t{np.mean(losses)}"
+    )
 
     fig, axis = plt.subplots()
 
