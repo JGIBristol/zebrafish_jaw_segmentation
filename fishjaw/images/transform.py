@@ -53,47 +53,6 @@ def window_size(config: dict) -> tuple[int, int, int]:
     return tuple(int(x) for x in config["window_size"].split(","))
 
 
-def crop_around_centre(
-    img: np.ndarray,
-    jaw_centre: tuple[int, int, int],
-    crop_size: tuple[int, int, int],
-) -> np.ndarray:
-    """
-    Crop an image around a given centre
-
-    """
-    d, w, h = crop_size
-    z, y, x = jaw_centre
-
-    # Ceiling so that if the crop_size is odd, we start offset backwards
-    # which I think is right but also it doesn't matter all that much
-    z_start = z - math.ceil(d / 2)
-    x_start = x - math.ceil(h / 2)
-    y_start = y - math.ceil(w / 2)
-
-    return img[z_start : z_start + d, x_start : x_start + h, y_start : y_start + w]
-
-
-def crop_from_z(
-    img: np.ndarray,
-    jaw_coords: tuple[int, int, int],
-    crop_size: tuple[int, int, int],
-) -> np.ndarray:
-    """
-    Crop an image around the centre of (x, y) and from z to z + d
-
-    :param img: The input image
-    :param jaw_coords: The coordinates to crop from (z, y, x)
-    :param crop_size: The size of the crop (d, w, h)
-
-    :returns: The cropped image as a numpy array
-    """
-    d, w, h = crop_size
-    z, y, x = jaw_coords
-
-    return img[z - d : z, y - w // 2 : y + w // 2, x - h // 2 : x + h // 2]
-
-
 def crop(
     img: np.ndarray,
     co_ords: tuple[int, int, int],
@@ -110,13 +69,23 @@ def crop(
                     the given Z-co-ord onwards (false)
 
     :returns: The cropped image as a numpy array
-    :raises: ValueError if the cropped array doesn't match the crop size
+    :raises: ValueError if the cropped array doesn't match the crop size, which should
+             never happen but its here to prevent regressions
 
     """
-    if centred:
-        retval = crop_around_centre(img, co_ords, crop_size)
-    else:
-        retval = crop_from_z(img, co_ords, crop_size)
+    d, w, h = crop_size
+    z, y, x = co_ords
+
+    # Ceiling so that if the crop_size is odd, we start offset backwards
+    # which I think is right but also it doesn't matter all that much
+    # Z is either in the middle, or at the start
+    z_start = z - math.ceil(d / 2) if centred else z - d
+
+    # X and Y are always in the middle
+    x_start = x - math.ceil(h / 2)
+    y_start = y - math.ceil(w / 2)
+
+    retval = img[z_start : z_start + d, x_start : x_start + h, y_start : y_start + w]
 
     if retval.shape != crop_size:
         raise ValueError(

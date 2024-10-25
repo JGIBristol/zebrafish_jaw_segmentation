@@ -87,3 +87,37 @@ def test_central_crop_odd_window(test_img: np.ndarray):
     cropped = transform.crop(test_img, centre, crop_size, centred=True)
 
     assert (cropped == expected).all()
+
+
+def test_offset_crop_even_window(test_img: np.ndarray):
+    """
+    Check that we can correctly crop an image up to a given slice
+
+    """
+    centre = (5, 5, 5)
+    crop_size = (4, 4, 4)
+
+    expected = np.arange(2, 6)[:, np.newaxis, np.newaxis] * np.ones(
+        crop_size, dtype=int
+    )
+
+    cropped = transform.crop(test_img, centre, crop_size, centred=False)
+
+    assert (cropped == expected).all()
+
+
+def test_offset_crop_odd_window(test_img: np.ndarray):
+    """
+    Check that we can correctly crop an image up to a given slice
+
+    """
+    centre = (5, 5, 5)
+    crop_size = (3, 3, 3)
+
+    expected = np.arange(3, 6)[:, np.newaxis, np.newaxis] * np.ones(
+        crop_size, dtype=int
+    )
+
+    cropped = transform.crop(test_img, centre, crop_size, centred=False)
+
+    assert (cropped == expected).all()
