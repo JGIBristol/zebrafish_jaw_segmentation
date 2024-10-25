@@ -36,7 +36,7 @@ def main():
     Read the DICOMs, find the last slice that contains labels, then find the XY location of the labels
 
     """
-    plot_dir = pathlib.Path("tmp/")
+    plot_dir = ...  # files.script_dir() or something
     if not plot_dir.is_dir():
         plot_dir.mkdir()
 
@@ -50,8 +50,15 @@ def main():
             z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
             idx = len(z_nonzero) - np.argmax(z_nonzero[::-1])
 
+            # Check if this overlaps with the edge of the image
+            # Error
+
             # Find the xy centre of that slice
             x, y = find_xy(mask[idx - 1])
+
+            # Check if this overlaps with the edge of the image
+            # Warn
+            # Move the XY location such that it doesn't overlap
 
             # Find n from the path
             n = int(path.stem.split("_", maxsplit=1)[-1])
