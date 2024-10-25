@@ -28,6 +28,10 @@ Some others that you probably won't run at all, because they're basically not in
                  $\frac{1}{1+\frac{1}{2}\alpha + \frac{1}{2}\beta}$ at chance performance,
                  This script doesn't use a sigmoid or softmax activation fcn.
                  Creates a plot named `chance_loss.png`.
+- `find_rear_jaw_centres.py`: find the ZXY locations of the jaw in of the rear jaw dataset. We need this
+                              because we want to crop our jaw from the last labelled slice backwards (towards
+                              the tail) so that our cropped out regions of interest don't contain any unlabelled
+                              jaw voxels. This script makes some decisions and crops the jaws.
 - `plot_cropped.py`: check that the cropping code gives us the correct regions.
                    This is intended to be a check that the cropping code correctly
                    gives us the correct slices for the rear jaw DICOMs, since it's
