@@ -20,44 +20,46 @@ from fishjaw.visualisation import images_3d
 from fishjaw.images import transform, io
 
 
-def _get_dicom(n: int) -> pathlib.Path:
+def _get_dicom(n: int, config: dict) -> pathlib.Path:
     """
     Get the path to the dicom given the number
 
     """
+    for path in files.dicom_paths():
+        if int(path.stem.split("_", maxsplit=1)[-1]) == n:
+            return path
+    raise ValueError(f"Could not find DICOM with number {n}")
 
 
 def _plot_slices(
     dicom_path: pathlib.Path,
     window_size: tuple[int, int, int],
     crop_coords: tuple[int, int, int],
+    around_centre: bool,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """
     Given a path to a DICOM file, plot it and save
 
     """
+    image, label = io.read_dicom(dicom_path)
 
-    # image, label = io.read_dicom(dicom_path)
+    image = transform.crop(image, crop_coords, window_size, around_centre)
+    label = transform.crop(label, crop_coords, window_size, around_centre)
 
-    # # Optionally crop
-    # if window_size is not None:
-    #     # Extract N from the filename
-    #     n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+    # Choose some slices
+    n_slices = 5
+    indices = [*[i * label.shape[0] // n_slices for i in range(n_slices - 1)], -1]
 
-    #     centre = transform.centre(n)
-    #     around_centre = transform.around_centre(n)
+    fig, axes = plt.subplots(1, n_slices, figsize=(15, 5))
+    # Plot the slices
+    for i, axis in zip(indices, axes):
+        axis.imshow(image[i], cmap="gray")
+        axis.imshow(label[i], cmap="hot_r", alpha=0.5)
+        axis.axis("off")
 
-    #     image = transform.crop(image, centre, window_size, around_centre)
-    #     label = transform.crop(label, centre, window_size, around_centre)
+    fig.tight_layout()
 
-    # # Plot the slices
-    # fig, _ = images_3d.plot_slices(image, mask=label)
-
-    # fig.suptitle(str(dicom_path))
-    # fig.tight_layout()
-
-    # fig.savefig(out_path)
-    # plt.close(fig)
+    return fig, axes
 
 
 def main(*, n: bool):
@@ -67,10 +69,10 @@ def main(*, n: bool):
     """
 
     # Get the right DICOM
-    dicom_path = _get_dicom(n)
+    config = util.userconf()
+    dicom_path = _get_dicom(n, config)
 
     # Get the window size and crop co-ordinates
-    config = util.userconf()
     window_size = transform.window_size(config)
     crop_coords = transform.centre(n)
 
@@ -81,7 +83,7 @@ def main(*, n: bool):
     if crop_from_edge:
         window_size = (window_size[0] + 1, *window_size[1:])
 
-    fig, axes = _plot_slices(dicom_path, window_size, crop_coords)
+    fig, axes = _plot_slices(dicom_path, window_size, crop_coords, not crop_from_edge)
 
     if crop_from_edge:
         fig.suptitle("Plotted from edge")
@@ -90,9 +92,11 @@ def main(*, n: bool):
     else:
         fig.suptitle("Plotted around centre")
 
-    out_path = (
-        pathlib.Path(util.config()["script_output"]) / dicom_path.stem / "_cropped.png"
-    )
+    out_dir = pathlib.Path(util.config()["script_output"]) / "cropped"
+    if not out_dir.is_dir():
+        out_dir.mkdir(parents=True)
+
+    out_path = out_dir / f"{dicom_path.stem}_cropped.png"
     fig.savefig(out_path)
 
 
