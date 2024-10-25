@@ -3,6 +3,7 @@ Operations for transforming images
 
 """
 
+import math
 import pathlib
 from functools import cache
 
@@ -64,9 +65,13 @@ def crop_around_centre(
     d, w, h = crop_size
     z, y, x = jaw_centre
 
-    return img[
-        z - d // 2 : z + d // 2, x - h // 2 : x + h // 2, y - w // 2 : y + w // 2
-    ]
+    # Ceiling so that if the crop_size is odd, we start offset backwards
+    # which I think is right but also it doesn't matter all that much
+    z_start = z - math.ceil(d / 2)
+    x_start = x - math.ceil(h / 2)
+    y_start = y - math.ceil(w / 2)
+
+    return img[z_start : z_start + d, x_start : x_start + h, y_start : y_start + w]
 
 
 def crop_from_z(
