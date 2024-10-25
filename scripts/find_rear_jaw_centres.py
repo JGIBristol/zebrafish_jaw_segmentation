@@ -5,6 +5,7 @@ This script is how I found the locations in data/jaw_centres.csv
 for the rear jaw dataset.
 
 """
+
 import pathlib
 
 import numpy as np
@@ -73,6 +74,7 @@ def main():
 
             # Output n,z
             print(n, idx, round(x), round(y), "FALSE", sep=",")
+
 
 if __name__ == "__main__":
     main()
