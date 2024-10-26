@@ -39,6 +39,13 @@ def main():
     Read the DICOMs, find the last slice that contains labels, then find the XY location of the labels
 
     """
+
+    # We will be printing our results to terminal- but we want to keep track of if/where I've fiddled
+    # with the X and Y locations to avoid a partial crop
+    # So we'll record a log of warnings to output as well as the results
+    warning_buffer = []
+    results_buffer = []
+
     plot_dir = ...  # files.script_dir() or something
     if not plot_dir.is_dir():
         plot_dir.mkdir()
@@ -62,13 +69,16 @@ def main():
             # accidentally make the window contain unlabelled jaw
             if transforms.crop_out_of_bounds(*transforms.start_and_end(idx, crop_size[0], start_from_loc=True), mask.shape[0]):
                 raise ValueError(f"Z crop out of bounds for {path}: {transforms.start_and_end(idx, crop_size[0], start_from_loc=True)} bound for image size {mask.shape[0]}"))
-            # Error
 
             # Find the xy centre of that slice
             x, y = find_xy(mask[idx - 1])
 
             # Check if this overlaps with the edge of the image
-            # Warn
+            # start_from_loc is False here since we crop centrally around X and Y
+            if transforms.crop_out_of_bounds(*transforms.start_and_end(x, crop_size[1], start_from_loc=False), mask.shape[1]):
+                warning_buffer.append(warnings.WarningMessage(f"X crop out of bounds for {path}: {transforms.start_and_end(x, crop_size[1], start_from_loc=False)} bound for image size {mask.shape[1]}")
+            if transforms.crop_out_of_bounds(*transforms.start_and_end(y, crop_size[2], start_from_loc=False), mask.shape[2]):
+                warning_buffer.append(warnings.WarningMessage(f"Y crop out of bounds for {path}: {transforms.start_and_end(y, crop_size[2], start_from_loc=False)} bound for image size {mask.shape[2]}")
             # Move the XY location such that it doesn't overlap
 
             # Find n from the path
@@ -84,6 +94,14 @@ def main():
 
             # Output n,z
             print(n, idx, round(x), round(y), "FALSE", sep=",")
+
+        for message in warning_buffer:
+            warnings.warn_explicit(
+                message=message.message,
+                category=message.category,
+                filename=message.filename,
+                lineno=message.lineno
+            )
 
 
 if __name__ == "__main__":
