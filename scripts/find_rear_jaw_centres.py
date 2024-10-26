@@ -12,6 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from fishjaw.images import io
+from fishjaw.images import transform
+from fishjaw.util import util
 
 
 def find_xy(
@@ -51,7 +53,15 @@ def main():
             z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
             idx = len(z_nonzero) - np.argmax(z_nonzero[::-1])
 
-            # Check if this overlaps with the edge of the image
+            # Get the size of the crop window from the config
+            config = util.userconf()
+            crop_size = transform.window_size(config)
+
+            # If our crop window would overlap with the edge of the image in Z, error
+            # We don't want to fiddle with the Z location since this might
+            # accidentally make the window contain unlabelled jaw
+            if transforms.crop_out_of_bounds(*transforms.start_and_end(idx, crop_size[0], start_from_loc=True), mask.shape[0]):
+                raise ValueError(f"Z crop out of bounds for {path}: {transforms.start_and_end(idx, crop_size[0], start_from_loc=True)} bound for image size {mask.shape[0]}"))
             # Error
 
             # Find the xy centre of that slice
