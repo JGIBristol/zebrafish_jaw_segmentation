@@ -88,6 +88,20 @@ def start_and_end(
     return start, start + crop_size
 
 
+def crop_out_of_bounds(start: int, end: int, length:int) -> bool:
+    """
+    Check if the start or end of the crop region are out of bounds
+
+    :param start: start of the crop window
+    :param end: end of the crop window
+    :param length: size of the image in the chosen dimension
+
+    :returns: bool for whether the crop extends beyond the image in either the positive
+              or negative directions
+
+    """
+
+
 def crop(
     img: np.ndarray,
     co_ords: tuple[int, int, int],
