@@ -134,13 +134,9 @@ def crop(
     x_start, x_end = start_and_end(x, h)
     y_start, y_end = start_and_end(y, w)
 
-    for start, x in zip((z_start, x_start, y_start), "zxy"):
-        if start < 0:
-            raise ValueError(f"{x.upper()} index is out of bounds: {start}")
-
-    for end, size, x in zip((z_end, x_end, y_end), img.shape, "zxy"):
-        if end > size:
-            raise ValueError(f"{x.upper()} index is out of bounds: {end} > {size}")
+    for start, end, length, x in zip((z_start, x_start, y_start), (z_end, x_end, y_end), img.shape, "zxy"):
+        if crop_out_of_bounds(start, end, length):
+            raise ValueError(f"{x.upper()} index is out of bounds: {start, end} with length {length}")
 
     retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
 
