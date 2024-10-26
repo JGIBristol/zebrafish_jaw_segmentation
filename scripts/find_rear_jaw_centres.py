@@ -76,10 +76,12 @@ def main():
             # Check if this overlaps with the edge of the image
             # start_from_loc is False here since we crop centrally around X and Y
             if transforms.crop_out_of_bounds(*transforms.start_and_end(x, crop_size[1], start_from_loc=False), mask.shape[1]):
-                warning_buffer.append(warnings.WarningMessage(f"X crop out of bounds for {path}: {transforms.start_and_end(x, crop_size[1], start_from_loc=False)} bound for image size {mask.shape[1]}")
+                warning_buffer.append(warnings.WarningMessage(f"X crop out of bounds for {path}: {transforms.start_and_end(x, crop_size[1], start_from_loc=False)} bound for image size {mask.shape[1]}"))
+                x = mask.shape[1]
+
             if transforms.crop_out_of_bounds(*transforms.start_and_end(y, crop_size[2], start_from_loc=False), mask.shape[2]):
-                warning_buffer.append(warnings.WarningMessage(f"Y crop out of bounds for {path}: {transforms.start_and_end(y, crop_size[2], start_from_loc=False)} bound for image size {mask.shape[2]}")
-            # Move the XY location such that it doesn't overlap
+                warning_buffer.append(warnings.WarningMessage(f"Y crop out of bounds for {path}: {transforms.start_and_end(y, crop_size[2], start_from_loc=False)} bound for image size {mask.shape[2]}"))
+                y = mask.shape[2]
 
             # Find n from the path
             n = int(path.stem.split("_", maxsplit=1)[-1])
