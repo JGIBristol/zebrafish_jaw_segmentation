@@ -67,6 +67,17 @@ def _check_z_overlap(
         )
 
 
+def _lateral_overlap(img_size: np.ndarray, x: int, crop_size: int) -> bool:
+    """
+    Check overlap in the X or Y directions
+    """
+    # start_from_loc is False here since we crop centrally around X and Y
+    return transform.crop_out_of_bounds(
+        *transform.start_and_end(x, crop_size, start_from_loc=False),
+        img_size,
+    )
+
+
 def main():
     """
     Read the DICOMs, find the last slice that contains labels,
@@ -111,19 +122,21 @@ def main():
         _check_z_overlap(mask, idx, crop_size, path)
 
         # Check if this overlaps with the edge of the image
-        # start_from_loc is False here since we crop centrally around X and Y
-        if transform.crop_out_of_bounds(
-            *(bounds := transform.start_and_end(x, crop_size[1], start_from_loc=False)),
-            mask.shape[1],
-        ):
+        # This doesn't actually shift things if it's out of bounds, since this doesn't
+        # happen often
+        if _lateral_overlap(mask.shape[1], x, crop_size[1]):
             warning_buffer.append(
                 f"""X crop out of bounds for {path}:
-                    {bounds=}
-                    for image size {mask.shape[1]}
+                    image size {mask.shape}, {x=}, {crop_size[1]=}
                  """
             )
-            # My initial idea was to move the X location such that it doesn't overlap with the edge
-            # But it turns out this doesn't actually happen, so I can't be bothered to implement it
+        if _lateral_overlap(mask.shape[2], y, crop_size[2]):
+            warning_buffer.append(
+                f"""X crop out of bounds for {path}:
+                    for image size {mask.shape[1]}
+                    image size {mask.shape}, {y=}, {crop_size[2]=}
+                 """
+            )
 
         if transform.crop_out_of_bounds(
             *(bounds := transform.start_and_end(y, crop_size[2], start_from_loc=False)),
