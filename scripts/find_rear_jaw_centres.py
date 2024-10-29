@@ -138,23 +138,12 @@ def main():
                  """
             )
 
-        if transform.crop_out_of_bounds(
-            *(bounds := transform.start_and_end(y, crop_size[2], start_from_loc=False)),
-            mask.shape[2],
-        ):
-            warning_buffer.append(
-                f"""Y crop out of bounds for {path}:
-                    {bounds=}
-                    for image size {mask.shape[2]}
-                 """
-            )
-
         # Find n from the path
         n = int(path.stem.split("_", maxsplit=1)[-1])
 
         # Plot them
         fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-        for i, (axis, img) in enumerate(zip(axes, mask[idx - 2 : idx + 1])):
+        for axis, img in zip(axes, mask[idx - 2 : idx + 1]):
             axis.imshow(img)
             axis.plot(y, x, "ro")
         fig.savefig(plot_dir / f"{n}.png")
