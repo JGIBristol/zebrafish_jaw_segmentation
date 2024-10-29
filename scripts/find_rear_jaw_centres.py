@@ -7,6 +7,7 @@ for the rear jaw dataset.
 """
 
 import pathlib
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,12 +37,13 @@ def find_xy(
 
 def main():
     """
-    Read the DICOMs, find the last slice that contains labels, then find the XY location of the labels
+    Read the DICOMs, find the last slice that contains labels,
+    then find the XY location of the labels
 
     """
 
-    # We will be printing our results to terminal- but we want to keep track of if/where I've fiddled
-    # with the X and Y locations to avoid a partial crop
+    # We will be printing our results to terminal- but we want to keep track of
+    # if/where I've fiddled with the X and Y locations to avoid a partial crop
     # So we'll record a log of warnings to output as well as the results
     warning_buffer = []
     results_buffer = []
@@ -67,20 +69,50 @@ def main():
             # If our crop window would overlap with the edge of the image in Z, error
             # We don't want to fiddle with the Z location since this might
             # accidentally make the window contain unlabelled jaw
-            if transforms.crop_out_of_bounds(*transforms.start_and_end(idx, crop_size[0], start_from_loc=True), mask.shape[0]):
-                raise ValueError(f"Z crop out of bounds for {path}: {transforms.start_and_end(idx, crop_size[0], start_from_loc=True)} bound for image size {mask.shape[0]}"))
+            if transform.crop_out_of_bounds(
+                *transform.start_and_end(idx, crop_size[0], start_from_loc=True),
+                mask.shape[0],
+            ):
+                raise ValueError(
+                    f"""Z crop out of bounds for {path}:
+                        {transform.start_and_end(idx,
+                                                 crop_size[0],
+                                                 start_from_loc=True,
+                                                 )}
+                        bound for image size {mask.shape[0]}
+                     """
+                )
 
             # Find the xy centre of that slice
             x, y = find_xy(mask[idx - 1])
 
             # Check if this overlaps with the edge of the image
             # start_from_loc is False here since we crop centrally around X and Y
-            if transforms.crop_out_of_bounds(*transforms.start_and_end(x, crop_size[1], start_from_loc=False), mask.shape[1]):
-                warning_buffer.append(warnings.WarningMessage(f"X crop out of bounds for {path}: {transforms.start_and_end(x, crop_size[1], start_from_loc=False)} bound for image size {mask.shape[1]}"))
+            if transform.crop_out_of_bounds(
+                *transform.start_and_end(x, crop_size[1], start_from_loc=False),
+                mask.shape[1],
+            ):
+                warning_buffer.append(
+                    f"""X crop out of bounds for {path}:
+                        {transform.start_and_end(x, crop_size[1], start_from_loc=False)}
+                        bound for image size {mask.shape[1]}
+                     """
+                )
                 x = mask.shape[1]
 
-            if transforms.crop_out_of_bounds(*transforms.start_and_end(y, crop_size[2], start_from_loc=False), mask.shape[2]):
-                warning_buffer.append(warnings.WarningMessage(f"Y crop out of bounds for {path}: {transforms.start_and_end(y, crop_size[2], start_from_loc=False)} bound for image size {mask.shape[2]}"))
+            if transform.crop_out_of_bounds(
+                *transform.start_and_end(y, crop_size[2], start_from_loc=False),
+                mask.shape[2],
+            ):
+                warning_buffer.append(
+                    f"""Y crop out of bounds for {path}:
+                        {transform.start_and_end(y,
+                                                 crop_size[2],
+                                                 start_from_loc=False,
+                                                 )}
+                        bound for image size {mask.shape[2]}
+                     """
+                )
                 y = mask.shape[2]
 
             # Find n from the path
@@ -98,12 +130,7 @@ def main():
             print(n, idx, round(x), round(y), "FALSE", sep=",")
 
         for message in warning_buffer:
-            warnings.warn_explicit(
-                message=message.message,
-                category=message.category,
-                filename=message.filename,
-                lineno=message.lineno
-            )
+            warnings.warn(message)
 
 
 if __name__ == "__main__":
