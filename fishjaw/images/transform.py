@@ -100,6 +100,7 @@ def crop_out_of_bounds(start: int, end: int, length: int) -> bool:
               or negative directions
 
     """
+    return start < 0 or end > length
 
 
 def crop(
