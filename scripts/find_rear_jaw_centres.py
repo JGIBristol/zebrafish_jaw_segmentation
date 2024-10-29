@@ -48,10 +48,11 @@ def main():
     warning_buffer = []
     results_buffer = []
 
-    plot_dir = ...  # files.script_dir() or something
+    plot_dir = pathlib.Path(util.config()["script_output"]) / "find_rear_jaw_centres"
     if not plot_dir.is_dir():
         plot_dir.mkdir()
 
+        # Only look at the training set 3 folder
         folder = pathlib.Path("dicoms/Training set 3 (base of jaw)")
         for path in folder.glob("*.dcm"):
             # Open each DICOM in the training set 3 folder
@@ -98,7 +99,9 @@ def main():
                         bound for image size {mask.shape[1]}
                      """
                 )
-                x = mask.shape[1]
+                # Move the X location such that it doesn't overlap with the edge
+                # x = mask.shape[1]
+                ...
 
             if transform.crop_out_of_bounds(
                 *transform.start_and_end(y, crop_size[2], start_from_loc=False),
@@ -113,7 +116,9 @@ def main():
                         bound for image size {mask.shape[2]}
                      """
                 )
-                y = mask.shape[2]
+                # Move the X location such that it doesn't overlap with the edge
+                # y = mask.shape[2]
+                ...
 
             # Find n from the path
             n = int(path.stem.split("_", maxsplit=1)[-1])
@@ -127,6 +132,7 @@ def main():
             plt.close(fig)
 
             # Output n,z
+            # This is what we'll copy and paste into the csv
             print(n, idx, round(x), round(y), "FALSE", sep=",")
 
         for message in warning_buffer:
