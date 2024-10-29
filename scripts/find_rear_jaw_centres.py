@@ -9,6 +9,7 @@ for the rear jaw dataset.
 import pathlib
 import warnings
 
+import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -59,7 +60,11 @@ def main():
     # Get the size of the crop window from the config
     config = util.userconf()
     crop_size = transform.window_size(config)
-    for path in folder.glob("*.dcm"):
+    for path in tqdm.tqdm(
+        folder.glob("*.dcm"),
+        desc="Finding jaw centres",
+        total=len(list(folder.glob("*.dcm"))),
+    ):
         # Open each DICOM in the training set 3 folder
         _, mask = io.read_dicom(path)
 
@@ -100,9 +105,8 @@ def main():
                     for image size {mask.shape[1]}
                  """
             )
-            print(bounds)
-            # Move the X location such that it doesn't overlap with the edge
-            # x = mask.shape[1]
+            # My initial idea was to move the X location such that it doesn't overlap with the edge
+            # But it turns out this doesn't actually happen, so I can't be bothered to implement it
 
         if transform.crop_out_of_bounds(
             *(bounds := transform.start_and_end(y, crop_size[2], start_from_loc=False)),
@@ -114,9 +118,6 @@ def main():
                     for image size {mask.shape[2]}
                  """
             )
-            print(bounds)
-            # Move the X location such that it doesn't overlap with the edge
-            # y = mask.shape[2]
 
         # Find n from the path
         n = int(path.stem.split("_", maxsplit=1)[-1])

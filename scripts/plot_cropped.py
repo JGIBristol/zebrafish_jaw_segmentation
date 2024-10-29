@@ -12,15 +12,13 @@ that the last cropped slice contains labelled jaw and the one beyond it does not
 import pathlib
 import argparse
 
-from tqdm import tqdm
 from matplotlib import pyplot as plt
 
 from fishjaw.util import files, util
-from fishjaw.visualisation import images_3d
 from fishjaw.images import transform, io
 
 
-def _get_dicom(n: int, config: dict) -> pathlib.Path:
+def _get_dicom(n: int) -> pathlib.Path:
     """
     Get the path to the dicom given the number
 
@@ -73,10 +71,10 @@ def main(*, n: bool):
 
     """
     # Get the right DICOM
-    config = util.userconf()
-    dicom_path = _get_dicom(n, config)
+    dicom_path = _get_dicom(n)
 
     # Get the window size and crop co-ordinates
+    config = util.userconf()
     window_size = transform.window_size(config)
     crop_coords = transform.centre(n)
 
