@@ -18,7 +18,14 @@ from fishjaw.images import transform
 from fishjaw.util import util
 
 
-def find_xy(
+def _find_z_loc(mask: np.ndarray) -> int:
+    """Find the last slice that contains labels"""
+    n_required = 3
+    z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
+    return len(z_nonzero) - np.argmax(z_nonzero[::-1])
+
+
+def _find_xy(
     binary_img: np.ndarray,
 ) -> tuple[np.ndarray, tuple[int, int]]:
     """
@@ -36,11 +43,28 @@ def find_xy(
     return tuple(center_of_mass)
 
 
-def _find_z_loc(mask: np.ndarray) -> int:
-    """Find the last slice that contains labels"""
-    n_required = 3
-    z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
-    return len(z_nonzero) - np.argmax(z_nonzero[::-1])
+def _check_z_overlap(
+    mask: np.ndarray, idx: int, crop_size: tuple[int, int, int], path: pathlib.Path
+):
+    """
+    Check if the crop window would overlap with the edge of the image in Z
+
+    Error if so
+
+    """
+    if transform.crop_out_of_bounds(
+        *transform.start_and_end(idx, crop_size[0], start_from_loc=True),
+        mask.shape[0],
+    ):
+        raise ValueError(
+            f"""Z crop out of bounds for {path}:
+                    {transform.start_and_end(idx,
+                                             crop_size[0],
+                                             start_from_loc=True,
+                                             )}
+                    bound for image size {mask.shape[0]}
+                 """
+        )
 
 
 def main():
@@ -78,25 +102,13 @@ def main():
         # Find the last Z slice for which there are at least some nonzero values
         idx = _find_z_loc(mask)
 
+        # Find the xy centre of that slice
+        x, y = _find_xy(mask[idx - 1])
+
         # If our crop window would overlap with the edge of the image in Z, error
         # We don't want to fiddle with the Z location since this might
         # accidentally make the window contain unlabelled jaw
-        if transform.crop_out_of_bounds(
-            *transform.start_and_end(idx, crop_size[0], start_from_loc=True),
-            mask.shape[0],
-        ):
-            raise ValueError(
-                f"""Z crop out of bounds for {path}:
-                    {transform.start_and_end(idx,
-                                             crop_size[0],
-                                             start_from_loc=True,
-                                             )}
-                    bound for image size {mask.shape[0]}
-                 """
-            )
-
-        # Find the xy centre of that slice
-        x, y = find_xy(mask[idx - 1])
+        _check_z_overlap(mask, idx, crop_size, path)
 
         # Check if this overlaps with the edge of the image
         # start_from_loc is False here since we crop centrally around X and Y
