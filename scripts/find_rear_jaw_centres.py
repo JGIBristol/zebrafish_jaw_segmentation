@@ -36,6 +36,13 @@ def find_xy(
     return tuple(center_of_mass)
 
 
+def _find_z_loc(mask: np.ndarray) -> int:
+    """Find the last slice that contains labels"""
+    n_required = 3
+    z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
+    return len(z_nonzero) - np.argmax(z_nonzero[::-1])
+
+
 def main():
     """
     Read the DICOMs, find the last slice that contains labels,
@@ -69,9 +76,7 @@ def main():
         _, mask = io.read_dicom(path)
 
         # Find the last Z slice for which there are at least some nonzero values
-        n_required = 3
-        z_nonzero = np.sum(mask, axis=(1, 2)) > n_required
-        idx = len(z_nonzero) - np.argmax(z_nonzero[::-1])
+        idx = _find_z_loc(mask)
 
         # If our crop window would overlap with the edge of the image in Z, error
         # We don't want to fiddle with the Z location since this might
