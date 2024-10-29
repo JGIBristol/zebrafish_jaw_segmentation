@@ -29,16 +29,18 @@ def _find_xy(
     binary_img: np.ndarray,
 ) -> tuple[np.ndarray, tuple[int, int]]:
     """
-    Find the point in the (2d) image in the centre of the white pixels
+    Find the point in the (3d) image in the centre of the white pixels
 
     """
-    white_pixel_coords = np.argwhere(binary_img == 1)
+    projection = binary_img.sum(axis=0)
+    white_pixel_coords = np.argwhere(projection > 0)
 
     # Calculate the center of mass
     if white_pixel_coords.size == 0:
         raise ValueError("The binary image contains no white pixels.")
 
-    center_of_mass = white_pixel_coords.mean(axis=0)
+    weights = projection[projection > 0]
+    center_of_mass = np.average(white_pixel_coords, axis=0, weights=weights)
 
     return tuple(center_of_mass)
 
@@ -114,7 +116,7 @@ def main():
         idx = _find_z_loc(mask)
 
         # Find the xy centre of that slice
-        x, y = _find_xy(mask[idx - 1])
+        x, y = _find_xy(mask)
 
         # If our crop window would overlap with the edge of the image in Z, error
         # We don't want to fiddle with the Z location since this might
