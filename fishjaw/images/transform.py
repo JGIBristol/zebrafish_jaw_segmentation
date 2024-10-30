@@ -48,7 +48,10 @@ def centre(n: int) -> tuple[float, float, float]:
 
     """
     jaw_centre = jaw_centres().loc[n, ["z", "x", "y"]]
-    if len(jaw_centre) != 1:
+
+    # The slicing should give us a series, but if there are multiple matches
+    # on the index then we will get a DataFrame
+    if isinstance(jaw_centre, pd.DataFrame):
         raise ValueError(
             f"Expected one row in jaw_centres csv for fish {n}, got {len(jaw_centre)}"
         )
