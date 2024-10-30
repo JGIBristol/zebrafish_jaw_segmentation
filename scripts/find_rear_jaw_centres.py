@@ -179,7 +179,12 @@ def main():
 
         # Output n,z
         # This is what we'll copy and paste into the csv
-        results_buffer.append(f"{n},{idx},{round(x)},{round(y)},FALSE")
+        crop_coords = idx, round(x), round(y)
+        results_buffer.append(f"{n},{','.join(str(crop_coords))},FALSE")
+
+        # Check that we've not accidentally left some jaw out of the crop window
+        cropped = transform.crop(mask, crop_coords, crop_size, centred=False)
+        assert mask.sum() == cropped.sum(), f"{n=}, {mask.sum()=}, {cropped.sum()=}"
 
     # Print the results
     print("\n".join(results_buffer))
