@@ -80,6 +80,22 @@ def _lateral_overlap(img_size: np.ndarray, x: int, crop_size: int) -> bool:
     )
 
 
+def _shift_coords(co_ord: float, crop_size: int, max_length: int) -> float:
+    """
+    Shift the crop window if it would overlap with the edge of the image
+
+    This check should be done before calling this function, otherwise
+    something will probably go wrong
+
+    """
+    start, end = transform.start_and_end(co_ord, crop_size, start_from_loc=False)
+    if start < 0:
+        return co_ord - start
+    elif end > max_length:
+        return co_ord - (end - max_length)
+    raise RuntimeError("Unexpected error")
+
+
 def main():
     """
     Read the DICOMs, find the last slice that contains labels,
@@ -127,16 +143,26 @@ def main():
         # This doesn't actually shift things if it's out of bounds, since this doesn't
         # happen often
         if _lateral_overlap(mask.shape[1], x, crop_size[1]):
+            old_x = x
+            x = _shift_coords(x, crop_size[1], mask.shape[1])
             warning_buffer.append(
                 f"""X crop out of bounds for {path}:
-                    image size {mask.shape}, {x=}, {crop_size[1]=}
+                    image size {mask.shape}, {old_x=}, {crop_size[1]=}
+                    Gives bounds {transform.start_and_end(x, crop_size[1], start_from_loc=False)}
+
+                    X shifted to {x}
                  """
             )
+
         if _lateral_overlap(mask.shape[2], y, crop_size[2]):
+            old_y = y
+            y = _shift_coords(y, crop_size[2], mask.shape[2])
             warning_buffer.append(
-                f"""X crop out of bounds for {path}:
-                    for image size {mask.shape[1]}
-                    image size {mask.shape}, {y=}, {crop_size[2]=}
+                f"""Y crop out of bounds for {path}:
+                    image size {mask.shape}, {old_y=}, {crop_size[2]=}
+                    Gives bounds {transform.start_and_end(y, crop_size[2], start_from_loc=False)}
+
+                    Y shifted to {y}
                  """
             )
 
