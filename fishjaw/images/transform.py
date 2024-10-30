@@ -21,6 +21,17 @@ class UnexpectedCropError(Exception):
         super().__init__(self.message)
 
 
+class CropOutOfBoundsError(Exception):
+    """
+    Raised when the crop region goes out of bounds
+    """
+
+    def __init__(self, x: str, start: int, end: int, shape: tuple[int, int, int]):
+        super().__init__(
+            f"{x.upper()} index is out of bounds: {start, end} with image shape {shape}"
+        )
+
+
 @cache
 def jaw_centres() -> pd.DataFrame:
     """
@@ -122,7 +133,7 @@ def crop(
     :raises ValueError: if the cropped array doesn't match the crop size, which should
              never happen but its here to prevent regressions
     :raises ValueError: if the crop size is larger than the image
-    :raises ValueError: if the crop region goes out of bounds
+    :raises CropOutOfBoundsError: if the crop region would go out of bounds
 
     """
     if any(x > y for x, y in zip(crop_size, img.shape)):
@@ -139,9 +150,7 @@ def crop(
         (z_start, x_start, y_start), (z_end, x_end, y_end), img.shape, "zxy"
     ):
         if crop_out_of_bounds(start, end, length):
-            raise ValueError(
-                f"{x.upper()} index is out of bounds: {start, end} with length {length}"
-            )
+            raise CropOutOfBoundsError(x, start, end, img.shape)
 
     retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
 
