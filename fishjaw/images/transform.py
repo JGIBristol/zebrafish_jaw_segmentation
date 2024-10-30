@@ -47,7 +47,13 @@ def centre(n: int) -> tuple[float, float, float]:
     Get the centre of the jaw for a given fish
 
     """
-    return tuple(int(x) for x in jaw_centres().loc[n, ["z", "x", "y"]].values)
+    jaw_centre = jaw_centres().loc[n, ["z", "x", "y"]]
+    if len(jaw_centre) != 1:
+        raise ValueError(
+            f"Expected one row in jaw_centres csv for fish {n}, got {len(jaw_centre)}"
+        )
+
+    return tuple(int(x) for x in jaw_centre.values)
 
 
 def around_centre(n: int) -> bool:
