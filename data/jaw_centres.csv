@@ -1,6 +1,8 @@
 # When slicing the array the Z value refers to one beyond the last slice,,,,
 # i.e. access the last image to keep with array[z-1]; when slicing a volume from the array,,,,
 # use array[z-d:z],,,,
+# NB: for training set 3 (where we don't crop around the centre), I've accidentally defined,,,
+# The x and y axes backwards, or something. Whoops,,,
 n,z,x,y,crop_around_centre
 30,1435,161,390,TRUE
 31,1350,409,243,TRUE
