@@ -157,10 +157,12 @@ def crop(
         if crop_out_of_bounds(start, end, length):
             raise CropOutOfBoundsError(x, start, end, img.shape)
 
+    # TODO find out what is going on here
+    # It should be ZXY but it looks like its ZYX (?)
     retval = img[
         bounds[0][0] : bounds[0][1],
-        bounds[1][0] : bounds[1][1],
         bounds[2][0] : bounds[2][1],
+        bounds[1][0] : bounds[1][1],
     ]
 
     if retval.shape != crop_size:
