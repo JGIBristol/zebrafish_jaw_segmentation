@@ -87,17 +87,19 @@ def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
     retval = []
     for path in all_dicoms:
         stem = path.stem
+
         # Training data is everything that isn't in the validation or test sets
-        if mode == "train" and stem not in (val_paths + test_paths):
-            retval.append(path)
+        if mode == "train":
+            if stem not in (val_paths + test_paths):
+                retval.append(path)
 
-        elif mode == "val" and stem in val_paths:
-            retval.append(path)
+        elif mode == "val":
+            if stem in val_paths:
+                retval.append(path)
 
-        elif mode == "test" and stem in test_paths:
-            retval.append(path)
-        else:
-            raise RuntimeError(f"{mode=}, {stem=}, {val_paths=}, {test_paths=}")
+        elif mode == "test":
+            if stem in test_paths:
+                retval.append(path)
 
     return retval
 
