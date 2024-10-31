@@ -130,6 +130,8 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "patch_size": "160,160,160",
         "window_size": "160,160,160",
         "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
+        "validation_dicoms":["ak_39","ak_86"],
+        "test_dicoms":["ak_131"],
     }
 
     return config
