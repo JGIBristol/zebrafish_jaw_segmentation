@@ -116,6 +116,8 @@ def create_set_1(config: dict) -> None:
         list(label_dir.glob("*.tif")),
         key=lambda x: x.name,
     )
+    if len(label_paths) == 0:
+        raise ValueError(f"No images found in {label_dir}")
 
     dicom_dir = files.dicom_dirs()[0]
     if not dicom_dir.is_dir():
@@ -158,6 +160,8 @@ def create_set_2(config: dict, ignore: set) -> None:
         list(label_dir.glob("*.tif")),
         key=lambda x: x.name,
     )
+    if len(label_paths) == 0:
+        raise ValueError(f"No images found in {label_dir}")
 
     dicom_dir = files.dicom_dirs()[1]
     if not dicom_dir.is_dir():
@@ -206,6 +210,8 @@ def create_set_3(config: dict, ignore: set):
         list(label_dir.glob("*.tif")),
         key=lambda x: x.name,
     )
+    if len(label_paths) == 0:
+        raise ValueError(f"No images found in {label_dir}")
 
     dicom_dir = files.dicom_dirs()[2]
     if not dicom_dir.is_dir():
