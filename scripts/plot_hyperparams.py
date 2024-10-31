@@ -12,7 +12,9 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+
 from fishjaw.images import metrics
+from fishjaw.util import files
 
 
 @dataclass
@@ -196,71 +198,55 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     return _plot_scores(runs)
 
 
-def _plot_coarse():
+def _plot_coarse(input_dir: pathlib.Path, output_dir: pathlib.Path):
     """
     Read the losses and indices from the coarse search,
     then plot them colour coded by LR
 
     """
-    paths = sorted(
-        list((pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse").glob("*"))
-    )
-
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "coarse"
-    if not out_dir.exists():
-        out_dir.mkdir(parents=True)
+    paths = sorted(list((input_dir).glob("*")))
 
     fig = _lr_plot(paths)
-    fig.savefig(out_dir / "coarse_search.png")
+    fig.savefig(output_dir / "coarse_search.png")
     plt.close(fig)
 
     fig = _filter_plot(paths)
-    fig.savefig(out_dir / "coarse_search_n_filters.png")
+    fig.savefig(output_dir / "coarse_search_n_filters.png")
     plt.close(fig)
 
     fig = _batch_plot(paths)
-    fig.savefig(out_dir / "coarse_search_batch.png")
+    fig.savefig(output_dir / "coarse_search_batch.png")
     plt.close(fig)
 
-    fig = _plot_scatters(
-        pathlib.Path(__file__).parents[1] / "tuning_output" / "coarse", metric="loss"
-    )
+    fig = _plot_scatters(input_dir, metric="loss")
     fig.suptitle(
         "NB: only run for a few epochs, minimum loss might mean LR is too high"
     )
-    fig.savefig(str(out_dir / "scores.png"))
+    fig.savefig(str(output_dir / "scores.png"))
 
 
-def _plot_med():
+def _plot_med(input_dir: pathlib.Path, output_dir: pathlib.Path):
     """
     Read the losses and indices from the med,
     then plot them colour coded by LR and n filters
 
     """
-    paths = sorted(
-        list((pathlib.Path(__file__).parents[1] / "tuning_output" / "med").glob("*"))
-    )
-
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "med"
-    if not out_dir.exists():
-        out_dir.mkdir(parents=True)
+    paths = sorted(list(input_dir.glob("*")))
 
     fig = _lr_plot(paths)
-    fig.savefig(out_dir / "med_search.png")
+    fig.savefig(output_dir / "med_search.png")
     plt.close(fig)
 
     fig = _filter_plot(paths)
-    fig.savefig(out_dir / "med_search_n_filters.png")
+    fig.savefig(output_dir / "med_search_n_filters.png")
     plt.close(fig)
 
     fig = _batch_plot(paths)
-    fig.savefig(out_dir / "med_search_batch.png")
+    fig.savefig(output_dir / "med_search_batch.png")
     plt.close(fig)
 
-    fig = _plot_scatters(
-        pathlib.Path(__file__).parents[1] / "tuning_output" / "med", metric="dice"
-    )
-    fig.savefig(out_dir / "scores.png")
+    fig = _plot_scatters(input_dir, metric="dice")
+    fig.savefig(output_dir / "scores.png")
 
 
 def _dicescore(results_dir: pathlib.Path) -> float:
@@ -354,30 +340,29 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
-def _plot_fine():
+def _plot_fine(input_dir: pathlib.Path, output_dir: pathlib.Path):
     """
     Find the DICE accuracy of each, plot it
 
     """
-    fig = _plot_scatters(
-        pathlib.Path(__file__).parents[1] / "tuning_output" / "fine", metric="dice"
-    )
+    fig = _plot_scatters(input_dir, metric="dice")
 
-    out_dir = pathlib.Path(__file__).parents[1] / "tuning_plots" / "fine"
-    if not out_dir.exists():
-        out_dir.mkdir(parents=True)
-
-    fig.savefig(str(out_dir / "scores.png"))
+    fig.savefig(str(output_dir / "scores.png"))
 
 
 def main(mode: str):
     """Choose the granularity of the search to plot"""
+    input_dir = files.script_out_dir() / "tuning_output" / mode
+    output_dir = files.script_out_dir() / "tuning_plots" / mode
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
     if mode == "coarse":
-        _plot_coarse()
+        _plot_coarse(input_dir, output_dir)
     elif mode == "med":
-        _plot_med()
+        _plot_med(input_dir, output_dir)
     else:
-        _plot_fine()
+        _plot_fine(input_dir, output_dir)
 
 
 if __name__ == "__main__":

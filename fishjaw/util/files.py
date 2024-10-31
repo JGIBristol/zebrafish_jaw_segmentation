@@ -43,14 +43,65 @@ def dicom_dirs() -> list:
     return [rootdir / pathlib.Path(label_dir).name for label_dir in label_dirs]
 
 
-def dicom_paths() -> list:
+def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
     """
-    Get a list of all the DICOM files
+    Get the paths to the DICOMs used for either training, validation or testing
+
+    :param config: config, as might be read from userconf.yml
+    :param mode: "train", "val", "test" or "all"
+
+    :returns: a list of paths
+    :raises ValueError: if mode does not match one of the expected values
 
     """
-    return sorted(
-        [path for dicom_dir in dicom_dirs() for path in dicom_dir.glob("*.dcm")]
-    )
+    if mode not in {"train", "val", "test", "all"}:
+        raise ValueError(
+            f"mode must be one of 'train', 'test', 'val' or 'all', not {mode}"
+        )
+
+    all_dicoms = [
+        dicom for directory in dicom_dirs() for dicom in directory.glob("*.dcm")
+    ]
+
+    # Sanity check - there should be no duplicated DICOMs
+    dicom_stems = [dicom.stem for dicom in all_dicoms]
+    if len(dicom_stems) != len(set(dicom_stems)):
+        raise RuntimeError(
+            f"Duplicate DICOMs found: {set(x for x in dicom_stems if dicom_stems.count(x) > 1)}"
+        )
+
+    # Returning all is easy
+    if mode == "all":
+        return all_dicoms
+
+    # Otherwise, we need to filter
+    val_paths = config["validation_dicoms"]
+    test_paths = config["test_dicoms"]
+
+    # Check there's no overlap; you never know...
+    if len(set(val_paths) & set(test_paths)):
+        raise RuntimeError(
+            f"Overlap between validation and test sets: {val_paths} & {test_paths}"
+        )
+
+    retval = []
+    for path in all_dicoms:
+        stem = path.stem
+
+        # Training data is everything that isn't in the validation or test sets
+        if mode == "train":
+            if stem not in (val_paths + test_paths):
+                retval.append(path)
+
+        elif mode == "val":
+            if stem in val_paths:
+                retval.append(path)
+
+        elif mode == "test":
+            if stem in test_paths:
+                retval.append(path)
+
+    return retval
 
 
 def image_path(mask_path: pathlib.Path) -> pathlib.Path:
@@ -96,3 +147,16 @@ def model_path() -> pathlib.Path:
 
     """
     return pathlib.Path(__file__).parents[2] / "model" / "model_state.pkl"
+
+
+def script_out_dir() -> pathlib.Path:
+    """
+    Get the directory where the output of scripts is stored, creating it if it doesn't exist
+
+    :returns: Path to the directory
+
+    """
+    retval = pathlib.Path(__file__).parents[2] / "script_output"
+    if not retval.is_dir():
+        retval.mkdir()
+    return retval

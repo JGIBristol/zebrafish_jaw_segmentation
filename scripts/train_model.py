@@ -8,7 +8,6 @@ import pathlib
 import argparse
 
 import torch
-import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
 
@@ -17,7 +16,7 @@ from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 
 
-def _plot_example(batch: dict[str, torch.Tensor]):
+def _plot_example(out_dir: pathlib.Path, batch: dict[str, torch.Tensor]):
     """
     Plot an example of the training data
 
@@ -26,12 +25,14 @@ def _plot_example(batch: dict[str, torch.Tensor]):
     label = batch[tio.LABEL][tio.DATA][0, 0].numpy()
 
     fig, _ = images_3d.plot_slices(img, label)
-    fig.savefig("train_output/train_example.png")
+
+    fig.savefig(f"{out_dir}/train_example.png")
 
 
 def train_model(
     config: dict,
     data_config: data.DataConfig,
+    out_dir: pathlib.Path,
 ) -> tuple[
     tuple[torch.nn.Module, list[list[float]], list[list[float]], torch.optim.Optimizer]
 ]:
@@ -50,7 +51,7 @@ def train_model(
     optimiser = model.optimiser(config, net)
 
     # Plot an example of the training data (which has been augmented)
-    _plot_example(next(iter(data_config.train_data)))
+    _plot_example(out_dir, next(iter(data_config.train_data)))
 
     # Define loss function
     loss = model.lossfn(config)
@@ -78,23 +79,24 @@ def main():
 
     config = util.userconf()
     torch.manual_seed(config["torch_seed"])
-    rng = np.random.default_rng(seed=config["test_train_seed"])
 
     # Find the activation - we'll need this for inference
     activation = model.activation_name(config)
 
     # Read the data from disk (from the DICOMs created by create_dicoms.py)
-    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config, rng)
+    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config)
     data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject
-    output_dir = pathlib.Path("train_output")
+    output_dir = pathlib.Path(util.config()["script_output"]) / "train_output"
     if not output_dir.is_dir():
-        output_dir.mkdir()
+        output_dir.mkdir(parents=True)
     with open(output_dir / "test_subject.pkl", "wb") as f:
         pickle.dump(test_subject, f)
 
-    (net, train_losses, val_losses), optimiser = train_model(config, data_config)
+    (net, train_losses, val_losses), optimiser = train_model(
+        config, data_config, output_dir
+    )
 
     # Save the model
     with open(str(model_path), "wb") as f:

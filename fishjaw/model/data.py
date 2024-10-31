@@ -254,9 +254,6 @@ def _transforms(transform_dict: dict) -> tio.transforms.Transform:
 
 def read_dicoms_from_disk(
     config: dict,
-    rng: np.random.Generator,
-    *,
-    train_frac: float = 0.95,
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
@@ -265,43 +262,32 @@ def read_dicoms_from_disk(
     Prints a progress bar.
 
     :param config: The configuration, e.g. from userconf.yml
-    :param rng: A random number generator to use for test/train/split
-    :param train_frac: The fraction of the data to use for training (roughly)
 
-    :return: subjects for training
-    :return: subjects for validation
-    :return: a subject, for testing
+    :returns: subjects for training
+    :returns: subjects for validation
+    :returns: a subject, for testing
 
     :raises: ValueError if transforms is not "default", "none" or a tio.transforms.Transform
 
     """
     # Read in data + convert to subjects
-    dicom_paths = files.dicom_paths()
-
     window_size = transform.window_size(config)
-    subjects = [
-        subject(path, window_size) for path in tqdm(dicom_paths, desc="Reading DICOMs")
-    ]
-
-    # Choose some indices to act as train, validation and test
-    # This is a bit of a hack
-    # TODO the images to use for training/testing should be in the config
-    indices = np.arange(len(subjects))
-    rng.shuffle(indices)
-    train_idx, val_idx, test_idx = (  # pylint: disable=unbalanced-tuple-unpacking
-        np.split(indices, [int(train_frac * len(indices)), len(indices) - 1])
+    train_subjects, test_subjects, val_subjects = (
+        [
+            subject(path, window_size)
+            for path in tqdm(
+                files.dicom_paths(config, mode), desc=f"Reading {mode} DICOMs"
+            )
+        ]
+        for mode in ("train", "test", "val")
     )
-    assert len(test_idx) == 1
-    test_idx = test_idx[0]
 
-    print(f"Train: {len(train_idx)=}")
-    print(f"Val: {val_idx=}")
-    print(f"Test: {test_idx=}")
+    # Convert to SubjectsDatasets, which is where the transforms get applied
 
     train_subjects = tio.SubjectsDataset(
-        [subjects[i] for i in train_idx], transform=_transforms(config["transforms"])
+        train_subjects, transform=_transforms(config["transforms"])
     )
-    val_subjects = tio.SubjectsDataset([subjects[i] for i in val_idx])
-    test_subject = subjects[test_idx]
+    val_subjects = tio.SubjectsDataset(val_subjects)
+    (test_subject,) = test_subjects
 
     return train_subjects, val_subjects, test_subject
