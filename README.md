@@ -92,8 +92,7 @@ This will create some plots showing the training process-- the training and vali
 an example of the training data, an example of inference on some testing data, etc.
 These are saved to the `train_output/` directory.
 
-On an old-ish NVIDIA A6000 GPU (48GB RAM) it took me around 20 minutes to train a model on 27 complete jaws,
-but this is subject to change as we get more data and as I mess with everything.
+On an old-ish NVIDIA A6000 GPU (48GB RAM) it took me around 13 minutes to train a model for 100 epochs on 43 images.
 
 ### Running inference
 Perform inference using `inference_example.py`.
