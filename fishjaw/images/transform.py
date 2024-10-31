@@ -154,7 +154,6 @@ def crop(
     ]
 
     for (start, end), length, x in zip(bounds, img.shape, "zxy"):
-        print(start, end)
         if crop_out_of_bounds(start, end, length):
             raise CropOutOfBoundsError(x, start, end, img.shape)
 
