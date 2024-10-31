@@ -257,3 +257,20 @@ def test_z_out_of_bounds_crop_offset(test_img: np.ndarray):
     transform.crop(test_img, (4, 5, 5), crop_size, False)
     with pytest.raises(transform.CropOutOfBoundsError):
         transform.crop(test_img, (3, 5, 5), crop_size, False)
+
+
+def test_crop_non_cubic(test_img: np.ndarray):
+    """
+    Check that we can correctly crop an image if the window isn't a cube
+
+    """
+    centre = (5, 5, 5)
+    crop_size = (4, 3, 5)
+
+    expected = np.arange(2, 6)[:, np.newaxis, np.newaxis] * np.ones(
+        crop_size, dtype=int
+    )
+
+    cropped = transform.crop(test_img, centre, crop_size, centred=False)
+
+    assert (cropped == expected).all()
