@@ -48,25 +48,36 @@ def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
     Get the paths to the DICOMs used for either training, validation or testing
 
     :param config: config, as might be read from userconf.yml
-    :param mode: "train", "val" or "test"
+    :param mode: "train", "val", "test" or "all"
 
     :returns: a list of paths
     :raises ValueError: if mode does not match one of the expected values
 
     """
-    if mode not in {"train", "val", "test"}:
-        raise ValueError(f"mode must be one of 'train', 'test' or 'val', not {mode}")
+    if mode not in {"train", "val", "test", "all"}:
+        raise ValueError(
+            f"mode must be one of 'train', 'test', 'val' or 'all', not {mode}"
+        )
 
+    all_dicoms = directory.glob("*.dcm")
+
+    # Returning all is easy
+    if mode == "all":
+        return list(all_dicoms)
+
+    # Otherwise, we need to filter
     val_paths = config["validation_dicoms"]
     test_paths = config["test_dicoms"]
-
     retval = []
     for directory in config["dicom_dirs"]:
-        for path in directory.glob("*.dcm"):
+        for path in all_dicoms:
+            # Training data is everything that isn't in the validation or test sets
             if mode == "train" and path not in (val_paths + test_paths):
                 retval.append(path)
+
             elif mode == "val" and path in val_paths:
                 retval.append(path)
+
             elif mode == "test" and path in test_paths:
                 retval.append(path)
     return retval

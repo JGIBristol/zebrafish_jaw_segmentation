@@ -50,7 +50,7 @@ def main(*, crop: bool):
 
     """
     config = util.userconf()
-    for dicom_path in tqdm(files.dicom_paths()):
+    for dicom_path in tqdm(files.dicom_paths(config, "all")):
         plot_dicom(dicom_path, transform.window_size(config) if crop else None)
 
 

@@ -276,7 +276,8 @@ def read_dicoms_from_disk(
 
     """
     # Read in data + convert to subjects
-    dicom_paths = files.dicom_paths()
+    dicom_paths = files.dicom_paths(config, "all")
+    raise NotImplementedError("Need to update this to use the new splitting system")
 
     window_size = transform.window_size(config)
     subjects = [
