@@ -58,7 +58,8 @@ def main():
 
     # Find the loss function for the reference image compared to itself
     print(
-        f"Loss at perfect performance, no activation (sigmoid or softmax):\n\t{loss(_to_prediction(reference_image), reference_image)}"
+        f"""Loss at perfect performance, no activation (sigmoid or softmax):
+            {loss(_to_prediction(reference_image), reference_image)}"""
     )
 
     # For lots of random images, find the loss function compared to the reference image
