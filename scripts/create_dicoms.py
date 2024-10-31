@@ -250,6 +250,7 @@ def main():
     config = util.userconf()
 
     # Some might be duplicated between the different sets; we only want
+    # the whole jaws in this case
     duplicates = {39}
 
     # I might know some are broken - this is usually because the label and

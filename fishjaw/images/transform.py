@@ -11,6 +11,27 @@ import numpy as np
 import pandas as pd
 
 
+class UnexpectedCropError(Exception):
+    """
+    Raised when the crop size is larger than the image.
+    """
+
+    def __init__(self, message="Unexpected crop size mismatch"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class CropOutOfBoundsError(Exception):
+    """
+    Raised when the crop region goes out of bounds
+    """
+
+    def __init__(self, x: str, start: int, end: int, shape: tuple[int, int, int]):
+        super().__init__(
+            f"{x.upper()} index is out of bounds: {start, end} with image shape {shape}"
+        )
+
+
 @cache
 def jaw_centres() -> pd.DataFrame:
     """
@@ -26,7 +47,16 @@ def centre(n: int) -> tuple[float, float, float]:
     Get the centre of the jaw for a given fish
 
     """
-    return tuple(int(x) for x in jaw_centres().loc[n, ["z", "x", "y"]].values)
+    jaw_centre = jaw_centres().loc[n, ["z", "x", "y"]]
+
+    # The slicing should give us a series, but if there are multiple matches
+    # on the index then we will get a DataFrame
+    if isinstance(jaw_centre, pd.DataFrame):
+        raise ValueError(
+            f"Expected one row in jaw_centres csv for fish {n}, got {len(jaw_centre)}"
+        )
+
+    return tuple(int(x) for x in jaw_centre.values)
 
 
 def around_centre(n: int) -> bool:
@@ -53,6 +83,46 @@ def window_size(config: dict) -> tuple[int, int, int]:
     return tuple(int(x) for x in config["window_size"].split(","))
 
 
+def start_and_end(
+    location: int, crop_size: int, *, start_from_loc: bool = False
+) -> tuple[int, int]:
+    """
+    Find the start and end of the crop along one dimension
+
+    :param location: the reference point for the crop
+    :param crop_size: the size of the crop window
+    :param start_from_loc: whether to start from the location and crop backwards (True),
+                           or to use the location as the centre of the crop window (False)
+
+    :returns: the start of the crop window
+    :returns: the end of the crop window
+
+    """
+    # Ceiling so that if the crop_size is odd, our crop is offset backwards by 1
+    # (instead of being offset forwards by 1) which I think is right but also it
+    # doesn't matter all that much Z is either in the middle, or at the start
+    start = (
+        location - crop_size if start_from_loc else location - math.ceil(crop_size / 2)
+    )
+
+    return start, start + crop_size
+
+
+def crop_out_of_bounds(start: int, end: int, length: int) -> bool:
+    """
+    Check if the start or end of the crop region are out of bounds
+
+    :param start: start of the crop window
+    :param end: end of the crop window
+    :param length: size of the image in the chosen dimension
+
+    :returns: bool for whether the crop extends beyond the image in either the positive
+              or negative directions
+
+    """
+    return start < 0 or end > length
+
+
 def crop(
     img: np.ndarray,
     co_ords: tuple[int, int, int],
@@ -69,26 +139,33 @@ def crop(
                     the given Z-co-ord onwards (false)
 
     :returns: The cropped image as a numpy array
-    :raises: ValueError if the cropped array doesn't match the crop size, which should
+    :raises ValueError: if the cropped array doesn't match the crop size, which should
              never happen but its here to prevent regressions
+    :raises ValueError: if the crop size is larger than the image
+    :raises CropOutOfBoundsError: if the crop region would go out of bounds
 
     """
-    d, w, h = crop_size
-    z, y, x = co_ords
+    if any(x > y for x, y in zip(crop_size, img.shape)):
+        raise ValueError("Crop size is larger than the image")
 
-    # Ceiling so that if the crop_size is odd, we start offset backwards
-    # which I think is right but also it doesn't matter all that much
-    # Z is either in the middle, or at the start
-    z_start = z - math.ceil(d / 2) if centred else z - d
+    bounds = [
+        start_and_end(a, b, start_from_loc=c)
+        for (a, b, c) in zip(co_ords, crop_size, [not centred, False, False])
+    ]
 
-    # X and Y are always in the middle
-    x_start = x - math.ceil(h / 2)
-    y_start = y - math.ceil(w / 2)
+    for (start, end), length, x in zip(bounds, img.shape, "zxy"):
+        print(start, end)
+        if crop_out_of_bounds(start, end, length):
+            raise CropOutOfBoundsError(x, start, end, img.shape)
 
-    retval = img[z_start : z_start + d, x_start : x_start + h, y_start : y_start + w]
+    retval = img[
+        bounds[0][0] : bounds[0][1],
+        bounds[1][0] : bounds[1][1],
+        bounds[2][0] : bounds[2][1],
+    ]
 
     if retval.shape != crop_size:
-        raise ValueError(
+        raise UnexpectedCropError(
             f"Expected cropped image to be {crop_size}, got {retval.shape}"
         )
 
