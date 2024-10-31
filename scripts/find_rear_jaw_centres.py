@@ -96,6 +96,35 @@ def _shift_coords(co_ord: float, crop_size: int, max_length: int) -> float:
     raise RuntimeError("Unexpected error")
 
 
+def _find_excluded_pixels(
+    mask: np.ndarray, bounds: tuple[tuple[int, int], tuple[int, int], tuple[int, int]]
+) -> np.ndarray:
+    """
+    Find the white pixels that have been cropped out of the mask
+
+    """
+    # bounds = [
+    #     transform.start_and_end(a, b, start_from_loc=c)
+    #     for (a, b, c) in zip(crop_coords, crop_size, [True, False, False])
+    # ]
+
+    # Find the co-ords of white pixels
+    white_pxl_coords = np.argwhere(mask)
+
+    # Find which ones are outside the crop window
+    in_z_bounds = (white_pxl_coords[:, 0] >= bounds[0][0]) & (
+        white_pxl_coords[:, 0] <= bounds[0][1]
+    )
+    in_y_bounds = (white_pxl_coords[:, 1] >= bounds[1][0]) & (
+        white_pxl_coords[:, 1] <= bounds[1][1]
+    )
+    in_x_bounds = (white_pxl_coords[:, 2] >= bounds[2][0]) & (
+        white_pxl_coords[:, 2] <= bounds[2][1]
+    )
+
+    return white_pxl_coords[~(in_z_bounds & in_y_bounds & in_x_bounds)]
+
+
 def main():
     """
     Read the DICOMs, find the last slice that contains labels,
@@ -180,15 +209,30 @@ def main():
         # Output n,z
         # This is what we'll copy and paste into the csv
         crop_coords = idx, round(x), round(y)
-        results_buffer.append(f"{n},{','.join(str(crop_coords))},FALSE")
+        results_buffer.append(f"{n},{','.join((str(x) for x in crop_coords))},FALSE")
 
-        # Check that we've not accidentally left some jaw out of the crop window
+        # If some mask has been cropped out, find the locations of it
         cropped = transform.crop(mask, crop_coords, crop_size, centred=False)
-        assert mask.sum() == cropped.sum(), f"{n=}, {mask.sum()=}, {cropped.sum()=}"
+        if cropped.sum() != mask.sum():
+            bounds = [
+                transform.start_and_end(a, b, start_from_loc=c)
+                for (a, b, c) in zip(crop_coords, crop_size, [True, False, False])
+            ]
+            # Probably just find the co-ordinates for the crop, then
+            # find which white pixels lie outside this
+            oob_pixels = _find_excluded_pixels(mask, bounds)
+            warning_buffer.append(
+                f"""Some mask has been cropped out for {path}:
+                    {oob_pixels.shape[0]} pixels cropped out:
+                    {' '.join(repr(list(x)) for x in oob_pixels)}
+                    From bounds {bounds}
+                 """
+            )
 
     # Print the results
     print("\n".join(results_buffer))
 
+    # Emit any warnings
     for message in warning_buffer:
         warnings.warn(message)
 
