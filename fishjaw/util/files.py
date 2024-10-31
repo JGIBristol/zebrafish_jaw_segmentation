@@ -63,6 +63,13 @@ def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
         dicom for directory in dicom_dirs() for dicom in directory.glob("*.dcm")
     ]
 
+    # Sanity check - there should be no duplicated DICOMs
+    dicom_stems = [dicom.stem for dicom in all_dicoms]
+    if len(dicom_stems) != len(set(dicom_stems)):
+        raise RuntimeError(
+            f"Duplicate DICOMs found: {set(x for x in dicom_stems if dicom_stems.count(x) > 1)}"
+        )
+
     # Returning all is easy
     if mode == "all":
         return all_dicoms
