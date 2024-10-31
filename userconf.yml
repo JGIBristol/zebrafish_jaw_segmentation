@@ -45,7 +45,7 @@ device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
 batch_size: 27
-epochs: 10
+epochs: 50
 lr_lambda: 0.9999 # Exponential decay factor (multiplicative with each epoch)
 
 # Options should be passed
