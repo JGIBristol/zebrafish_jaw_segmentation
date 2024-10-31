@@ -77,6 +77,13 @@ def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
     # Otherwise, we need to filter
     val_paths = config["validation_dicoms"]
     test_paths = config["test_dicoms"]
+
+    # Check there's no overlap; you never know...
+    if len(set(val_paths) & set(test_paths)):
+        raise RuntimeError(
+            f"Overlap between validation and test sets: {val_paths} & {test_paths}"
+        )
+
     retval = []
     for path in all_dicoms:
         stem = path.stem
