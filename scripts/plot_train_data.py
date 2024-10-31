@@ -7,7 +7,6 @@ import pathlib
 import argparse
 
 import torch
-import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
 
@@ -24,9 +23,8 @@ def _data_config() -> data.DataConfig:
     # Create training config
     config = util.userconf()
     torch.manual_seed(config["torch_seed"])
-    rng = np.random.default_rng(seed=config["test_train_seed"])
 
-    train_subjects, val_subjects, _ = data.read_dicoms_from_disk(config, rng)
+    train_subjects, val_subjects, _ = data.read_dicoms_from_disk(config)
     return data.DataConfig(config, train_subjects, val_subjects)
 
 

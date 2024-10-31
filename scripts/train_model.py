@@ -8,7 +8,6 @@ import pathlib
 import argparse
 
 import torch
-import numpy as np
 import torchio as tio
 import matplotlib.pyplot as plt
 
@@ -78,13 +77,12 @@ def main():
 
     config = util.userconf()
     torch.manual_seed(config["torch_seed"])
-    rng = np.random.default_rng(seed=config["test_train_seed"])
 
     # Find the activation - we'll need this for inference
     activation = model.activation_name(config)
 
     # Read the data from disk (from the DICOMs created by create_dicoms.py)
-    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config, rng)
+    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config)
     data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject

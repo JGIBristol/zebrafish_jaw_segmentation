@@ -18,12 +18,12 @@ from fishjaw.util import files, util
 from fishjaw.images import transform, io
 
 
-def _get_dicom(n: int) -> pathlib.Path:
+def _get_dicom(n: int, config: dict) -> pathlib.Path:
     """
     Get the path to the dicom given the number
 
     """
-    for path in files.dicom_paths():
+    for path in files.dicom_paths(config, "all"):
         if int(path.stem.split("_", maxsplit=1)[-1]) == n:
             return path
     raise ValueError(f"Could not find DICOM with number {n}")
@@ -71,10 +71,10 @@ def main(*, n: bool):
 
     """
     # Get the right DICOM
-    dicom_path = _get_dicom(n)
+    config = util.userconf()
+    dicom_path = _get_dicom(n, config)
 
     # Get the window size and crop co-ordinates
-    config = util.userconf()
     window_size = transform.window_size(config)
     crop_coords = transform.centre(n)
 

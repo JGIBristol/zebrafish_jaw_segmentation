@@ -265,10 +265,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     }
 
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
-    train_subjects, val_subjects, _ = data.read_dicoms_from_disk(
-        example_config,
-        rng,
-    )
+    train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 
     # I think this might be doing something slightly wrong - we're getting the data which means,
     # when we train our models we're not using exactly the same data to train the models each time
