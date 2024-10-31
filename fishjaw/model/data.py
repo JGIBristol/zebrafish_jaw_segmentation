@@ -187,8 +187,12 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
     crop_coords = transform.centre(n)
     around_centre = transform.around_centre(n)
 
-    image = transform.crop(image, crop_coords, window_size, around_centre)
-    mask = transform.crop(mask, crop_coords, window_size, around_centre)
+    try:
+        image = transform.crop(image, crop_coords, window_size, around_centre)
+        mask = transform.crop(mask, crop_coords, window_size, around_centre)
+    except transform.CropOutOfBoundsError as e:
+        print(f"Error cropping {dicom_path}")
+        raise e
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors
