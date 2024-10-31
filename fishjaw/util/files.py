@@ -43,14 +43,33 @@ def dicom_dirs() -> list:
     return [rootdir / pathlib.Path(label_dir).name for label_dir in label_dirs]
 
 
-def dicom_paths() -> list:
+def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
     """
-    Get a list of all the DICOM files
+    Get the paths to the DICOMs used for either training, validation or testing
+
+    :param config: config, as might be read from userconf.yml
+    :param mode: "train", "val" or "test"
+
+    :returns: a list of paths
+    :raises ValueError: if mode does not match one of the expected values
 
     """
-    return sorted(
-        [path for dicom_dir in dicom_dirs() for path in dicom_dir.glob("*.dcm")]
-    )
+    if mode not in {"train", "val", "test"}:
+        raise ValueError(f"mode must be one of 'train', 'test' or 'val', not {mode}")
+
+    val_paths = config["validation_dicoms"]
+    test_paths = config["test_dicoms"]
+
+    retval = []
+    for directory in config["dicom_dirs"]:
+        for path in directory.glob("*.dcm"):
+            if mode == "train" and path not in (val_paths + test_paths):
+                retval.append(path)
+            elif mode == "val" and path in val_paths:
+                retval.append(path)
+            elif mode == "test" and path in test_paths:
+                retval.append(path)
+    return retval
 
 
 def image_path(mask_path: pathlib.Path) -> pathlib.Path:
