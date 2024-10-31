@@ -13,13 +13,14 @@ import monai.losses
 import torchio as tio
 import matplotlib.pyplot as plt
 
+from fishjaw.util import files
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 
 
 def _output_parent(mode: str) -> pathlib.Path:
     """Parent dir for output"""
-    retval = pathlib.Path(__file__).parents[1] / "tuning_output" / mode
+    retval = files.script_out_dir() / "tuning_output" / mode
     if not retval.is_dir():
         retval.mkdir(parents=True)
     return retval
@@ -130,8 +131,12 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "patch_size": "160,160,160",
         "window_size": "160,160,160",
         "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
-        "validation_dicoms":["ak_39","ak_86"],
-        "test_dicoms":["ak_131"],
+        "validation_dicoms": ["ak_39", "ak_86"],
+        "test_dicoms": ["ak_131"],
+        "transforms": {
+            "torchio.RandomFlip": {"axes": [0, 1, 2], "flip_probability": 0.5},
+            "torchio.RandomAffine": {"p": 0.25, "degrees": 10, "scales": 0.2},
+        },
     }
 
     return config
@@ -257,15 +262,13 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
             raise ValueError("Existing directories found")
         start = 0
 
-    # Get the data we need for training
     rng = np.random.default_rng()
 
-    # We need this information to get the data
-    example_config = {
-        _config(rng, mode=mode)[item]
-        for item in ["patch_size", "window_size", "dicom_dir"]
-    }
-
+    # Get the data we need for training
+    # We don't want to apply any transforms if we're not doing the fine search
+    example_config = _config(rng, mode)
+    if mode != "fine":
+        example_config["transforms"] = {}
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 

@@ -147,3 +147,16 @@ def model_path() -> pathlib.Path:
 
     """
     return pathlib.Path(__file__).parents[2] / "model" / "model_state.pkl"
+
+
+def script_out_dir() -> pathlib.Path:
+    """
+    Get the directory where the output of scripts is stored, creating it if it doesn't exist
+
+    :returns: Path to the directory
+
+    """
+    retval = pathlib.Path(__file__).parents[2] / "script_output"
+    if not retval.is_dir():
+        retval.mkdir()
+    return retval
