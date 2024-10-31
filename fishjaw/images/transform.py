@@ -39,7 +39,7 @@ def jaw_centres() -> pd.DataFrame:
 
     """
     csv_path = pathlib.Path(__file__).parents[2] / "data" / "jaw_centres.csv"
-    return pd.read_csv(csv_path, skiprows=3).set_index("n")
+    return pd.read_csv(csv_path, skiprows=5).set_index("n")
 
 
 def centre(n: int) -> tuple[float, float, float]:
@@ -156,6 +156,11 @@ def crop(
     for (start, end), length, x in zip(bounds, img.shape, "zxy"):
         if crop_out_of_bounds(start, end, length):
             raise CropOutOfBoundsError(x, start, end, img.shape)
+
+    # TODO find out what is going on here
+    # It should be ZXY but it looks like its ZYX (?)
+    if centred:
+        bounds = [bounds[0], bounds[2], bounds[1]]
 
     retval = img[
         bounds[0][0] : bounds[0][1],
