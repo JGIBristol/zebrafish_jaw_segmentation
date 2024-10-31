@@ -148,20 +148,21 @@ def crop(
     if any(x > y for x, y in zip(crop_size, img.shape)):
         raise ValueError("Crop size is larger than the image")
 
-    d, h, w = crop_size
-    z, x, y = co_ords
+    bounds = [
+        start_and_end(a, b, start_from_loc=c)
+        for (a, b, c) in zip(co_ords, crop_size, [not centred, False, False])
+    ]
 
-    z_start, z_end = start_and_end(z, d, start_from_loc=not centred)
-    x_start, x_end = start_and_end(x, h)
-    y_start, y_end = start_and_end(y, w)
-
-    for start, end, length, x in zip(
-        (z_start, x_start, y_start), (z_end, x_end, y_end), img.shape, "zxy"
-    ):
+    for (start, end), length, x in zip(bounds, img.shape, "zxy"):
+        print(start, end)
         if crop_out_of_bounds(start, end, length):
             raise CropOutOfBoundsError(x, start, end, img.shape)
 
-    retval = img[z_start:z_end, x_start:x_end, y_start:y_end]
+    retval = img[
+        bounds[0][0] : bounds[0][1],
+        bounds[1][0] : bounds[1][1],
+        bounds[2][0] : bounds[2][1],
+    ]
 
     if retval.shape != crop_size:
         raise UnexpectedCropError(
