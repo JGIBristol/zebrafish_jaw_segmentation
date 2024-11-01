@@ -66,6 +66,8 @@ def main():
     Plot the number of lines of code in the repository over time.
 
     """
+    out_file = files.script_out_dir() / "lines_of_code.png"
+
     commits = (
         subprocess.run(["git", "rev-list", "main"], capture_output=True, check=True)
         .stdout.decode("utf-8")
@@ -74,15 +76,27 @@ def main():
         :-1  # The last element is an empty string
     ]
 
+    dates = []
+    loc = []
     for commit in tqdm(commits):
         date_time = _get_commit_time(commit)
 
-        # Find all python files for each
+        # Find the length of all python files in the repository at this commit
         python_files = _list_python_files(commit)
         total_len = _get_total_lines(commit, python_files)
 
-        # Count the lines of code
+        dates.append(date_time)
+        loc.append(total_len)
+
     # Plot
+    fig, axis = plt.subplots()
+    axis.fill_between(dates, loc, color="skyblue", alpha=0.4)
+
+    axis.set_xlabel("Date")
+    axis.set_ylabel("LOC")
+    axis.set_title("Lines in *.py files over time")
+
+    fig.savefig(out_file)
 
 
 if __name__ == "__main__":
