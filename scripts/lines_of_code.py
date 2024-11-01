@@ -8,6 +8,9 @@ Creates lines_of_code.png in the script output directory.
 import datetime
 import subprocess
 
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 from fishjaw.util import files
 
 
@@ -42,6 +45,22 @@ def _list_python_files(commit: str) -> list[str]:
     return [file for file in all_files if file.endswith(".py")]
 
 
+def _get_total_lines(commit: str, file_paths: list[str]) -> int:
+    """
+    Get the number of lines in a file at a specific commit.
+    """
+    total_lines = 0
+    for file_path in file_paths:
+        file_content = subprocess.run(
+            ["git", "cat-file", "blob", f"{commit}:{file_path}"],
+            capture_output=True,
+            check=True,
+        ).stdout.decode("utf-8")
+        total_lines += len(file_content.split("\n"))
+
+    return total_lines
+
+
 def main():
     """
     Plot the number of lines of code in the repository over time.
@@ -55,11 +74,12 @@ def main():
         :-1  # The last element is an empty string
     ]
 
-    for commit in commits:
+    for commit in tqdm(commits):
         date_time = _get_commit_time(commit)
 
         # Find all python files for each
         python_files = _list_python_files(commit)
+        total_len = _get_total_lines(commit, python_files)
 
         # Count the lines of code
     # Plot
