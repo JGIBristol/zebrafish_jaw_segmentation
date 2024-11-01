@@ -25,6 +25,23 @@ def _get_commit_time(commit: str) -> datetime.datetime:
             return datetime.datetime.fromtimestamp(int(time), tz=datetime.timezone.utc)
 
 
+def _list_python_files(commit: str) -> list[str]:
+    """
+    List all *.py files in the repository at a given commit
+
+    """
+    all_files = (
+        subprocess.run(
+            ["git", "ls-tree", "--name-only", "-r", commit],
+            capture_output=True,
+            check=True,
+        )
+        .stdout.decode("utf-8")
+        .split("\n")
+    )
+    return [file for file in all_files if file.endswith(".py")]
+
+
 def main():
     """
     Plot the number of lines of code in the repository over time.
@@ -39,11 +56,12 @@ def main():
     ]
 
     for commit in commits:
-        time = _get_commit_time(commit)
+        date_time = _get_commit_time(commit)
 
-    # Find the date
-    # Find all python files for each
-    # Count the lines of code
+        # Find all python files for each
+        python_files = _list_python_files(commit)
+
+        # Count the lines of code
     # Plot
 
 
