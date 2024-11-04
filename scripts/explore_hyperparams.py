@@ -215,39 +215,37 @@ def step(
         activation = model.activation_name(config)
 
         # Plot the validation data
-        one_patch = next(iter(data_config.val_data))
-        val_subject = tio.Subject(
-            image=tio.Image(
-                tensor=one_patch[tio.IMAGE][tio.DATA][0], type=tio.INTENSITY
-            ),
-            label=tio.Image(tensor=one_patch[tio.LABEL][tio.DATA][0], type=tio.LABEL),
-        )
-        fig = images_3d.plot_inference(
-            net,
-            val_subject,
-            patch_size=data.get_patch_size(config),
-            patch_overlap=(4, 4, 4),
-            activation=activation,
-        )
-        fig.savefig(str(out_dir / "val_pred.png"))
-        plt.close(fig)
+        for i, val_subject in enumerate(full_validation_subjects):
+            breakpoint()
+            fig = images_3d.plot_inference(
+                net,
+                val_subject,
+                patch_size=data.get_patch_size(config),
+                patch_overlap=(4, 4, 4),
+                activation=activation,
+            )
+            fig.savefig(str(out_dir / f"val_pred_{i}.png"))
+            plt.close(fig)
 
-        # Plot the ground truth for this image
-        fig, _ = images_3d.plot_subject(val_subject)
-        fig.savefig(str(out_dir / "val_truth.png"))
-        plt.close(fig)
+            # Plot the ground truth for this image
+            fig, _ = images_3d.plot_subject(val_subject)
+            fig.savefig(str(out_dir / f"val_truth_{i}.png"))
+            plt.close(fig)
 
-        # Save the ground truth and validation prediction to file
-        np.save(out_dir / "val_truth.npy", val_subject[tio.LABEL][tio.DATA].numpy())
+            # Save the ground truth and validation prediction to file
+            np.save(
+                out_dir / f"val_truth_{i}.npy",
+                val_subject[tio.LABEL][tio.DATA].squeeze().numpy(),
+            )
 
-        prediction = model.predict(
-            net,
-            val_subject,
-            patch_size=data.get_patch_size(config),
-            patch_overlap=(4, 4, 4),
-            activation=activation,
-        )
-        np.save(out_dir / "val_pred.npy", prediction)
+            prediction = model.predict(
+                net,
+                val_subject,
+                patch_size=data.get_patch_size(config),
+                patch_overlap=(4, 4, 4),
+                activation=activation,
+            )
+            np.save(out_dir / "val_pred.npy", prediction.squeeze())
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
@@ -288,7 +286,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
             data.subject(path, transform.window_size(example_config))
             for path in tqdm(
                 files.dicom_paths(example_config, "val"),
-                desc=f"Reading {mode} DICOMs, again",
+                desc="Reading val DICOMs, again",
             )
         ]
         if mode != "coarse"  # We don't need this for the quick search
