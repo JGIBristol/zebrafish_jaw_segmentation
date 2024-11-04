@@ -194,8 +194,8 @@ def step(
         # Plot a training patch
         patch = next(iter(data_config.train_data))
         fig, _ = images_3d.plot_slices(
-            patch[tio.IMAGE][tio.DATA].squeeze().numpy(),
-            patch[tio.LABEL][tio.DATA].squeeze().numpy(),
+            patch[tio.IMAGE][tio.DATA].squeeze()[0].numpy(),
+            patch[tio.LABEL][tio.DATA].squeeze()[0].numpy(),
         )
         fig.savefig(str(out_dir / "train_patch.png"))
         plt.close(fig)
@@ -272,14 +272,13 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 
-    # I think this might be doing something slightly wrong - we're getting the data which means,
-    # when we train our models we're not using exactly the same data to train the models each time
-    # (as the dataloading picks random patches). This is probably fine, but it's worth noting
-    data_config = data.DataConfig(example_config, train_subjects, val_subjects)
-
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
         config = _config(rng, mode)
+
+        # Since the dataloader picks random patches, the training data is slightly different
+        # between runs. Hopefully this doesn't matter though
+        data_config = data.DataConfig(config, train_subjects, val_subjects)
 
         with open(out_dir / "config.yaml", "w", encoding="utf-8") as cfg_file:
             yaml.dump(config, cfg_file)

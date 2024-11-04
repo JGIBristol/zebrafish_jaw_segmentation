@@ -100,7 +100,7 @@ class DataConfig:
             max_length=10000,  # Not sure if this matters
             samples_per_volume=1,
             sampler=patch_sampler,
-            num_workers=0,
+            num_workers=6,  # TODO make this a config option
             shuffle_patches=True,
             shuffle_subjects=True,
         )
@@ -109,7 +109,7 @@ class DataConfig:
             patches,
             batch_size=batch_size,
             shuffle=shuffle,
-            num_workers=6,  # TODO make this a config option
+            num_workers=0,
             drop_last=drop_last,
         )
 
