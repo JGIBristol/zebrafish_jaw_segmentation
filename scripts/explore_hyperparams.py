@@ -211,7 +211,13 @@ def step(
         activation = model.activation_name(config)
 
         # Plot the validation data
-        val_subject = next(iter(data_config.val_data))
+        one_patch = next(iter(data_config.val_data))
+        val_subject = tio.Subject(
+            image=tio.Image(
+                tensor=one_patch[tio.IMAGE][tio.DATA][0], type=tio.INTENSITY
+            ),
+            label=tio.Image(tensor=one_patch[tio.LABEL][tio.DATA][0], type=tio.LABEL),
+        )
         fig = images_3d.plot_inference(
             net,
             val_subject,
@@ -227,11 +233,9 @@ def step(
         fig.savefig(str(out_dir / "val_truth.png"))
         plt.close(fig)
 
-        # Save the ground truth and testing image
-        # This saves them as weird shapes but it's fine
+        # Save the ground truth and validation prediction to file
         np.save(out_dir / "val_truth.npy", val_subject[tio.LABEL][tio.DATA].numpy())
 
-        # It's actually the validation subject, but i've accidentally called it something else
         prediction = model.predict(
             net,
             val_subject,
