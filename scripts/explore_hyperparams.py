@@ -216,7 +216,6 @@ def step(
 
         # Plot the validation data
         for i, val_subject in enumerate(full_validation_subjects):
-            breakpoint()
             fig = images_3d.plot_inference(
                 net,
                 val_subject,
