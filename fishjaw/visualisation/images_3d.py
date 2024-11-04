@@ -51,7 +51,7 @@ def plot_subject(subject: tio.Subject) -> plt.Figure:
 
 def plot_inference(
     net: torch.nn.Module,
-    subject: tio.subject,
+    subject: tio.Subject,
     *,
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
