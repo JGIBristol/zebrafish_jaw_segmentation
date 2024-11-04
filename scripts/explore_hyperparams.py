@@ -11,9 +11,11 @@ import torch
 import numpy as np
 import monai.losses
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
+from fishjaw.images import transform
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 
@@ -275,6 +277,17 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
         example_config["transforms"] = {}
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
+
+    # Additionally, we'll want to get tensors representing the (full, not patch-wise) validation
+    # data so that we can perform inference on it - we don't want our validation Dice score to
+    # depend on the patch that was chosen
+    full_validation_subjects = [
+        data.subject(path, transform.window_size(example_config))
+        for path in tqdm(
+            files.dicom_paths(example_config, "val"),
+            desc=f"Reading {mode} DICOMs, again",
+        )
+    ]
 
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
