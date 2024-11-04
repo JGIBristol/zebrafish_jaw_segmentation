@@ -68,7 +68,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
 
 def _batch_size(rng: np.random.Generator) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
-    return int(rng.integers(1, 11))
+    return int(rng.integers(1, 32))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
@@ -129,7 +129,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "torch_seed": 0,
         "mode": mode,
         "patch_size": "160,160,160",
-        "window_size": "160,160,160",
+        "window_size": "192,192,192",
         "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
         "validation_dicoms": ["ak_39", "ak_86"],
         "test_dicoms": ["ak_131"],
