@@ -13,6 +13,7 @@ import monai.losses
 import torchio as tio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from typing import Union
 
 from fishjaw.util import files
 from fishjaw.images import transform
@@ -182,6 +183,7 @@ def step(
     config: dict,
     data_config: data.DataConfig,
     out_dir: pathlib.Path,
+    full_validation_subjects: Union[list[tio.Subject], None],
 ):
     """
     Get the right data, train the model and create some outputs
@@ -279,15 +281,19 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 
     # Additionally, we'll want to get tensors representing the (full, not patch-wise) validation
-    # data so that we can perform inference on it - we don't want our validation Dice score to
+    # data so that we can make plots from it - we don't want our validation Dice score to
     # depend on the patch that was chosen
-    full_validation_subjects = [
-        data.subject(path, transform.window_size(example_config))
-        for path in tqdm(
-            files.dicom_paths(example_config, "val"),
-            desc=f"Reading {mode} DICOMs, again",
-        )
-    ]
+    full_validation_subjects = (
+        [
+            data.subject(path, transform.window_size(example_config))
+            for path in tqdm(
+                files.dicom_paths(example_config, "val"),
+                desc=f"Reading {mode} DICOMs, again",
+            )
+        ]
+        if mode != "coarse"  # We don't need this for the quick search
+        else None
+    )
 
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
@@ -301,7 +307,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
             yaml.dump(config, cfg_file)
 
         try:
-            step(config, data_config, out_dir)
+            step(config, data_config, out_dir, full_validation_subjects)
         except torch.cuda.OutOfMemoryError as e:
             print(config)
             print(e)
