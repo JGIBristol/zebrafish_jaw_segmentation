@@ -197,12 +197,19 @@ def step(
     if config["mode"] != "coarse":
         # Plot a training patch
         patch = next(iter(data_config.train_data))
-        fig, _ = images_3d.plot_slices(
-            patch[tio.IMAGE][tio.DATA].squeeze()[0].numpy(),
-            patch[tio.LABEL][tio.DATA].squeeze()[0].numpy(),
-        )
-        fig.savefig(str(out_dir / "train_patch.png"))
-        plt.close(fig)
+        try:
+            fig, _ = images_3d.plot_slices(
+                patch[tio.IMAGE][tio.DATA].squeeze()[0].numpy(),
+                patch[tio.LABEL][tio.DATA].squeeze()[0].numpy(),
+            )
+            fig.savefig(str(out_dir / "train_patch.png"))
+            plt.close(fig)
+        except TypeError as e:
+            # Sometimes this is happening
+            print(patch)
+            with open("err.txt", "w") as f:
+                print(patch, file=f)
+            raise e
 
         # Plot the loss
         fig = training.plot_losses(train_losses, val_losses)

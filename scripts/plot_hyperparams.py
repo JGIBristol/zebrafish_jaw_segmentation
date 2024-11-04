@@ -262,6 +262,9 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
         assert n_val_imgs == len(list(results_dir.glob("val_truth_*.npy")))
 
+        if n_val_imgs == 0:
+            raise FileNotFoundError(f"No validation images found in {results_dir}")
+
         # Get the DICE score
         # We want to combine the Dice score for multiple images
         # So keep track of the total intersection and volume here
