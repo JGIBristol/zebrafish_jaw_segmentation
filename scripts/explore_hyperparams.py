@@ -5,6 +5,7 @@ Train several models with different hyperparameters to compare the results
 
 import pathlib
 import argparse
+from typing import Union
 
 import yaml
 import torch
@@ -13,7 +14,6 @@ import monai.losses
 import torchio as tio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from typing import Union
 
 from fishjaw.util import files
 from fishjaw.images import transform

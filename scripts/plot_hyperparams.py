@@ -13,7 +13,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
-from fishjaw.images import metrics
 from fishjaw.util import files
 
 
