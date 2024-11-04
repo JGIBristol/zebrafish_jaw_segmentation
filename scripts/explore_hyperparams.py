@@ -245,7 +245,7 @@ def step(
                 patch_overlap=(4, 4, 4),
                 activation=activation,
             )
-            np.save(out_dir / "val_pred.npy", prediction.squeeze())
+            np.save(out_dir / f"val_pred_{i}.npy", prediction.squeeze())
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
