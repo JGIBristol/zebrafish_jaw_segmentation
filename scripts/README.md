@@ -37,3 +37,4 @@ Some others that you probably won't run at all, because they're basically not in
                    gives us the correct slices for the rear jaw DICOMs, since it's
                    important that there's no unlabelled jaw in the training data.
 - `lines_of_code.py`: plot the total lines of code in this respository over time. Just for fun!!!!
+- `find_occupancy.py`: find how much of each DICOM is occupied by jaw voxels, for both the cropped and uncropped DICOMs.
