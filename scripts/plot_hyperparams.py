@@ -275,6 +275,8 @@ def _dicescore(results_dir: pathlib.Path) -> float:
             pred = np.load(results_dir / f"val_pred_{i}.npy")
             truth = np.load(results_dir / f"val_truth_{i}.npy").squeeze()
 
+            assert pred.shape == truth.shape, f"{pred.shape=} != {truth.shape=}"
+
             # The prediction should already be scaled to be between 0 and 1
             if not pred.min() >= 0 and pred.max() <= 1:
                 raise ValueError("Prediction should be scaled to between 0 and 1")
