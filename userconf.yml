@@ -18,8 +18,8 @@ test_dicoms:
  - "ak_131"  # 2.5yr het chst11 chst11 talen
 
 # Optimiser options
-optimiser: "Adam"  # Must be one of the torch.optim optimisers
-learning_rate: 0.015
+optimiser: "Adam"  # Must be one of the torch.optim optimiser
+learning_rate: 0.001
 
 # Loss function options
 loss: "monai.losses.TverskyLoss"
@@ -44,7 +44,7 @@ test_train_seed: 1
 device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
-batch_size: 27
+batch_size: 14
 epochs: 100
 lr_lambda: 0.9999 # Exponential decay factor (multiplicative with each epoch)
 
@@ -80,4 +80,4 @@ model_params:
   n_initial_filters: 14  # 6 would be sensible
   kernel_size: 3
   stride: 2  # 2
-  dropout: 0.1
+  dropout: 0.01

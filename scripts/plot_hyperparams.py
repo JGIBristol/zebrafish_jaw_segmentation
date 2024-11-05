@@ -13,7 +13,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
-from fishjaw.images import metrics
 from fishjaw.util import files
 
 
@@ -254,21 +253,46 @@ def _dicescore(results_dir: pathlib.Path) -> float:
     Get the DICE score from the i-th run
 
     """
+    # We'll write the score to a file
     dice_file = results_dir / "dice.txt"
-    if not dice_file.exists():
-        pred = np.load(results_dir / "val_pred.npy")
-        truth = np.load(results_dir / "val_truth.npy").squeeze()
 
-        # The prediction should already be scaled to be between 0 and 1
-        if not pred.min() >= 0 and pred.max() <= 1:
-            raise ValueError("Prediction should be scaled to between 0 and 1")
+    # We might have already calculated it
+    if not dice_file.exists():
+        # Find how many images there are in the validation set
+        n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
+        assert n_val_imgs == len(list(results_dir.glob("val_truth_*.npy")))
+
+        if n_val_imgs == 0:
+            raise FileNotFoundError(f"No validation images found in {results_dir}")
 
         # Get the DICE score
-        score = metrics.dice_score(truth, pred)
+        # We want to combine the Dice score for multiple images
+        # So keep track of the total intersection and volume here
+        intersection = 0
+        volume = 0
+
+        for i in range(n_val_imgs):
+            pred = np.load(results_dir / f"val_pred_{i}.npy")
+            truth = np.load(results_dir / f"val_truth_{i}.npy")
+
+            assert pred.shape == truth.shape, f"{pred.shape=} != {truth.shape=}"
+
+            # The prediction should already be scaled to be between 0 and 1
+            if not pred.min() >= 0 and pred.max() <= 1:
+                raise ValueError("Prediction should be scaled to between 0 and 1")
+
+            intersection += np.sum(pred * truth)
+            volume += pred.sum() + truth.sum()
+        score = 2.0 * intersection / volume
+
+        # Check for nan
+        if score != score:
+            score = 0.0
 
         with open(dice_file, "w", encoding="utf-8") as f:
             f.write(str(score))
 
+    # Read the score from the file
     with open(dice_file, encoding="utf-8") as f:
         return float(f.read().strip())
 
@@ -289,7 +313,8 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     top_chunk = set(sorted(scores, reverse=True)[: 2 * len(scores) // 5])
 
     # Histogram of scores
-    _, bins, _ = axes[0, 0].hist([run.score for run in run_infos], bins=20, label="All")
+    bins = np.linspace(0, 1, 21, endpoint=True)
+    axes[0, 0].hist([run.score for run in run_infos], bins=bins, label="All")
     axes[0, 0].set_title("Scores")
 
     # Plot the top quintile

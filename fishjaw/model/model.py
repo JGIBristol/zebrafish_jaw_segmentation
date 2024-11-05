@@ -439,6 +439,8 @@ def predict(
     :param patch_overlap: the overlap between patches. Uses a hann window
     :param activation: the activation function to use
 
+    returns: the prediction, as a 3d numpy array
+
     """
     assert activation in {"softmax", "sigmoid"}
 

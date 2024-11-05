@@ -5,15 +5,18 @@ Train several models with different hyperparameters to compare the results
 
 import pathlib
 import argparse
+from typing import Union
 
 import yaml
 import torch
 import numpy as np
 import monai.losses
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
+from fishjaw.images import transform
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 
@@ -68,7 +71,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
 
 def _batch_size(rng: np.random.Generator) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
-    return int(rng.integers(1, 11))
+    return int(rng.integers(1, 33))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
@@ -129,7 +132,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "torch_seed": 0,
         "mode": mode,
         "patch_size": "160,160,160",
-        "window_size": "160,160,160",
+        "window_size": "192,192,192",
         "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
         "validation_dicoms": ["ak_39", "ak_86"],
         "test_dicoms": ["ak_131"],
@@ -180,6 +183,7 @@ def step(
     config: dict,
     data_config: data.DataConfig,
     out_dir: pathlib.Path,
+    full_validation_subjects: Union[list[tio.Subject], None],
 ):
     """
     Get the right data, train the model and create some outputs
@@ -194,8 +198,11 @@ def step(
         # Plot a training patch
         patch = next(iter(data_config.train_data))
         fig, _ = images_3d.plot_slices(
-            patch[tio.IMAGE][tio.DATA].squeeze().numpy(),
-            patch[tio.LABEL][tio.DATA].squeeze().numpy(),
+            # Squeeze out the channel dim
+            # don't want to accidentally squeeze out the batch dim
+            # if batch size is 1, so pass it explicitly
+            patch[tio.IMAGE][tio.DATA].squeeze(dim=1)[0].numpy(),
+            patch[tio.LABEL][tio.DATA].squeeze(dim=1)[0].numpy(),
         )
         fig.savefig(str(out_dir / "train_patch.png"))
         plt.close(fig)
@@ -211,35 +218,38 @@ def step(
         activation = model.activation_name(config)
 
         # Plot the validation data
-        val_subject = next(iter(data_config.val_data))
-        fig = images_3d.plot_inference(
-            net,
-            val_subject,
-            patch_size=data.get_patch_size(config),
-            patch_overlap=(4, 4, 4),
-            activation=activation,
-        )
-        fig.savefig(str(out_dir / "val_pred.png"))
-        plt.close(fig)
+        for i, val_subject in enumerate(full_validation_subjects):
+            fig = images_3d.plot_inference(
+                net,
+                val_subject,
+                patch_size=data.get_patch_size(config),
+                patch_overlap=(4, 4, 4),
+                activation=activation,
+            )
+            fig.savefig(str(out_dir / f"val_pred_{i}.png"))
+            plt.close(fig)
 
-        # Plot the ground truth for this image
-        fig, _ = images_3d.plot_subject(val_subject)
-        fig.savefig(str(out_dir / "val_truth.png"))
-        plt.close(fig)
+            # Plot the ground truth for this image
+            fig, _ = images_3d.plot_subject(val_subject)
+            fig.savefig(str(out_dir / f"val_truth_{i}.png"))
+            plt.close(fig)
 
-        # Save the ground truth and testing image
-        # This saves them as weird shapes but it's fine
-        np.save(out_dir / "val_truth.npy", val_subject[tio.LABEL][tio.DATA].numpy())
+            # Save the ground truth and validation prediction to file
+            np.save(
+                out_dir / f"val_truth_{i}.npy",
+                val_subject[tio.LABEL][tio.DATA]
+                .squeeze(dim=0)
+                .numpy(),  # Squeeze out the channel dim
+            )
 
-        # It's actually the validation subject, but i've accidentally called it something else
-        prediction = model.predict(
-            net,
-            val_subject,
-            patch_size=data.get_patch_size(config),
-            patch_overlap=(4, 4, 4),
-            activation=activation,
-        )
-        np.save(out_dir / "val_pred.npy", prediction)
+            prediction = model.predict(
+                net,
+                val_subject,
+                patch_size=data.get_patch_size(config),
+                patch_overlap=(4, 4, 4),
+                activation=activation,
+            )
+            np.save(out_dir / f"val_pred_{i}.npy", prediction)
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
@@ -269,23 +279,38 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     example_config = _config(rng, mode)
     if mode != "fine":
         example_config["transforms"] = {}
+
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 
-    # I think this might be doing something slightly wrong - we're getting the data which means,
-    # when we train our models we're not using exactly the same data to train the models each time
-    # (as the dataloading picks random patches). This is probably fine, but it's worth noting
-    data_config = data.DataConfig(example_config, train_subjects, val_subjects)
+    # Additionally, we'll want to get tensors representing the (full, not patch-wise) validation
+    # data so that we can make plots from it - we don't want our validation Dice score to
+    # depend on the patch that was chosen
+    full_validation_subjects = (
+        [
+            data.subject(path, transform.window_size(example_config))
+            for path in tqdm(
+                files.dicom_paths(example_config, "val"),
+                desc="Reading val DICOMs, again",
+            )
+        ]
+        if mode != "coarse"  # We don't need this for the quick search
+        else None
+    )
 
     for i in range(start, start + n_steps):
         out_dir = _output_dir(i, mode)
         config = _config(rng, mode)
 
+        # Since the dataloader picks random patches, the training data is slightly different
+        # between runs. Hopefully this doesn't matter though
+        data_config = data.DataConfig(config, train_subjects, val_subjects)
+
         with open(out_dir / "config.yaml", "w", encoding="utf-8") as cfg_file:
             yaml.dump(config, cfg_file)
 
         try:
-            step(config, data_config, out_dir)
+            step(config, data_config, out_dir, full_validation_subjects)
         except torch.cuda.OutOfMemoryError as e:
             print(config)
             print(e)
