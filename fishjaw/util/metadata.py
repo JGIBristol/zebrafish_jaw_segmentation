@@ -17,9 +17,9 @@ def age(n: int) -> float:
     :returns: the age of the fish in months
 
     """
-    age = transform.jaw_centres().loc[n, "age"]
+    age_ = transform.jaw_centres().loc[n, "age"]
 
     if not isinstance(age, np.float64):
-        raise ValueError(f"Got multiple ages for fish {n}:\n\t{age}")
+        raise ValueError(f"Got multiple ages for fish {n}:\n\t{age_}")
 
-    return age
+    return age_
