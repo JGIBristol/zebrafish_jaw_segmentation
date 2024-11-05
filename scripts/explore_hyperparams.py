@@ -71,7 +71,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
 
 def _batch_size(rng: np.random.Generator) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
-    return int(rng.integers(1, 32))
+    return int(rng.integers(1, 33))
 
 
 def _epochs(rng: np.random.Generator, mode: str) -> int:
@@ -197,19 +197,15 @@ def step(
     if config["mode"] != "coarse":
         # Plot a training patch
         patch = next(iter(data_config.train_data))
-        try:
-            fig, _ = images_3d.plot_slices(
-                patch[tio.IMAGE][tio.DATA].squeeze()[0].numpy(),
-                patch[tio.LABEL][tio.DATA].squeeze()[0].numpy(),
-            )
-            fig.savefig(str(out_dir / "train_patch.png"))
-            plt.close(fig)
-        except TypeError as e:
-            # Sometimes this is happening
-            print(patch)
-            with open("err.txt", "w") as f:
-                print(patch, file=f)
-            raise e
+        fig, _ = images_3d.plot_slices(
+            # Squeeze out the channel dim
+            # don't want to accidentally squeeze out the batch dim
+            # if batch size is 1, so pass it explicitly
+            patch[tio.IMAGE][tio.DATA].squeeze(dim=1)[0].numpy(),
+            patch[tio.LABEL][tio.DATA].squeeze(dim=1)[0].numpy(),
+        )
+        fig.savefig(str(out_dir / "train_patch.png"))
+        plt.close(fig)
 
         # Plot the loss
         fig = training.plot_losses(train_losses, val_losses)
@@ -241,7 +237,9 @@ def step(
             # Save the ground truth and validation prediction to file
             np.save(
                 out_dir / f"val_truth_{i}.npy",
-                val_subject[tio.LABEL][tio.DATA].squeeze().numpy(),
+                val_subject[tio.LABEL][tio.DATA]
+                .squeeze(dim=0)
+                .numpy(),  # Squeeze out the channel dim
             )
 
             prediction = model.predict(
@@ -251,7 +249,7 @@ def step(
                 patch_overlap=(4, 4, 4),
                 activation=activation,
             )
-            np.save(out_dir / f"val_pred_{i}.npy", prediction.squeeze())
+            np.save(out_dir / f"val_pred_{i}.npy", prediction)
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
@@ -281,6 +279,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool):
     example_config = _config(rng, mode)
     if mode != "fine":
         example_config["transforms"] = {}
+
     # Throw away the test data - we don't need it for hyperparam tuning (that would be cheating)
     train_subjects, val_subjects, _ = data.read_dicoms_from_disk(example_config)
 
