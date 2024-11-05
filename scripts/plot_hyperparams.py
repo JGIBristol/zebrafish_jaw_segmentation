@@ -273,7 +273,7 @@ def _dicescore(results_dir: pathlib.Path) -> float:
 
         for i in range(n_val_imgs):
             pred = np.load(results_dir / f"val_pred_{i}.npy")
-            truth = np.load(results_dir / f"val_truth_{i}.npy").squeeze()
+            truth = np.load(results_dir / f"val_truth_{i}.npy")
 
             assert pred.shape == truth.shape, f"{pred.shape=} != {truth.shape=}"
 
@@ -284,6 +284,10 @@ def _dicescore(results_dir: pathlib.Path) -> float:
             intersection += np.sum(pred * truth)
             volume += pred.sum() + truth.sum()
         score = 2.0 * intersection / volume
+
+        # Check for nan
+        if score != score:
+            score = 0.0
 
         with open(dice_file, "w", encoding="utf-8") as f:
             f.write(str(score))
@@ -309,7 +313,8 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     top_chunk = set(sorted(scores, reverse=True)[: 2 * len(scores) // 5])
 
     # Histogram of scores
-    _, bins, _ = axes[0, 0].hist([run.score for run in run_infos], bins=20, label="All")
+    bins = np.linspace(0, 1, 21, endpoint=True)
+    axes[0, 0].hist([run.score for run in run_infos], bins=bins, label="All")
     axes[0, 0].set_title("Scores")
 
     # Plot the top quintile
