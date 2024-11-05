@@ -51,6 +51,9 @@ conda env create -f environment.yml
 ```
 
 You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA.
+You might need to change the versions of CUDA etc. that this environment file looks for - see [here](https://pytorch.org/get-started/locally/)
+for a guide on which versions to use. If you don't have cuda installed at all, you'll need to do that first-- on linux, this will be something like
+`sudo apt install nvidia-cuda-toolkit`.
 
 Old versions of conda are painfully, unusably slow, but modern `conda` versions are fast at solving
 the environment so are useful for rapidly getting stuff done.
