@@ -8,9 +8,8 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from fishjaw.util import util
-from fishjaw.util import files
 from fishjaw.images import io, transform
+from fishjaw.util import util, files, metadata
 
 
 def main():
@@ -29,12 +28,15 @@ def main():
 
     means = []
     cropped_means = []
+    ages = []
     for path in tqdm(paths):
         _, mask = io.read_dicom(path)
 
         n = int(path.stem.split("_", maxsplit=1)[-1])
         crop_coords = transform.centre(n)
         around_centre = transform.around_centre(n)
+
+        ages.append(metadata.age(n))
 
         means.append(1000 * mask.mean())
 
