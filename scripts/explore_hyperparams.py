@@ -62,15 +62,17 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         lr_range = (-6, 1)
     elif mode == "fine":
         # From centering around a value that seems to broadly work
-        lr_range = (-5, 0)
+        lr_range = (-3, 0)
     else:
         raise ValueError(f"Unknown mode {mode}")
 
     return 10 ** rng.uniform(*lr_range)
 
 
-def _batch_size(rng: np.random.Generator) -> int:
+def _batch_size(rng: np.random.Generator, mode: str) -> int:
     # Maximum here sort of depends on what you can fit on the GPU
+    if mode == "fine":
+        return int(rng.integers(1, 21))
     return int(rng.integers(1, 33))
 
 
@@ -79,7 +81,8 @@ def _epochs(rng: np.random.Generator, mode: str) -> int:
         return 5
     if mode == "med":
         return 15
-    return int(rng.integers(25, 500))
+    # return int(rng.integers(100, 500))
+    return 400
 
 
 def _alpha(rng: np.random.Generator) -> float:
@@ -93,7 +96,7 @@ def _n_filters(rng: np.random.Generator) -> int:
 def _lambda(rng: np.random.Generator, mode: str) -> float:
     if mode != "fine":
         return 1
-    return 1 - (10 ** rng.uniform(-17, -1))
+    return 1 - (10 ** rng.uniform(-12, -1))
 
 
 def _config(rng: np.random.Generator, mode: str) -> dict:
@@ -118,7 +121,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "device": "cuda",
         "learning_rate": _lr(rng, mode),
         "optimiser": "Adam",
-        "batch_size": _batch_size(rng),
+        "batch_size": _batch_size(rng, mode),
         "epochs": _epochs(rng, mode),
         "lr_lambda": _lambda(rng, mode),
         "loss": "monai.losses.TverskyLoss",
