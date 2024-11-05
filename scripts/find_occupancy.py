@@ -24,6 +24,9 @@ def main():
     # Don't need to pass a config in if we're reading all the DICOMs
     paths = files.dicom_paths(None, "all")
 
+    # We only want the complete jaws
+    paths = [path for path in paths if "Training set 3 (base of jaw)" not in path.stem]
+
     means = []
     cropped_means = []
     for path in tqdm(paths):
