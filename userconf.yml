@@ -26,8 +26,8 @@ loss: "monai.losses.TverskyLoss"
 loss_options: {
   "include_background": false,
   "to_onehot_y": true,
-  "alpha": 0.5,
-  "beta": 0.5,
+  "alpha": 0.3,
+  "beta": 0.7,
   "sigmoid": true,
 }
 
@@ -44,9 +44,9 @@ test_train_seed: 1
 device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
-batch_size: 14
-epochs: 100
-lr_lambda: 0.9999 # Exponential decay factor (multiplicative with each epoch)
+batch_size: 6
+epochs: 400
+lr_lambda: 0.99999 # Exponential decay factor (multiplicative with each epoch)
 
 # Options should be passed
 transforms:
