@@ -90,9 +90,13 @@ def main():
     data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject
-    output_dir = pathlib.Path(util.config()["script_output"]) / "train_output"
+    output_dir = (
+        pathlib.Path(util.config()["script_output"]) / "train_output" / model_path.stem
+    )
     if not output_dir.is_dir():
         output_dir.mkdir(parents=True)
+    print(f"Saving outputs to {output_dir}")
+
     with open(output_dir / "test_subject.pkl", "wb") as f:
         pickle.dump(test_subject, f)
 
