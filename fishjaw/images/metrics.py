@@ -4,6 +4,7 @@ Metrics for evaluating similarity etc. between images.
 """
 
 import warnings
+from typing import Iterable
 
 import numpy as np
 from sklearn import metrics as skm
@@ -182,7 +183,6 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
     return skm.roc_auc_score(truth.flatten(), pred.flatten())
 
 
-# Hausdorff
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred).
@@ -193,7 +193,7 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     :returns: Hausdorff distance
     :raises: ValueError if the shapes of the arrays do not match.
     :raises: ValueError if the truth array is not binary.
-    :raises: ValueError if the pred array is not in the range [0, 1].
+    :raises: ValueError if the prediction array is not binary.
 
     """
     if truth.shape != pred.shape:
@@ -206,3 +206,27 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
         raise ValueError(f"prediction array is not binary: {np.unique(truth)=}")
 
     return skimage_m.hausdorff_distance(truth, pred)
+
+
+def hausdorff_profile(
+    truth: np.ndarray, pred: np.ndarray, thresholds: Iterable = None
+) -> list[float]:
+    """
+    Calculate the hausdorff distance for a range of thresholds between a binary mask
+    (truth) and a binary array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+    :param thresholds: Thresholds to use for the prediction array. If None, uses 50 thresholds
+        between 0 and 1.
+
+    :returns: Hausdorff distance for each threshold
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the prediction array is not binary.
+
+    """
+    if thresholds is None:
+        thresholds = np.linspace(0, 1, 50, endpoint=True)
+
+    return [hausdorff_distance(truth, pred > threshold) for threshold in thresholds]
