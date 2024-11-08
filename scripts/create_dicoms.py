@@ -1,6 +1,13 @@
 """
 Create DICOM files from the data on RDSF so we have everything nicely paired up and in one place
 
+NB this script requires some things to be hard coded into the config file, namely:
+dicom_dirs:
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
+TODO fix this
+
 """
 
 import pathlib

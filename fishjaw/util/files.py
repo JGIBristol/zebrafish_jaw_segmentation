@@ -29,18 +29,15 @@ def mask_dirs(config: dict) -> list:
     return [rdsf_dir(config) / mask_dir for mask_dir in util.config()["label_dirs"]]
 
 
-def dicom_dirs() -> list:
+def dicom_dirs(config: dict) -> list[pathlib.Path]:
     """
     Get the directories where the DICOMs are stored
 
+    :param config: the configuration, e.g. from userconf.yml
     :returns: List of paths to the directories storing the DICOM files
 
     """
-    # The directory where all the DICOMs live
-    rootdir = pathlib.Path(__file__).parents[2] / "dicoms"
-
-    label_dirs = util.config()["label_dirs"]
-    return [rootdir / pathlib.Path(label_dir).name for label_dir in label_dirs]
+    return [pathlib.Path(dicom_dir) for dicom_dir in config["dicom_dirs"]]
 
 
 def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
@@ -60,7 +57,7 @@ def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
         )
 
     all_dicoms = [
-        dicom for directory in dicom_dirs() for dicom in directory.glob("*.dcm")
+        dicom for directory in dicom_dirs(config) for dicom in directory.glob("*.dcm")
     ]
 
     # Sanity check - there should be no duplicated DICOMs

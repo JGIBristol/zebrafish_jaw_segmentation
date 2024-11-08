@@ -5,7 +5,10 @@
 rdsf_dir: "/home/mh19137/zebrafish_rdsf/"
 
 # Where the DICOMs are stored - this is where the training data lives
-dicom_dir: "/home/mh19137/zebrafish_jaw_segmentation/dicoms/"
+dicom_dirs:
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
@@ -30,8 +33,8 @@ loss: "monai.losses.TverskyLoss"
 loss_options: {
   "include_background": false,
   "to_onehot_y": true,
-  "alpha": 0.3,
-  "beta": 0.7,
+  "alpha": 0.1,
+  "beta": 0.9,
   "sigmoid": true,
 }
 
