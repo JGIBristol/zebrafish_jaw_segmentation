@@ -118,10 +118,67 @@ def average_precision(truth: np.ndarray, pred: np.ndarray) -> float:
     :raises: ValueError if the pred array is not in the range [0, 1].
 
     """
+    _check_arrays(truth, pred)
+
     return skm.average_precision_score(truth.flatten(), pred.flatten())
 
 
-# recall
-# Jaccard
+def recall(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the recall score between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Average precision score
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    _check_arrays(truth, pred)
+
+    return skm.recall_score(truth.flatten(), pred.flatten())
+
+
+def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the Jaccard score between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Jaccard score
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    _check_arrays(truth, pred)
+
+    intersection = np.sum(truth * pred)
+    union = np.sum(truth + pred)
+
+    return intersection / union
+
+
+def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the ROC AUC score between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: ROC AUC score
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    _check_arrays(truth, pred)
+
+    return skm.roc_auc_score(truth.flatten(), pred.flatten())
+
+
 # Hausdorff
 # hausdorff profile
