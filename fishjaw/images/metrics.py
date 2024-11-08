@@ -183,6 +183,21 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
     return skm.roc_auc_score(truth.flatten(), pred.flatten())
 
 
+def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
+    """
+    Check the arrays are the right shape and formats
+
+    """
+    if truth.shape != pred.shape:
+        raise ValueError(
+            f"Shapes of truth {truth.shape} and pred {pred.shape} arrays do not match"
+        )
+    if set(np.unique(truth)) - {0, 1}:
+        raise ValueError(f"truth array is not binary: {np.unique(truth)=}")
+    if set(np.unique(pred)) - {0, 1}:
+        raise ValueError(f"prediction array is not binary: {np.unique(truth)=}")
+
+
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred).
@@ -196,14 +211,7 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     :raises: ValueError if the prediction array is not binary.
 
     """
-    if truth.shape != pred.shape:
-        raise ValueError(
-            f"Shapes of truth {truth.shape} and pred {pred.shape} arrays do not match"
-        )
-    if set(np.unique(truth)) - {0, 1}:
-        raise ValueError(f"truth array is not binary: {np.unique(truth)=}")
-    if set(np.unique(pred)) - {0, 1}:
-        raise ValueError(f"prediction array is not binary: {np.unique(truth)=}")
+    _check_arrays_binary(truth, pred)
 
     return skimage_m.hausdorff_distance(truth, pred)
 
@@ -230,3 +238,26 @@ def hausdorff_profile(
         thresholds = np.linspace(0, 1, 50, endpoint=True)
 
     return [hausdorff_distance(truth, pred > threshold) for threshold in thresholds]
+
+
+def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the combined Hausdorff-Dice metric between a binary mask (truth) and a binary array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Hausdorff-Dice distance
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the prediction array is not binary.
+
+    """
+    _check_arrays_binary(truth, pred)
+
+    # Scale the hausdorff distance to the maximum possible value (i.e. the diagonal)
+    scaled_distance = hausdorff_distance(truth, pred) / np.sqrt(
+        np.sum(a**2 for a in truth.shape)
+    )
+
+    return scaled_distance + (1 - dice_score(truth, pred))
