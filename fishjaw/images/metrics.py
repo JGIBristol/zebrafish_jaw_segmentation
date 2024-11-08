@@ -107,7 +107,8 @@ def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
 
 def average_precision(truth: np.ndarray, pred: np.ndarray) -> float:
     """
-    Calculate the precision, averaged over thresholds, between a binary mask (truth) and a float array (pred).
+    Calculate the precision, averaged over thresholds,
+    between a binary mask (truth) and a float array (pred).
 
     :param truth: Binary mask array.
     :param pred: Float prediction array.

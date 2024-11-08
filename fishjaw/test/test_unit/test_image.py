@@ -9,7 +9,7 @@ import numpy as np
 from ...images import transform, metrics
 
 
-@pytest.fixture
+@pytest.fixture(name="binary_images_")
 def binary_images():
     """
     Two 10x10 binary images, both containing a 5x5 square of 1s
@@ -34,17 +34,17 @@ def test_get_window_size():
     assert transform.window_size(config) == (2, 3, 4)
 
 
-def test_fpr_binary(binary_images: tuple[np.ndarray, np.ndarray]):
+def test_fpr_binary(binary_images_: tuple[np.ndarray, np.ndarray]):
     """
     Check that we can calculate the false positive rate
 
     """
-    assert metrics.fpr(*binary_images) == 0.12
+    assert metrics.fpr(*binary_images_) == 0.12
 
 
-def test_tpr_binary(binary_images: tuple[np.ndarray, np.ndarray]):
+def test_tpr_binary(binary_images_: tuple[np.ndarray, np.ndarray]):
     """
     Check that we can calculate the true positive rate
 
     """
-    assert metrics.tpr(*binary_images) == 0.64
+    assert metrics.tpr(*binary_images_) == 0.64
