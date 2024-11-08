@@ -56,8 +56,6 @@ def fpr(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the false positive rate between a binary mask (truth) and a float array (pred).
 
-
-
     :param truth: Binary mask array.
     :param pred: Float prediction array.
 
@@ -75,6 +73,6 @@ def fpr(truth: np.ndarray, pred: np.ndarray) -> float:
         warnings.warn("Both arrays are empty, returning FPR of 0")
         return 0.0
 
-    weighted_false_positives = np.sum(~truth * pred)
+    weighted_false_positives = np.sum((1 - truth) * pred)
 
     return weighted_false_positives / negatives
