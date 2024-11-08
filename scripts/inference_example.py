@@ -46,7 +46,9 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     """
     # Load the testing subject
     if args.test:
-        with open("train_output/test_subject.pkl", "rb") as f:
+        with open(
+            str(files.script_out_dir() / "train_output" / "test_subject.pkl"), "rb"
+        ) as f:
             return pickle.load(f)
     else:
         window_size = transform.window_size(config)
@@ -60,7 +62,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     crop_lookup = {
         218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
         219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
-        247: (1710, 431, 290),  # 14month het sp7 sp7+/-
+        # 247: (1710, 431, 290),  # 14month het sp7 sp7+/-
         273: (1685, 221, 286),  # 9month het sp7 sp7 het
         274: (1413, 174, 240),  # 9month hom sp7 sp7 mut
         120: (1595, 251, 398),  # 10month wt giantin giantin sib
@@ -167,7 +169,7 @@ def _make_plots(
     # Convert the image to a 3d numpy array - for plotting
     image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
 
-    out_dir = pathlib.Path("inference/")
+    out_dir = files.script_out_dir() / "inference"
     if not out_dir.exists():
         out_dir.mkdir()
 
