@@ -6,6 +6,7 @@ Metrics for evaluating similarity etc. between images.
 import warnings
 
 import numpy as np
+from sklearn import metrics as skm
 
 
 def _check_arrays(truth: np.ndarray, pred: np.ndarray) -> None:
@@ -104,7 +105,22 @@ def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
     return weighted_positives / positives
 
 
-# precision
+def average_precision(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the precision, averaged over thresholds, between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Average precision score
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    return skm.average_precision_score(truth.flatten(), pred.flatten())
+
+
 # recall
 # Jaccard
 # Hausdorff
