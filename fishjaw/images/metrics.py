@@ -7,6 +7,7 @@ import warnings
 
 import numpy as np
 from sklearn import metrics as skm
+from skimage import metrics as skimage_m
 
 
 def _check_arrays(truth: np.ndarray, pred: np.ndarray) -> None:
@@ -182,4 +183,26 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
 
 
 # Hausdorff
-# hausdorff profile
+def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Hausdorff distance
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    if truth.shape != pred.shape:
+        raise ValueError(
+            f"Shapes of truth {truth.shape} and pred {pred.shape} arrays do not match"
+        )
+    if set(np.unique(truth)) - {0, 1}:
+        raise ValueError(f"truth array is not binary: {np.unique(truth)=}")
+    if set(np.unique(pred)) - {0, 1}:
+        raise ValueError(f"prediction array is not binary: {np.unique(truth)=}")
+
+    return skimage_m.hausdorff_distance(truth, pred)
