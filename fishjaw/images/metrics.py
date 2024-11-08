@@ -7,6 +7,7 @@ import warnings
 from typing import Iterable
 
 import numpy as np
+import pandas as pd
 from sklearn import metrics as skm
 from skimage import metrics as skimage_m
 
@@ -261,3 +262,27 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     )
 
     return scaled_distance + (1 - dice_score(truth, pred))
+
+
+def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> str:
+    """
+    Return a table of metrics between a binary mask (truth) and a float array (pred)
+    in a nice markdown format
+
+    :param truth: List of binary mask arrays.
+    :param pred: List of float prediction arrays.
+
+    :returns: Table of metrics
+
+    """
+    df = pd.DataFrame()
+
+    df["Dice"] = [dice_score(t, p) for t, p in zip(truth, pred)]
+    df["FPR"] = [fpr(t, p) for t, p in zip(truth, pred)]
+    df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
+    df["Precision"] = [average_precision(t, p) for t, p in zip(truth, pred)]
+    # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
+    df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
+    df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
+
+    return df.to_markdown()

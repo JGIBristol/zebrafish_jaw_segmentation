@@ -29,6 +29,7 @@ dependencies:
   - pyyaml
   - numpy-stl
   - prettytable
+  - tabulate
   - pip:
       - pickle-mixin
       - torchio
