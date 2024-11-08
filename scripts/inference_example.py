@@ -4,7 +4,6 @@ Perform inference on an out-of-sample subject
 """
 
 import pickle
-import pathlib
 import argparse
 
 import torch
@@ -156,7 +155,16 @@ def _make_plots(
 ) -> None:
     """
     Make the inference plots using a model and subject
+
     """
+    # Create the output dir
+    out_dir, _ = args.model_name.split(".pkl")
+    assert not _, "Model name should end with .pkl"
+
+    out_dir = files.script_out_dir() / "inference" / out_dir
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
     # Perform inference
     prediction = model.predict(
         net,
@@ -168,10 +176,6 @@ def _make_plots(
 
     # Convert the image to a 3d numpy array - for plotting
     image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
-
-    out_dir = files.script_out_dir() / "inference"
-    if not out_dir.exists():
-        out_dir.mkdir()
 
     # Save the image and prediction as tiffs
     prefix = args.subject if args.subject else "test"
@@ -228,11 +232,14 @@ def main(args):
     Save the output image
 
     """
+    if not args.model_name.endswith(".pkl"):
+        raise ValueError("Model name should end with .pkl")
+
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
 
     # Load the model and training-time config
-    with open(str(files.model_path()), "rb") as f:
+    with open(str(files.model_path({"model_path": args.model_name})), "rb") as f:
         model_state: model.ModelState = pickle.load(f)
 
     config = model_state.config
@@ -264,5 +271,9 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--mesh", help="Save the mesh", action="store_true")
+    parser.add_argument(
+        "model_name",
+        help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
 
     main(parser.parse_args())

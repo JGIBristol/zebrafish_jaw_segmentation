@@ -76,7 +76,7 @@ def _batch_size(rng: np.random.Generator, mode: str) -> int:
     return int(rng.integers(1, 33))
 
 
-def _epochs(rng: np.random.Generator, mode: str) -> int:
+def _epochs(mode: str) -> int:
     if mode == "coarse":
         return 5
     if mode == "med":
@@ -122,7 +122,7 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "learning_rate": _lr(rng, mode),
         "optimiser": "Adam",
         "batch_size": _batch_size(rng, mode),
-        "epochs": _epochs(rng, mode),
+        "epochs": _epochs(mode),
         "lr_lambda": _lambda(rng, mode),
         "loss": "monai.losses.TverskyLoss",
         "loss_options": {

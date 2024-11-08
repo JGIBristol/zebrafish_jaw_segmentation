@@ -72,12 +72,14 @@ def main():
     Get the right data, train the model and create some outputs
 
     """
+    config = util.userconf()
+
     # If the model is already cached, don't train it again
-    model_path = files.model_path()
+    model_path = files.model_path(config)
     if model_path.is_file():
         raise FileExistsError(f"Model already exists at {model_path}")
+    print(f"Training model to save at {model_path}")
 
-    config = util.userconf()
     torch.manual_seed(config["torch_seed"])
 
     # Find the activation - we'll need this for inference
@@ -88,9 +90,13 @@ def main():
     data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject
-    output_dir = pathlib.Path(util.config()["script_output"]) / "train_output"
+    output_dir = (
+        pathlib.Path(util.config()["script_output"]) / "train_output" / model_path.stem
+    )
     if not output_dir.is_dir():
         output_dir.mkdir(parents=True)
+    print(f"Saving outputs to {output_dir}")
+
     with open(output_dir / "test_subject.pkl", "wb") as f:
         pickle.dump(test_subject, f)
 

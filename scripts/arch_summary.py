@@ -9,7 +9,7 @@ import argparse
 import torch
 from prettytable import PrettyTable
 
-from fishjaw.util import files
+from fishjaw.util import files, util
 from fishjaw.model import model
 
 
@@ -61,14 +61,14 @@ def replace_layers_with_tracker(net: torch.nn.Module):
             replace_layers_with_tracker(layer)
 
 
-def _load_model() -> torch.nn.Module:
+def _load_model(config: dict) -> torch.nn.Module:
     """
     Load the model from disk
 
     """
 
     # Load the state dict
-    with open(str(files.model_path()), "rb") as f:
+    with open(str(files.model_path(config)), "rb") as f:
         model_state: model.ModelState = pickle.load(f)
     return model_state.load_model(set_eval=True)
 
@@ -80,7 +80,7 @@ def main():
 
     """
     # Load the model
-    net = _load_model()
+    net = _load_model(util.userconf())
     net.to("cuda")
 
     # Print the number of trainable parameters

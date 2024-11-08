@@ -1,6 +1,13 @@
 """
 Create DICOM files from the data on RDSF so we have everything nicely paired up and in one place
 
+NB this script requires some things to be hard coded into the config file, namely:
+dicom_dirs:
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
+TODO fix this
+
 """
 
 import pathlib
@@ -119,7 +126,7 @@ def create_set_1(config: dict) -> None:
     if len(label_paths) == 0:
         raise ValueError(f"No images found in {label_dir}")
 
-    dicom_dir = files.dicom_dirs()[0]
+    dicom_dir = files.dicom_dirs(config)[0]
     if not dicom_dir.is_dir():
         dicom_dir.mkdir(parents=True)
 
@@ -163,7 +170,7 @@ def create_set_2(config: dict, ignore: set) -> None:
     if len(label_paths) == 0:
         raise ValueError(f"No images found in {label_dir}")
 
-    dicom_dir = files.dicom_dirs()[1]
+    dicom_dir = files.dicom_dirs(config)[1]
     if not dicom_dir.is_dir():
         dicom_dir.mkdir(parents=True)
 
@@ -213,7 +220,7 @@ def create_set_3(config: dict, ignore: set):
     if len(label_paths) == 0:
         raise ValueError(f"No images found in {label_dir}")
 
-    dicom_dir = files.dicom_dirs()[2]
+    dicom_dir = files.dicom_dirs(config)[2]
     if not dicom_dir.is_dir():
         dicom_dir.mkdir(parents=True)
 
