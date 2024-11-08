@@ -40,3 +40,11 @@ def test_fpr_binary(binary_images: tuple[np.ndarray, np.ndarray]):
 
     """
     assert metrics.fpr(*binary_images) == 0.12
+
+
+def test_tpr_binary(binary_images: tuple[np.ndarray, np.ndarray]):
+    """
+    Check that we can calculate the true positive rate
+
+    """
+    assert metrics.tpr(*binary_images) == 0.64

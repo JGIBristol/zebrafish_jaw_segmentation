@@ -67,12 +67,45 @@ def fpr(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays(truth, pred)
 
-    negatives = np.sum(truth == 0)
+    inverse_negatives = 1 - truth
+    negatives = np.sum(inverse_negatives)
 
     if negatives == 0:
-        warnings.warn("Both arrays are empty, returning FPR of 0")
+        warnings.warn("No negatives; returning FPR of 0")
         return 0.0
 
-    weighted_false_positives = np.sum((1 - truth) * pred)
+    weighted_false_positives = np.sum(inverse_negatives * pred)
 
     return weighted_false_positives / negatives
+
+
+def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the true positive rate between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: True positive rate.
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    _check_arrays(truth, pred)
+
+    positives = np.sum(truth)
+    if positives == 0:
+        warnings.warn("No positives; returning TPR of 0")
+        return 0.0
+
+    weighted_positives = np.sum(truth * pred)
+
+    return weighted_positives / positives
+
+
+# precision
+# recall
+# Jaccard
+# Hausdorff
+# hausdorff profile
