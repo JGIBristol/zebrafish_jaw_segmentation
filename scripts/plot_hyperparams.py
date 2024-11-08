@@ -286,7 +286,7 @@ def _dicescore(results_dir: pathlib.Path) -> float:
         score = 2.0 * intersection / volume
 
         # Check for nan
-        if score != score:
+        if score != score:  # pylint: disable=comparison-with-itself
             score = 0.0
 
         with open(dice_file, "w", encoding="utf-8") as f:

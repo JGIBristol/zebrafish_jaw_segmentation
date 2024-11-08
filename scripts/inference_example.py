@@ -4,7 +4,6 @@ Perform inference on an out-of-sample subject
 """
 
 import pickle
-import pathlib
 import argparse
 
 import torch
@@ -15,7 +14,7 @@ import torchio as tio
 from skimage import measure
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files
+from fishjaw.util import files, util
 from fishjaw.model import model, data
 from fishjaw.images import transform, metrics
 from fishjaw.visualisation import images_3d
@@ -232,7 +231,8 @@ def main(args):
         raise RuntimeError("I think this one was in the training dataset...")
 
     # Load the model and training-time config
-    with open(str(files.model_path()), "rb") as f:
+    config = util.userconf()
+    with open(str(files.model_path(config)), "rb") as f:
         model_state: model.ModelState = pickle.load(f)
 
     config = model_state.config

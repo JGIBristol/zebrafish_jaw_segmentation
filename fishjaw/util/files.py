@@ -134,7 +134,7 @@ def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:
     return rdsf_dir(config) / util.config()["wahabs_3d_tifs"]
 
 
-def model_path() -> pathlib.Path:
+def model_path(config: dict) -> pathlib.Path:
     """
     Get the path to the cached model, as created by scripts/train_model.py
 
@@ -143,10 +143,15 @@ def model_path() -> pathlib.Path:
     configuration used to initialise the model/define the architecture and
     training parameters all in one place.
 
-    :returns: Path to the model
+    :param config: the configuration, e.g. from userconf.yml
+    :returns: Path to the model. If the path doesn't end in .pkl, it will be appended
 
     """
-    return pathlib.Path(__file__).parents[2] / "model" / "model_state.pkl"
+    path = config["model_path"]
+    if not path.endswith(".pkl"):
+        path = path + ".pkl"
+
+    return pathlib.Path(__file__).parents[2] / "model" / path
 
 
 def script_out_dir() -> pathlib.Path:

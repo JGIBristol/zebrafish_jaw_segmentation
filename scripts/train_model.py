@@ -72,12 +72,14 @@ def main():
     Get the right data, train the model and create some outputs
 
     """
+    config = util.userconf()
+
     # If the model is already cached, don't train it again
-    model_path = files.model_path()
+    model_path = files.model_path(config)
     if model_path.is_file():
         raise FileExistsError(f"Model already exists at {model_path}")
+    print(f"Training model to save at {model_path}")
 
-    config = util.userconf()
     torch.manual_seed(config["torch_seed"])
 
     # Find the activation - we'll need this for inference
