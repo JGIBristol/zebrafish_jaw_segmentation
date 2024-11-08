@@ -14,7 +14,7 @@ import torchio as tio
 from skimage import measure
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files, util
+from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import transform, metrics
 from fishjaw.visualisation import images_3d
