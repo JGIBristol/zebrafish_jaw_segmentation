@@ -351,8 +351,9 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
             "r.",
         )
 
-    # Log scale for learning rate and lambda
+    # Log scale for learning rate, lambda and alpha
     axes[0, 1].set_xscale("log")
+    axes[1, 1].set_xscale("log")
     axes[2, 0].set_xscale("log")
 
     # Turn the other axes off
