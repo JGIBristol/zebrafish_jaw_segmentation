@@ -260,15 +260,6 @@ def step(
             np.save(out_dir / f"val_pred_{i}.npy", prediction)
             predictions.append(prediction)
 
-        # Save a table of metrics
-        truths = [
-            val_subject[tio.LABEL][tio.DATA].squeeze(dim=0).numpy()
-            for val_subject in full_validation_subjects
-        ]
-        table = metrics.table(truths, predictions)
-        with open(str(out_dir / "metrics.txt"), "w", encoding="utf-8") as table_file:
-            table_file.write(table.to_markdown())
-
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)
     np.save(out_dir / "val_losses.npy", val_losses)
