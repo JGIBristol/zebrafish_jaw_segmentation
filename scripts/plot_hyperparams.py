@@ -9,11 +9,13 @@ from dataclasses import dataclass, fields
 
 import yaml
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
 from fishjaw.util import files
+from fishjaw.images import metrics
 
 
 @dataclass
@@ -157,7 +159,7 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     """
     data_dirs = list(data_dir.glob("*"))
     runs = []
-    for dir_ in data_dirs:
+    for dir_ in tqdm(data_dirs, desc="Creating metric tables"):
         # We might still be running, in which case the last dir will be incomplete
         if metric == "dice":
             try:
@@ -254,47 +256,47 @@ def _dicescore(results_dir: pathlib.Path) -> float:
 
     """
     # We'll write the score to a file
-    dice_file = results_dir / "dice.txt"
+    metrics_file = results_dir / "metrics.txt"
 
-    # We might have already calculated it
-    if not dice_file.exists():
-        # Find how many images there are in the validation set
+    # If it doesn't exist, write the metrics file
+    if not metrics_file.exists():
         n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
         assert n_val_imgs == len(list(results_dir.glob("val_truth_*.npy")))
 
         if n_val_imgs == 0:
             raise FileNotFoundError(f"No validation images found in {results_dir}")
 
-        # Get the DICE score
-        # We want to combine the Dice score for multiple images
-        # So keep track of the total intersection and volume here
-        intersection = 0
-        volume = 0
+        pred = [np.load(results_dir / f"val_pred_{i}.npy") for i in range(n_val_imgs)]
+        truth = [np.load(results_dir / f"val_truth_{i}.npy") for i in range(n_val_imgs)]
 
-        for i in range(n_val_imgs):
-            pred = np.load(results_dir / f"val_pred_{i}.npy")
-            truth = np.load(results_dir / f"val_truth_{i}.npy")
-
-            assert pred.shape == truth.shape, f"{pred.shape=} != {truth.shape=}"
+        for p, t in zip(pred, truth):
+            assert p.shape == t.shape, f"{p.shape=} != {t.shape=}"
 
             # The prediction should already be scaled to be between 0 and 1
-            if not pred.min() >= 0 and pred.max() <= 1:
+            if not p.min() >= 0 and p.max() <= 1:
                 raise ValueError("Prediction should be scaled to between 0 and 1")
 
-            intersection += np.sum(pred * truth)
-            volume += pred.sum() + truth.sum()
-        score = 2.0 * intersection / volume
+        table = metrics.table(truth, pred)
 
-        # Check for nan
-        if score != score:  # pylint: disable=comparison-with-itself
-            score = 0.0
+        with open(metrics_file, "w", encoding="utf-8") as f:
+            f.write(table.to_markdown())
 
-        with open(dice_file, "w", encoding="utf-8") as f:
-            f.write(str(score))
+    # get the average DICE score from the metrics file
+    df = (
+        pd.read_table(
+            metrics_file,
+            sep="|",
+            index_col=1,
+            header=0,
+            skipinitialspace=True,
+        )
+        .dropna(how="all", axis=1)
+        .iloc[1:]
+        .astype(float)
+    )
+    df.columns = df.columns.str.strip()
 
-    # Read the score from the file
-    with open(dice_file, encoding="utf-8") as f:
-        return float(f.read().strip())
+    return df["Dice"].mean()
 
 
 def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
