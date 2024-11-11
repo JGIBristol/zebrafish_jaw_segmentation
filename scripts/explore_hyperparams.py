@@ -267,7 +267,7 @@ def step(
         ]
         table = metrics.table(truths, predictions)
         with open(str(out_dir / "metrics.txt"), "w", encoding="utf-8") as table_file:
-            table_file.write(table)
+            table_file.write(table.to_markdown())
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)

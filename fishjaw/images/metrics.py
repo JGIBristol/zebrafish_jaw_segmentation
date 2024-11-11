@@ -243,7 +243,8 @@ def hausdorff_profile(
 
 def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     """
-    Calculate the combined Hausdorff-Dice metric between a binary mask (truth) and a binary array (pred).
+    Calculate the combined Hausdorff-Dice metric between a binary mask (truth)
+    and a binary array (pred).
 
     :param truth: Binary mask array.
     :param pred: Float prediction array.
@@ -264,7 +265,7 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     return scaled_distance + (1 - dice_score(truth, pred))
 
 
-def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> str:
+def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     """
     Return a table of metrics between a binary mask (truth) and a float array (pred)
     in a nice markdown format
@@ -285,4 +286,4 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> str:
     df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
 
-    return df.to_markdown()
+    return df

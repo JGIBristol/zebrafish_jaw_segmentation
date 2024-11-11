@@ -203,7 +203,7 @@ def _make_plots(
         tifffile.imwrite(out_dir / f"{prefix}_truth.tif", truth)
 
         # Print a table of metrics
-        print(metrics.table([truth], [prediction]))
+        print(metrics.table([truth], [prediction]).to_markdown())
 
     else:
         fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
