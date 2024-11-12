@@ -6,12 +6,13 @@ Plot the results from the hyperparam search
 import pathlib
 import argparse
 from typing import Iterable
+from multiprocessing import Pool
 from dataclasses import dataclass, fields
 
 import yaml
+import tqdm
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
@@ -94,13 +95,23 @@ def _write_metrics_file(results_dir: pathlib.Path) -> None:
         return
 
     n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
-    assert n_val_imgs == len(list(results_dir.glob("val_truth_*.npy")))
-    if n_val_imgs == 0:
-        raise FileNotFoundError(f"No validation images found in {results_dir}")
+    n_truth_imgs = len(list(results_dir.glob("*val_truth_*.npy")))
+    # The run hasn't finished yet
+    if n_val_imgs == 0 and n_truth_imgs == 0:
+        return
+
+    # Something weird has happened - maybe the run was interrupted,
+    # or we got unlucky and only one file has been written
+    if n_val_imgs != n_truth_imgs:
+        raise ValueError(
+            f"Number of validation images {n_val_imgs} != number of truth images {n_truth_imgs}"
+        )
 
     # Load the arrays
     pred = [np.load(results_dir / f"val_pred_{i}.npy") for i in range(n_val_imgs)]
     truth = [np.load(results_dir / f"val_truth_{i}.npy") for i in range(n_val_imgs)]
+
+    # Check them
     for p, t in zip(pred, truth):
         assert p.shape == t.shape, f"{p.shape=} != {t.shape=}"
         if not p.min() >= 0 and p.max() <= 1:
@@ -111,17 +122,19 @@ def _write_metrics_file(results_dir: pathlib.Path) -> None:
         f.write(table.to_markdown())
 
 
-def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path]) -> None:
+def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path], n_procs: int) -> None:
     """
     Create metrics files for all the runs
 
     """
-    # If the run is still going, there might be some missing files
-    for dir_ in tqdm(data_dirs, desc="Creating metric tables"):
-        try:
-            _write_metrics_file(dir_)
-        except FileNotFoundError:
-            continue
+    dirs = list(data_dirs)
+
+    with Pool(n_procs) as pool, tqdm.tqdm(
+        total=len(dirs), desc="Creating metric tables"
+    ) as pbar:
+        for _ in pool.imap(_write_metrics_file, dirs):
+            pbar.update()
+            pbar.refresh()
 
 
 def _metrics_df(metrics_file: pathlib.Path) -> pd.DataFrame:
@@ -251,13 +264,20 @@ if __name__ == "__main__":
         choices={"coarse", "med", "fine"},
         help="Granularity of the search.",
     )
+    parser.add_argument(
+        "--n_procs",
+        type=int,
+        help="How many processes to spawn for file stuff when making fine-grained plots",
+        default=None,
+    )
 
     args = parser.parse_args()
 
     # We need to write the files holding the table of metrics
     if args.mode == "fine":
         _write_all_metrics_files(
-            (files.script_out_dir() / "tuning_output" / "fine").glob("*")
+            (files.script_out_dir() / "tuning_output" / "fine").glob("*"),
+            args.n_procs,
         )
 
-    main(**vars(args))
+    main(args.mode)
