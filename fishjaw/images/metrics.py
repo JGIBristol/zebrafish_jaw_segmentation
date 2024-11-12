@@ -196,7 +196,7 @@ def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
     if set(np.unique(truth)) - {0, 1}:
         raise ValueError(f"truth array is not binary: {np.unique(truth)=}")
     if set(np.unique(pred)) - {0, 1}:
-        raise ValueError(f"prediction array is not binary: {np.unique(truth)=}")
+        raise ValueError(f"prediction array is not binary: {np.unique(pred)=}")
 
 
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
