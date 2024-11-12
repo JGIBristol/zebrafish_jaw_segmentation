@@ -30,49 +30,7 @@ class RunInfo:
     n_filters: int
     batch_size: int
     alpha: float
-    epochs: int
     one_minus_lambda: float
-
-
-def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
-    """
-    Plot the training and validation losses, colour coded by batch size
-
-    """
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the batch size
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        batch_size = params["batch_size"]
-
-        # Scale to between 0 and 1
-        scaled = (batch_size - 2) / 12
-
-        # Get the colour from the LR
-        colour = cmap(scaled)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=2, vmax=12)), ax=axes
-    )
-    cbar.set_label("Batch size")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
 
 
 def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
@@ -116,7 +74,6 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
                 params["model_params"]["n_initial_filters"],
                 params["batch_size"],
                 params["loss_options"]["alpha"],
-                params["epochs"],
                 1 - params["lr_lambda"],
             )
         )
@@ -207,7 +164,7 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     Plot histograms of the DICE scores and scatter plots
 
     """
-    fig, axes = plt.subplots(3, 3, figsize=(12, 8))
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8))
 
     # Identify the top n
     n = 5
@@ -258,12 +215,8 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
 
     # Log scale for learning rate, lambda and alpha
     axes[0, 1].set_xscale("log")
-    axes[1, 1].set_xscale("log")
     axes[2, 0].set_xscale("log")
-
-    # Turn the other axes off
-    for axis in axes.flat[-2:]:
-        axis.axis("off")
+    axes[2, 1].set_xscale("log")
 
     fig.suptitle(f"N runs {len(run_infos)}")
     fig.tight_layout()
