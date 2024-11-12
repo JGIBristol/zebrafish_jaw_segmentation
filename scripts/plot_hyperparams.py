@@ -5,6 +5,7 @@ Plot the results from the hyperparam search
 
 import pathlib
 import argparse
+from typing import Iterable
 from dataclasses import dataclass, fields
 
 import yaml
@@ -12,7 +13,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 
 from fishjaw.util import files
 from fishjaw.images import metrics
@@ -41,14 +41,6 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     """
     data_dirs = list(data_dir.glob("*"))
     runs = []
-
-    # Create metrics files for all the runs
-    # If the run is still going, there might be some missing files
-    for dir_ in tqdm(data_dirs, desc="Creating metric tables"):
-        try:
-            _write_metrics_files(dir_)
-        except FileNotFoundError:
-            continue
 
     for dir_ in data_dirs:
         if metric == "dice":
@@ -88,7 +80,7 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     return _plot_scores(runs)
 
 
-def _write_metrics_files(results_dir: pathlib.Path) -> None:
+def _write_metrics_file(results_dir: pathlib.Path) -> None:
     """
     Write files containing the validation metrics for each run, as markdown
 
@@ -117,6 +109,19 @@ def _write_metrics_files(results_dir: pathlib.Path) -> None:
     table = metrics.table(truth, pred)
     with open(metrics_file, "w", encoding="utf-8") as f:
         f.write(table.to_markdown())
+
+
+def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path]) -> None:
+    """
+    Create metrics files for all the runs
+
+    """
+    # If the run is still going, there might be some missing files
+    for dir_ in tqdm(data_dirs, desc="Creating metric tables"):
+        try:
+            _write_metrics_file(dir_)
+        except FileNotFoundError:
+            continue
 
 
 def _metrics_df(metrics_file: pathlib.Path) -> pd.DataFrame:
@@ -247,4 +252,12 @@ if __name__ == "__main__":
         help="Granularity of the search.",
     )
 
-    main(**vars(parser.parse_args()))
+    args = parser.parse_args()
+
+    # We need to write the files holding the table of metrics
+    if args.mode == "fine":
+        _write_all_metrics_files(
+            (files.script_out_dir() / "tuning_output" / "fine").glob("*")
+        )
+
+    main(**vars(args))
