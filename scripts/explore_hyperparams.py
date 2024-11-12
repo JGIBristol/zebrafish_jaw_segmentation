@@ -16,7 +16,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
-from fishjaw.images import transform, metrics
+from fishjaw.images import transform
 from fishjaw.model import data, model
 from fishjaw.visualisation import images_3d, training
 
