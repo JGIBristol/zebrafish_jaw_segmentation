@@ -6,7 +6,6 @@ Plot the results from the hyperparam search
 import pathlib
 import argparse
 from typing import Iterable
-from multiprocessing import Pool
 from dataclasses import dataclass, fields
 
 import yaml
@@ -122,19 +121,15 @@ def _write_metrics_file(results_dir: pathlib.Path) -> None:
         f.write(table.to_markdown())
 
 
-def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path], n_procs: int) -> None:
+def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path]) -> None:
     """
     Create metrics files for all the runs
 
     """
     dirs = list(data_dirs)
 
-    with Pool(n_procs) as pool, tqdm.tqdm(
-        total=len(dirs), desc="Creating metric tables"
-    ) as pbar:
-        for _ in pool.imap(_write_metrics_file, dirs):
-            pbar.update()
-            pbar.refresh()
+    for d in tqdm.tqdm(dirs):
+        _write_metrics_file(d)
 
 
 def _metrics_df(metrics_file: pathlib.Path) -> pd.DataFrame:
