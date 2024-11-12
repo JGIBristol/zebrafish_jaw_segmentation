@@ -286,4 +286,11 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
 
+    # Threshold the prediction
+    thresholds = (0.5,)
+    for threshold in thresholds:
+        df[f"Hausdorff_{threshold}"] = [
+            hausdorff_distance(t, p > threshold) for t, p in zip(truth, pred)
+        ]
+
     return df
