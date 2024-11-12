@@ -201,7 +201,8 @@ def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
 
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
-    Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred).
+    Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred),
+    scaled by the image dimensions.
 
     :param truth: Binary mask array.
     :param pred: Float prediction array.
@@ -214,7 +215,10 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays_binary(truth, pred)
 
-    return skimage_m.hausdorff_distance(truth, pred)
+    h_d = skimage_m.hausdorff_distance(truth, pred)
+
+    # Scale by the image dimensions
+    return h_d / np.sqrt(np.sum(a**2 for a in truth.shape))
 
 
 def hausdorff_profile(
@@ -257,12 +261,7 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays_binary(truth, pred)
 
-    # Scale the hausdorff distance to the maximum possible value (i.e. the diagonal)
-    scaled_distance = hausdorff_distance(truth, pred) / np.sqrt(
-        np.sum(a**2 for a in truth.shape)
-    )
-
-    return scaled_distance + (1 - dice_score(truth, pred))
+    return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
 
 
 def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
