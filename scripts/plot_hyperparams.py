@@ -75,82 +75,6 @@ def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
     return fig
 
 
-def _lr_plot(paths: list[pathlib.Path]) -> plt.Figure:
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the LR and n filters
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        lr = params["learning_rate"]
-
-        # Scale to between 0 and 1
-        scaled_lr = (np.log10(lr) + 6) / 7
-
-        # Get the colour from the LR
-        colour = cmap(scaled_lr)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=-6, vmax=1)), ax=axes
-    )
-    cbar.set_label("Learning rate")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
-
-
-def _filter_plot(paths: list[pathlib.Path]) -> plt.Figure:
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        # Get the training and validation loss from each
-        # Average over batches
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the LR and n filters
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        n_filters = params["model_params"]["n_initial_filters"]
-
-        # Scale to between 0 and 1
-        scaled_filters = (n_filters - 4) / 20
-
-        # Get the colour from the n filters
-        colour = cmap(scaled_filters)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=4, vmax=24)), ax=axes
-    )
-    cbar.set_label("N filters")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
-
-
 def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     """
     Plot scatter plots and a histogram of dice scores if they exist
@@ -205,57 +129,6 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
             print(r, d.name)
 
     return _plot_scores(runs)
-
-
-def _plot_coarse(input_dir: pathlib.Path, output_dir: pathlib.Path):
-    """
-    Read the losses and indices from the coarse search,
-    then plot them colour coded by LR
-
-    """
-    paths = sorted(list((input_dir).glob("*")))
-
-    fig = _lr_plot(paths)
-    fig.savefig(output_dir / "coarse_search.png")
-    plt.close(fig)
-
-    fig = _filter_plot(paths)
-    fig.savefig(output_dir / "coarse_search_n_filters.png")
-    plt.close(fig)
-
-    fig = _batch_plot(paths)
-    fig.savefig(output_dir / "coarse_search_batch.png")
-    plt.close(fig)
-
-    fig = _plot_scatters(input_dir, metric="loss")
-    fig.suptitle(
-        "NB: only run for a few epochs, minimum loss might mean LR is too high"
-    )
-    fig.savefig(str(output_dir / "scores.png"))
-
-
-def _plot_med(input_dir: pathlib.Path, output_dir: pathlib.Path):
-    """
-    Read the losses and indices from the med,
-    then plot them colour coded by LR and n filters
-
-    """
-    paths = sorted(list(input_dir.glob("*")))
-
-    fig = _lr_plot(paths)
-    fig.savefig(output_dir / "med_search.png")
-    plt.close(fig)
-
-    fig = _filter_plot(paths)
-    fig.savefig(output_dir / "med_search_n_filters.png")
-    plt.close(fig)
-
-    fig = _batch_plot(paths)
-    fig.savefig(output_dir / "med_search_batch.png")
-    plt.close(fig)
-
-    fig = _plot_scatters(input_dir, metric="dice")
-    fig.savefig(output_dir / "scores.png")
 
 
 def _write_metrics_files(results_dir: pathlib.Path) -> None:
@@ -398,16 +271,6 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
-def _plot_fine(input_dir: pathlib.Path, output_dir: pathlib.Path):
-    """
-    Find the DICE accuracy of each, plot it
-
-    """
-    fig = _plot_scatters(input_dir, metric="dice")
-
-    fig.savefig(str(output_dir / "scores.png"))
-
-
 def main(mode: str):
     """Choose the granularity of the search to plot"""
     input_dir = files.script_out_dir() / "tuning_output" / mode
@@ -415,12 +278,8 @@ def main(mode: str):
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    if mode == "coarse":
-        _plot_coarse(input_dir, output_dir)
-    elif mode == "med":
-        _plot_med(input_dir, output_dir)
-    else:
-        _plot_fine(input_dir, output_dir)
+    fig = _plot_scatters(input_dir, metric="dice" if mode == "fine" else "loss")
+    fig.savefig(output_dir / "scores.png")
 
 
 if __name__ == "__main__":
