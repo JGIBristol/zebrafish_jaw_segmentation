@@ -142,7 +142,8 @@ def recall(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays(truth, pred)
 
-    return skm.recall_score(truth.flatten(), pred.flatten())
+    # True positives / all positives
+    return np.sum(truth * pred) / np.sum(truth)
 
 
 def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
@@ -281,7 +282,7 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
     df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
     df["Precision"] = [average_precision(t, p) for t, p in zip(truth, pred)]
-    # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
+    df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
     df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
 
