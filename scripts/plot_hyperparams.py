@@ -5,15 +5,17 @@ Plot the results from the hyperparam search
 
 import pathlib
 import argparse
+from typing import Iterable
 from dataclasses import dataclass, fields
 
 import yaml
+import tqdm
 import numpy as np
-from tqdm import tqdm
+import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 
 from fishjaw.util import files
+from fishjaw.images import metrics
 
 
 @dataclass
@@ -28,273 +30,99 @@ class RunInfo:
     n_filters: int
     batch_size: int
     alpha: float
-    epochs: int
     one_minus_lambda: float
 
 
-def _batch_plot(paths: list[pathlib.Path]) -> plt.Figure:
+def _write_metrics_file(results_dir: pathlib.Path) -> None:
     """
-    Plot the training and validation losses, colour coded by batch size
+    Write files containing the validation metrics for each run, as markdown
 
-    """
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the batch size
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        batch_size = params["batch_size"]
-
-        # Scale to between 0 and 1
-        scaled = (batch_size - 2) / 12
-
-        # Get the colour from the LR
-        colour = cmap(scaled)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=2, vmax=12)), ax=axes
-    )
-    cbar.set_label("Batch size")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
-
-
-def _lr_plot(paths: list[pathlib.Path]) -> plt.Figure:
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the LR and n filters
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        lr = params["learning_rate"]
-
-        # Scale to between 0 and 1
-        scaled_lr = (np.log10(lr) + 6) / 7
-
-        # Get the colour from the LR
-        colour = cmap(scaled_lr)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=-6, vmax=1)), ax=axes
-    )
-    cbar.set_label("Learning rate")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
-
-
-def _filter_plot(paths: list[pathlib.Path]) -> plt.Figure:
-    fig, axes = plt.subplots(1, 2, sharey=True)
-    cmap = plt.get_cmap("viridis")
-
-    for path in tqdm(paths):
-        # Get the training and validation loss from each
-        # Average over batches
-        try:
-            train_loss = np.load(path / "train_losses.npy").mean(axis=1)
-            val_loss = np.load(path / "val_losses.npy").mean(axis=1)
-        except FileNotFoundError:
-            continue
-
-        # Get the LR and n filters
-        with open(path / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-        n_filters = params["model_params"]["n_initial_filters"]
-
-        # Scale to between 0 and 1
-        scaled_filters = (n_filters - 4) / 20
-
-        # Get the colour from the n filters
-        colour = cmap(scaled_filters)
-        axes[0].plot(train_loss, color=colour)
-        axes[1].plot(val_loss, color=colour)
-
-    # Add a colorbar
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap, norm=Normalize(vmin=4, vmax=24)), ax=axes
-    )
-    cbar.set_label("N filters")
-    axes[0].set_title("Training loss")
-    axes[1].set_title("Validation loss")
-    for axis in axes:
-        axis.set_xticks([])
-
-    return fig
-
-
-def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
-    """
-    Plot scatter plots and a histogram of dice scores if they exist
-    metric must either be "dice" or "loss"
-
-    """
-    data_dirs = list(data_dir.glob("*"))
-    runs = []
-    for dir_ in data_dirs:
-        # We might still be running, in which case the last dir will be incomplete
-        if metric == "dice":
-            try:
-                score = _dicescore(dir_)
-            except FileNotFoundError:
-                continue
-        elif metric == "loss":
-            try:
-                score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
-            except FileNotFoundError:
-                continue
-        else:
-            raise ValueError("metric must be either 'dice' or 'loss'")
-
-        with open(dir_ / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-
-        runs.append(
-            RunInfo(
-                score,
-                params["learning_rate"],
-                params["model_params"]["n_initial_filters"],
-                params["batch_size"],
-                params["loss_options"]["alpha"],
-                params["epochs"],
-                1 - params["lr_lambda"],
-            )
-        )
-
-    # Print the best params
-    n = 5
-    top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
-    for r, d in zip(runs, data_dirs):
-        if r.score in top_dice_scores:
-            print(r, d.name)
-
-    return _plot_scores(runs)
-
-
-def _plot_coarse(input_dir: pathlib.Path, output_dir: pathlib.Path):
-    """
-    Read the losses and indices from the coarse search,
-    then plot them colour coded by LR
-
-    """
-    paths = sorted(list((input_dir).glob("*")))
-
-    fig = _lr_plot(paths)
-    fig.savefig(output_dir / "coarse_search.png")
-    plt.close(fig)
-
-    fig = _filter_plot(paths)
-    fig.savefig(output_dir / "coarse_search_n_filters.png")
-    plt.close(fig)
-
-    fig = _batch_plot(paths)
-    fig.savefig(output_dir / "coarse_search_batch.png")
-    plt.close(fig)
-
-    fig = _plot_scatters(input_dir, metric="loss")
-    fig.suptitle(
-        "NB: only run for a few epochs, minimum loss might mean LR is too high"
-    )
-    fig.savefig(str(output_dir / "scores.png"))
-
-
-def _plot_med(input_dir: pathlib.Path, output_dir: pathlib.Path):
-    """
-    Read the losses and indices from the med,
-    then plot them colour coded by LR and n filters
-
-    """
-    paths = sorted(list(input_dir.glob("*")))
-
-    fig = _lr_plot(paths)
-    fig.savefig(output_dir / "med_search.png")
-    plt.close(fig)
-
-    fig = _filter_plot(paths)
-    fig.savefig(output_dir / "med_search_n_filters.png")
-    plt.close(fig)
-
-    fig = _batch_plot(paths)
-    fig.savefig(output_dir / "med_search_batch.png")
-    plt.close(fig)
-
-    fig = _plot_scatters(input_dir, metric="dice")
-    fig.savefig(output_dir / "scores.png")
-
-
-def _dicescore(results_dir: pathlib.Path) -> float:
-    """
-    Get the DICE score from the i-th run
+    :param results_dir: The directory containing the results from a run
 
     """
     # We'll write the score to a file
-    dice_file = results_dir / "dice.txt"
+    metrics_file = results_dir / "metrics.txt"
 
-    # We might have already calculated it
-    if not dice_file.exists():
-        # Find how many images there are in the validation set
-        n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
-        assert n_val_imgs == len(list(results_dir.glob("val_truth_*.npy")))
+    if metrics_file.exists():
+        return
 
-        if n_val_imgs == 0:
-            raise FileNotFoundError(f"No validation images found in {results_dir}")
+    n_val_imgs = len(list(results_dir.glob("*val_pred_*.npy")))
+    n_truth_imgs = len(list(results_dir.glob("*val_truth_*.npy")))
+    # The run hasn't finished yet
+    if n_val_imgs == 0 and n_truth_imgs == 0:
+        return
 
-        # Get the DICE score
-        # We want to combine the Dice score for multiple images
-        # So keep track of the total intersection and volume here
-        intersection = 0
-        volume = 0
+    # Something weird has happened - maybe the run was interrupted,
+    # or we got unlucky and only one file has been written
+    if n_val_imgs != n_truth_imgs:
+        raise ValueError(
+            f"Number of validation images {n_val_imgs} != number of truth images {n_truth_imgs}"
+        )
 
-        for i in range(n_val_imgs):
-            pred = np.load(results_dir / f"val_pred_{i}.npy")
-            truth = np.load(results_dir / f"val_truth_{i}.npy")
+    # Load the arrays
+    pred = [np.load(results_dir / f"val_pred_{i}.npy") for i in range(n_val_imgs)]
+    truth = [np.load(results_dir / f"val_truth_{i}.npy") for i in range(n_val_imgs)]
 
-            assert pred.shape == truth.shape, f"{pred.shape=} != {truth.shape=}"
+    # Check them
+    for p, t in zip(pred, truth):
+        assert p.shape == t.shape, f"{p.shape=} != {t.shape=}"
+        if not p.min() >= 0 and p.max() <= 1:
+            raise ValueError("Prediction should be scaled to between 0 and 1")
 
-            # The prediction should already be scaled to be between 0 and 1
-            if not pred.min() >= 0 and pred.max() <= 1:
-                raise ValueError("Prediction should be scaled to between 0 and 1")
+    table = metrics.table(truth, pred)
+    with open(metrics_file, "w", encoding="utf-8") as f:
+        f.write(table.to_markdown())
 
-            intersection += np.sum(pred * truth)
-            volume += pred.sum() + truth.sum()
-        score = 2.0 * intersection / volume
 
-        # Check for nan
-        if score != score:  # pylint: disable=comparison-with-itself
-            score = 0.0
+def _write_all_metrics_files(data_dirs: Iterable[pathlib.Path]) -> None:
+    """
+    Create metrics files for all the runs
 
-        with open(dice_file, "w", encoding="utf-8") as f:
-            f.write(str(score))
+    """
+    dirs = list(data_dirs)
 
-    # Read the score from the file
-    with open(dice_file, encoding="utf-8") as f:
-        return float(f.read().strip())
+    for d in tqdm.tqdm(dirs):
+        _write_metrics_file(d)
+
+
+def _metrics_df(metrics_file: pathlib.Path) -> pd.DataFrame:
+    """
+    Read the metrics files and return a DataFrame
+
+    """
+    df = (
+        pd.read_table(
+            metrics_file,
+            sep="|",
+            index_col=1,
+            header=0,
+            skipinitialspace=True,
+        )
+        .dropna(how="all", axis=1)
+        .iloc[1:]
+        .astype(float)
+    )
+    df.columns = df.columns.str.strip()
+    return df
+
+
+def _metric(results_dir: pathlib.Path, metric: str) -> float:
+    """
+    Get a metric score from the i-th run
+
+    :param results_dir: The directory containing the results from a run
+
+    """
+    # We'll write the score to a file
+    metrics_file = results_dir / "metrics.txt"
+
+    if not metrics_file.exists():
+        raise FileNotFoundError(f"No metrics file found in {results_dir}")
+
+    # get the average DICE score from the metrics file
+    df = _metrics_df(metrics_file)
+
+    return df[metric].mean()
 
 
 def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
@@ -302,7 +130,7 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     Plot histograms of the DICE scores and scatter plots
 
     """
-    fig, axes = plt.subplots(3, 3, figsize=(12, 8))
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8))
 
     # Identify the top n
     n = 5
@@ -351,13 +179,10 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
             "r.",
         )
 
-    # Log scale for learning rate and lambda
+    # Log scale for learning rate, lambda and alpha
     axes[0, 1].set_xscale("log")
     axes[2, 0].set_xscale("log")
-
-    # Turn the other axes off
-    for axis in axes.flat[-2:]:
-        axis.axis("off")
+    axes[2, 1].set_xscale("log")
 
     fig.suptitle(f"N runs {len(run_infos)}")
     fig.tight_layout()
@@ -365,14 +190,49 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
-def _plot_fine(input_dir: pathlib.Path, output_dir: pathlib.Path):
+def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     """
-    Find the DICE accuracy of each, plot it
+    Plot scatter plots and a histogram of dice scores if they exist
+    metric must either be "dice" or "loss"
 
     """
-    fig = _plot_scatters(input_dir, metric="dice")
+    data_dirs = list(data_dir.glob("*"))
+    runs = []
 
-    fig.savefig(str(output_dir / "scores.png"))
+    for dir_ in data_dirs:
+        if metric == "loss":
+            try:
+                score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
+            except FileNotFoundError:
+                continue
+        else:
+            try:
+                score = _metric(dir_, metric)
+            except FileNotFoundError:
+                continue
+
+        with open(dir_ / "config.yaml", encoding="utf-8") as f:
+            params = yaml.safe_load(f)
+
+        runs.append(
+            RunInfo(
+                score,
+                params["learning_rate"],
+                params["model_params"]["n_initial_filters"],
+                params["batch_size"],
+                params["loss_options"]["alpha"],
+                1 - params["lr_lambda"],
+            )
+        )
+
+    # Print the best params
+    n = 5
+    top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
+    for r, d in zip(runs, data_dirs):
+        if r.score in top_dice_scores:
+            print(r, d.name)
+
+    return _plot_scores(runs)
 
 
 def main(mode: str):
@@ -382,12 +242,23 @@ def main(mode: str):
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    if mode == "coarse":
-        _plot_coarse(input_dir, output_dir)
-    elif mode == "med":
-        _plot_med(input_dir, output_dir)
+    if mode != "fine":
+        fig = _plot_scatters(input_dir, metric="loss")
+        fig.savefig(output_dir / "scores.png")
     else:
-        _plot_fine(input_dir, output_dir)
+        for metric in [
+            "Dice",
+            "1-FPR",
+            "TPR",
+            "Precision",
+            "Recall",
+            "Jaccard",
+            "ROC AUC",
+            "G_Measure",
+            "Hausdorff_0.5",
+        ]:
+            fig = _plot_scatters(input_dir, metric=metric)
+            fig.savefig(output_dir / f"{metric}.png")
 
 
 if __name__ == "__main__":
@@ -402,4 +273,15 @@ if __name__ == "__main__":
         help="Granularity of the search.",
     )
 
-    main(**vars(parser.parse_args()))
+    args = parser.parse_args()
+
+    # We need to write the files holding the table of metrics
+    if args.mode == "fine":
+        _write_all_metrics_files(
+            sorted(
+                list((files.script_out_dir() / "tuning_output" / "fine").glob("*")),
+                key=lambda x: int(x.name),
+            )
+        )
+
+    main(args.mode)

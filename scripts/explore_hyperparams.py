@@ -62,7 +62,7 @@ def _lr(rng: np.random.Generator, mode: str) -> float:
         lr_range = (-6, 1)
     elif mode == "fine":
         # From centering around a value that seems to broadly work
-        lr_range = (-3, 0)
+        lr_range = (-3.5, -2)
     else:
         raise ValueError(f"Unknown mode {mode}")
 
@@ -86,7 +86,7 @@ def _epochs(mode: str) -> int:
 
 
 def _alpha(rng: np.random.Generator) -> float:
-    return rng.uniform(0.0, 1.0)
+    return 10 ** rng.uniform(-4, 0)
 
 
 def _n_filters(rng: np.random.Generator) -> int:
@@ -136,7 +136,11 @@ def _config(rng: np.random.Generator, mode: str) -> dict:
         "mode": mode,
         "patch_size": "160,160,160",
         "window_size": "192,192,192",
-        "dicom_dir": "/home/mh19137/zebrafish_jaw_segmentation/dicoms/",
+        "dicom_dirs": [
+            "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/",
+            "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/",
+            "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/",
+        ],
         "validation_dicoms": ["ak_39", "ak_86"],
         "test_dicoms": ["ak_131"],
         "transforms": {
@@ -221,6 +225,7 @@ def step(
         activation = model.activation_name(config)
 
         # Plot the validation data
+        predictions = []
         for i, val_subject in enumerate(full_validation_subjects):
             fig = images_3d.plot_inference(
                 net,
@@ -253,6 +258,7 @@ def step(
                 activation=activation,
             )
             np.save(out_dir / f"val_pred_{i}.npy", prediction)
+            predictions.append(prediction)
 
     # Save the losses to file
     np.save(out_dir / "train_losses.npy", train_losses)

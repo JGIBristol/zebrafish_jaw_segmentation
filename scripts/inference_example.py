@@ -4,6 +4,7 @@ Perform inference on an out-of-sample subject
 """
 
 import pickle
+import pathlib
 import argparse
 
 import torch
@@ -46,7 +47,13 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     # Load the testing subject
     if args.test:
         with open(
-            str(files.script_out_dir() / "train_output" / "test_subject.pkl"), "rb"
+            str(
+                files.script_out_dir()
+                / "train_output"
+                / pathlib.Path(config["model_path"]).stem
+                / "test_subject.pkl"
+            ),
+            "rb",
         ) as f:
             return pickle.load(f)
     else:
@@ -194,6 +201,10 @@ def _make_plots(
 
         # We might as well save the truth as a tiff too
         tifffile.imwrite(out_dir / f"{prefix}_truth.tif", truth)
+
+        # Print a table of metrics
+        print(metrics.table([truth], [prediction]).to_markdown())
+
     else:
         fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
 
