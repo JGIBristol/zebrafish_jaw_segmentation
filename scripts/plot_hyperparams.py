@@ -246,7 +246,17 @@ def main(mode: str):
         fig = _plot_scatters(input_dir, metric="loss")
         fig.savefig(output_dir / "scores.png")
     else:
-        for metric in ["Dice", "1-FPR", "TPR", "Precision", "Jaccard", "ROC AUC", "Hausdorff_0.5"]:
+        for metric in [
+            "Dice",
+            "1-FPR",
+            "TPR",
+            "Precision",
+            "Recall",
+            "Jaccard",
+            "ROC AUC",
+            "G_Measure",
+            "Hausdorff_0.5",
+        ]:
             fig = _plot_scatters(input_dir, metric=metric)
             fig.savefig(output_dir / f"{metric}.png")
 

@@ -108,7 +108,7 @@ def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
     return weighted_positives / positives
 
 
-def average_precision(truth: np.ndarray, pred: np.ndarray) -> float:
+def precision(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the precision, averaged over thresholds,
     between a binary mask (truth) and a float array (pred).
@@ -124,7 +124,7 @@ def average_precision(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays(truth, pred)
 
-    return skm.average_precision_score(truth.flatten(), pred.flatten())
+    return np.sum(truth * pred) / np.sum(pred)
 
 
 def recall(truth: np.ndarray, pred: np.ndarray) -> float:
@@ -144,6 +144,20 @@ def recall(truth: np.ndarray, pred: np.ndarray) -> float:
 
     # True positives / all positives
     return np.sum(truth * pred) / np.sum(truth)
+
+
+def g_measure(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the geometric mean of the precision and recall
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the pred array is not in the range [0, 1].
+
+    """
+    return np.sqrt(precision(truth, pred) * recall(truth, pred))
 
 
 def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
@@ -285,9 +299,11 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
     df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
+    df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
 
     # Threshold the prediction
     thresholds = (0.5,)
+
     for threshold in thresholds:
         df[f"Hausdorff_{threshold}"] = [
             hausdorff_distance(t, p > threshold) for t, p in zip(truth, pred)
