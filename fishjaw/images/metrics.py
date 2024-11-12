@@ -278,7 +278,7 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df = pd.DataFrame()
 
     df["Dice"] = [dice_score(t, p) for t, p in zip(truth, pred)]
-    df["FPR"] = [fpr(t, p) for t, p in zip(truth, pred)]
+    df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
     df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
     df["Precision"] = [average_precision(t, p) for t, p in zip(truth, pred)]
     # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
