@@ -33,53 +33,6 @@ class RunInfo:
     one_minus_lambda: float
 
 
-def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
-    """
-    Plot scatter plots and a histogram of dice scores if they exist
-    metric must either be "dice" or "loss"
-
-    """
-    data_dirs = list(data_dir.glob("*"))
-    runs = []
-
-    for dir_ in data_dirs:
-        if metric == "dice":
-            try:
-                score = _dicescore(dir_)
-            except FileNotFoundError:
-                continue
-        elif metric == "loss":
-            try:
-                score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
-            except FileNotFoundError:
-                continue
-        else:
-            raise ValueError("metric must be either 'dice' or 'loss'")
-
-        with open(dir_ / "config.yaml", encoding="utf-8") as f:
-            params = yaml.safe_load(f)
-
-        runs.append(
-            RunInfo(
-                score,
-                params["learning_rate"],
-                params["model_params"]["n_initial_filters"],
-                params["batch_size"],
-                params["loss_options"]["alpha"],
-                1 - params["lr_lambda"],
-            )
-        )
-
-    # Print the best params
-    n = 5
-    top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
-    for r, d in zip(runs, data_dirs):
-        if r.score in top_dice_scores:
-            print(r, d.name)
-
-    return _plot_scores(runs)
-
-
 def _write_metrics_file(results_dir: pathlib.Path) -> None:
     """
     Write files containing the validation metrics for each run, as markdown
@@ -153,9 +106,9 @@ def _metrics_df(metrics_file: pathlib.Path) -> pd.DataFrame:
     return df
 
 
-def _dicescore(results_dir: pathlib.Path) -> float:
+def _metric(results_dir: pathlib.Path, metric: str) -> float:
     """
-    Get the DICE score from the i-th run
+    Get a metric score from the i-th run
 
     :param results_dir: The directory containing the results from a run
 
@@ -169,7 +122,7 @@ def _dicescore(results_dir: pathlib.Path) -> float:
     # get the average DICE score from the metrics file
     df = _metrics_df(metrics_file)
 
-    return df["Dice"].mean()
+    return df[metric].mean()
 
 
 def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
@@ -237,6 +190,51 @@ def _plot_scores(run_infos: list[RunInfo]) -> plt.Figure:
     return fig
 
 
+def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
+    """
+    Plot scatter plots and a histogram of dice scores if they exist
+    metric must either be "dice" or "loss"
+
+    """
+    data_dirs = list(data_dir.glob("*"))
+    runs = []
+
+    for dir_ in data_dirs:
+        if metric == "loss":
+            try:
+                score = 1 - np.load(dir_ / "val_losses.npy")[-1].mean()
+            except FileNotFoundError:
+                continue
+        else:
+            try:
+                score = _metric(dir_, metric)
+            except FileNotFoundError:
+                continue
+
+        with open(dir_ / "config.yaml", encoding="utf-8") as f:
+            params = yaml.safe_load(f)
+
+        runs.append(
+            RunInfo(
+                score,
+                params["learning_rate"],
+                params["model_params"]["n_initial_filters"],
+                params["batch_size"],
+                params["loss_options"]["alpha"],
+                1 - params["lr_lambda"],
+            )
+        )
+
+    # Print the best params
+    n = 5
+    top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
+    for r, d in zip(runs, data_dirs):
+        if r.score in top_dice_scores:
+            print(r, d.name)
+
+    return _plot_scores(runs)
+
+
 def main(mode: str):
     """Choose the granularity of the search to plot"""
     input_dir = files.script_out_dir() / "tuning_output" / mode
@@ -244,8 +242,13 @@ def main(mode: str):
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    fig = _plot_scatters(input_dir, metric="dice" if mode == "fine" else "loss")
-    fig.savefig(output_dir / "scores.png")
+    if mode != "fine":
+        fig = _plot_scatters(input_dir, metric="loss")
+        fig.savefig(output_dir / "scores.png")
+    else:
+        for metric in ["Dice", "FPR", "TPR", "Precision", "Jaccard", "ROC AUC"]:
+            fig = _plot_scatters(input_dir, metric=metric)
+            fig.savefig(output_dir / f"{metric}.png")
 
 
 if __name__ == "__main__":
@@ -259,20 +262,16 @@ if __name__ == "__main__":
         choices={"coarse", "med", "fine"},
         help="Granularity of the search.",
     )
-    parser.add_argument(
-        "--n_procs",
-        type=int,
-        help="How many processes to spawn for file stuff when making fine-grained plots",
-        default=None,
-    )
 
     args = parser.parse_args()
 
     # We need to write the files holding the table of metrics
     if args.mode == "fine":
         _write_all_metrics_files(
-            (files.script_out_dir() / "tuning_output" / "fine").glob("*"),
-            args.n_procs,
+            sorted(
+                list((files.script_out_dir() / "tuning_output" / "fine").glob("*")),
+                key=lambda x: int(x.name),
+            )
         )
 
     main(args.mode)
