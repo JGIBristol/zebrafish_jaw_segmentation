@@ -64,8 +64,8 @@ def test_hausdorff():
     y = np.zeros(shape)
     y[-3:, -3:] = 1
 
-    assert np.isclose(metrics.hausdorff_distance(x, y), 7 * np.sqrt(2))
-    assert np.isclose(metrics.hausdorff_distance(y, x), 7 * np.sqrt(2))
+    assert np.isclose(metrics.hausdorff_distance(x, y), 7 * np.sqrt(2) / np.sqrt(200))
+    assert np.isclose(metrics.hausdorff_distance(y, x), 7 * np.sqrt(2) / np.sqrt(200))
 
 
 def test_hausdorff_3d():
@@ -81,5 +81,5 @@ def test_hausdorff_3d():
     y = np.zeros(shape)
     y[2, 1, 1] = 1
 
-    assert np.isclose(metrics.hausdorff_distance(x, y), np.sqrt(6))
-    assert np.isclose(metrics.hausdorff_distance(y, x), np.sqrt(6))
+    assert np.isclose(metrics.hausdorff_distance(x, y), np.sqrt(6) / np.sqrt(27))
+    assert np.isclose(metrics.hausdorff_distance(y, x), np.sqrt(6) / np.sqrt(27))
