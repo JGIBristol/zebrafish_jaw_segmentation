@@ -235,10 +235,13 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     return _plot_scores(runs)
 
 
-def main(mode: str):
+def main(mode: str, out_dir: str):
     """Choose the granularity of the search to plot"""
-    input_dir = files.script_out_dir() / "tuning_output" / mode
-    output_dir = files.script_out_dir() / "tuning_plots" / mode
+    input_dir = files.script_out_dir() / out_dir / mode
+    if not input_dir.exists():
+        raise FileNotFoundError(f"Directory {input_dir} not found")
+
+    output_dir = files.script_out_dir() / "tuning_plots" / out_dir / mode
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -272,6 +275,12 @@ if __name__ == "__main__":
         choices={"coarse", "med", "fine"},
         help="Granularity of the search.",
     )
+    parser.add_argument(
+        "out_dir",
+        type=str,
+        help="Directory to read the tuning outputs from,"
+        "relative to the script output directory",
+    )
 
     args = parser.parse_args()
 
@@ -279,9 +288,9 @@ if __name__ == "__main__":
     if args.mode == "fine":
         _write_all_metrics_files(
             sorted(
-                list((files.script_out_dir() / "tuning_output" / "fine").glob("*")),
+                list((files.script_out_dir() / args.out_dir / args.mode).glob("*")),
                 key=lambda x: int(x.name),
             )
         )
 
-    main(args.mode)
+    main(args.mode, args.out_dir)
