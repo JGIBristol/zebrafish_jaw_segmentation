@@ -241,7 +241,7 @@ def main(mode: str, out_dir: str):
     if not input_dir.exists():
         raise FileNotFoundError(f"Directory {input_dir} not found")
 
-    output_dir = files.script_out_dir() / "tuning_plots" / mode
+    output_dir = files.script_out_dir() / "tuning_plots" / out_dir / mode
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
