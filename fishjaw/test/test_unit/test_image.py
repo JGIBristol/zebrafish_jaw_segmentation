@@ -83,3 +83,31 @@ def test_hausdorff_3d():
 
     assert np.isclose(metrics.hausdorff_distance(x, y), np.sqrt(6) / np.sqrt(27))
     assert np.isclose(metrics.hausdorff_distance(y, x), np.sqrt(6) / np.sqrt(27))
+
+
+def test_largest_object():
+    """
+    Check that we can isolate the largest connected object in a 3D binary image
+
+    """
+    binary_array = np.zeros((5, 5, 5), dtype=int)
+
+    # Add a small connected component
+    binary_array[1, 1, 1] = 1
+    binary_array[1, 1, 2] = 1
+
+    # Add a larger connected component
+    binary_array[3, 3, 3] = 1
+    binary_array[3, 3, 4] = 1
+    binary_array[3, 4, 3] = 1
+    binary_array[4, 3, 3] = 1
+
+    expected = binary_array.copy()
+    expected[1, 1, 1] = 0
+    expected[1, 1, 2] = 0
+
+    # Use the function to find the largest connected component
+    largest_component = metrics.largest_connected_component(binary_array)
+
+    # Check that the result matches the expected result
+    assert np.array_equal(largest_component, expected)

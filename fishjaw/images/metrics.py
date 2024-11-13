@@ -8,6 +8,7 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
+from scipy import ndimage
 from sklearn import metrics as skm
 from skimage import metrics as skimage_m
 
@@ -279,6 +280,24 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
 
 
+def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
+    """
+    Return the largest connected component of a binary array, as a binary array,
+    using a 26-connectivity.
+
+    :param binary_array: Binary array.
+    :returns: Largest connected component.
+
+    """
+    labelled, _ = ndimage.label(binary_array, np.ones((3, 3, 3)))
+
+    # Find the size of each component, ignoring the background
+    sizes = np.bincount(labelled.ravel())
+    sizes[0] = 0
+
+    return labelled == np.argmax(sizes)
+
+
 def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     """
     Return a table of metrics between a binary mask (truth) and a float array (pred)
@@ -305,8 +324,18 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     thresholds = (0.5,)
 
     for threshold in thresholds:
-        df[f"Hausdorff_{threshold}"] = [
-            hausdorff_distance(t, p > threshold) for t, p in zip(truth, pred)
-        ]
+        hd = []
+        hd_dice = []
+        for t, p in zip(truth, pred):
+            thresholded = largest_connected_component(p > threshold)
+
+            distance = hausdorff_distance(t, thresholded)
+
+            hd.append(1 - distance)
+
+            hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
+
+        df[f"1-Hausdorff_{threshold}"] = hd
+        df[f"Hausdorff_Dice_{threshold}"] = hd_dice
 
     return df
