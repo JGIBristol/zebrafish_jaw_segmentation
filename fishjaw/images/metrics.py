@@ -324,8 +324,18 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     thresholds = (0.5,)
 
     for threshold in thresholds:
-        df[f"Hausdorff_{threshold}"] = [
-            hausdorff_distance(t, p > threshold) for t, p in zip(truth, pred)
-        ]
+        hd = []
+        hd_dice = []
+        for t, p in zip(truth, pred):
+            thresholded = largest_connected_component(p > threshold)
+
+            distance = hausdorff_distance(t, thresholded)
+
+            hd.append(1 - distance)
+
+            hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
+
+        df[f"1-Hausdorff_{threshold}"] = hd
+        df[f"Hausdorff_Dice_{threshold}"] = hd_dice
 
     return df
