@@ -197,7 +197,11 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     _check_arrays(truth, pred)
 
-    return skm.roc_auc_score(truth.flatten(), pred.flatten())
+    try:
+        return skm.roc_auc_score(truth.flatten(), pred.flatten())
+    except ValueError:
+        warnings.warn("ROC AUC score could not be calculated")
+        return float("nan")
 
 
 def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
