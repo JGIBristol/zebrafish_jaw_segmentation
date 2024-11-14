@@ -298,8 +298,9 @@ def main(mode: str, out_dir: str):
             "Jaccard",
             "ROC AUC",
             "G_Measure",
-            "1-Hausdorff_0.5",
-            "Hausdorff_Dice_0.5",
+            # "1-Hausdorff_0.5",
+            # "Hausdorff_Dice_0.5",
+            "Z_dist_score",
         ]:
             fig = _plot_scatters(input_dir, metric=metric)
             fig.savefig(output_dir / f"{metric}.png")

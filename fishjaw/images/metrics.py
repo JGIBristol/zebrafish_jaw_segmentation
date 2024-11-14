@@ -325,13 +325,16 @@ def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
     return labelled == np.argmax(sizes)
 
 
-def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
+def table(
+    truth: list[np.ndarray], pred: list[np.ndarray], thresholded_metrics: bool = False
+) -> pd.DataFrame:
     """
     Return a table of metrics between a binary mask (truth) and a float array (pred)
     in a nice markdown format
 
     :param truth: List of binary mask arrays.
     :param pred: List of float prediction arrays.
+    :param thresholded_metrics: Whether to add some metrics for thresholded predictions.
 
     :returns: Table of metrics
 
@@ -349,20 +352,21 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
 
     # Threshold the prediction
-    thresholds = (0.5,)
-    for threshold in thresholds:
-        hd = []
-        hd_dice = []
-        for t, p in zip(truth, pred):
-            thresholded = largest_connected_component(p > threshold)
+    if thresholded_metrics:
+        thresholds = (0.5,)
+        for t in thresholds:
+            hd = []
+            hd_dice = []
+            for t, p in zip(truth, pred):
+                thresholded = largest_connected_component(p > t)
 
-            distance = hausdorff_distance(t, thresholded)
+                distance = hausdorff_distance(t, thresholded)
 
-            hd.append(1 - distance)
+                hd.append(1 - distance)
 
-            hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
+                hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
 
-        df[f"1-Hausdorff_{threshold}"] = hd
-        df[f"Hausdorff_Dice_{threshold}"] = hd_dice
+            df[f"1-Hausdorff_{t}"] = hd
+            df[f"Hausdorff_Dice_{t}"] = hd_dice
 
     return df
