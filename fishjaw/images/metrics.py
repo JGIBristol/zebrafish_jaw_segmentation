@@ -196,7 +196,6 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
 
     """
     _check_arrays(truth, pred)
-
     try:
         return skm.roc_auc_score(truth.flatten(), pred.flatten())
     except ValueError:
@@ -282,6 +281,21 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     _check_arrays_binary(truth, pred)
 
     return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
+
+
+def z_distance(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the Z-distance between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Z-distance
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the prediction array is not binary.
+
+    """
 
 
 def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
