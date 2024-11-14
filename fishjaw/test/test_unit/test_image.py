@@ -111,3 +111,68 @@ def test_largest_object():
 
     # Check that the result matches the expected result
     assert np.array_equal(largest_component, expected)
+
+
+def test_z_distance_overlap():
+    """
+    Check that we can calculate the z distance for perfect overlap
+
+    """
+    shape = 10, 10, 10
+
+    truth = np.zeros(shape)
+    truth[:3, :3, :3] = 1
+
+    pred = truth.copy()
+
+    assert np.isclose(metrics.z_distance_score(truth, pred), 1.0)
+
+
+def test_z_distance_no_overlap():
+    """
+    Check that we can calculate the z distance for no overlap
+
+    """
+    shape = 10, 10, 10
+
+    truth = np.zeros(shape)
+    truth[:3, :3, :3] = 1
+
+    pred = np.zeros(shape)
+    truth[8:, 8:, 8:] = 1
+
+    assert np.isclose(metrics.z_distance_score(truth, pred), 0.0)
+
+
+def test_z_distance_binary():
+    """
+    Check we get the right number for binary arrays
+
+    """
+    shape = 10, 10, 10
+
+    truth = np.zeros(shape)
+    truth[4:7, 4:7, 4:7] = 1
+
+    pred = np.zeros(shape)
+    pred[2:6, 2:6, 2:6] = 1
+
+    assert np.isclose(metrics.z_distance_score(truth, pred), 1 - (691 / 1267))
+
+
+def test_z_distance_greyscale():
+    """
+    Check we get the right number for binary arrays
+
+    """
+    shape = 10, 10, 10
+
+    truth = np.zeros(shape)
+    truth[4:7, 4:7, 4:7] = 1
+
+    pred = np.zeros(shape)
+    pred[3, 3:6, 3:6] = 0.8
+    pred[4, 3:6, 3:6] = 1.0
+    pred[5, 3:6, 3:6] = 0.4
+
+    assert np.isclose(metrics.z_distance_score(truth, pred), 1 - 1 / 2.4)

@@ -196,8 +196,11 @@ def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
 
     """
     _check_arrays(truth, pred)
-
-    return skm.roc_auc_score(truth.flatten(), pred.flatten())
+    try:
+        return skm.roc_auc_score(truth.flatten(), pred.flatten())
+    except ValueError:
+        warnings.warn("ROC AUC score could not be calculated")
+        return float("nan")
 
 
 def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
@@ -280,6 +283,30 @@ def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
     return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
 
 
+def z_distance_score(truth: np.ndarray, pred: np.ndarray) -> float:
+    """
+    Calculate the weighted Z-distance between a binary mask (truth) and a float array (pred).
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Z-distance
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the prediction array is not binary.
+
+    """
+    _check_arrays(truth, pred)
+
+    truth_slice_sums = np.sum(truth, axis=(1, 2))
+    pred_slice_sums = np.sum(pred, axis=(1, 2))
+
+    numerator = np.sum((truth_slice_sums - pred_slice_sums) ** 2)
+    denominator = np.sum(truth_slice_sums**2) + np.sum(pred_slice_sums**2)
+
+    return 1 - numerator / denominator
+
+
 def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
     """
     Return the largest connected component of a binary array, as a binary array,
@@ -298,13 +325,16 @@ def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
     return labelled == np.argmax(sizes)
 
 
-def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
+def table(
+    truth: list[np.ndarray], pred: list[np.ndarray], thresholded_metrics: bool = False
+) -> pd.DataFrame:
     """
     Return a table of metrics between a binary mask (truth) and a float array (pred)
     in a nice markdown format
 
     :param truth: List of binary mask arrays.
     :param pred: List of float prediction arrays.
+    :param thresholded_metrics: Whether to add some metrics for thresholded predictions.
 
     :returns: Table of metrics
 
@@ -319,23 +349,24 @@ def table(truth: list[np.ndarray], pred: list[np.ndarray]) -> pd.DataFrame:
     df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
     df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
+    df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
 
     # Threshold the prediction
-    thresholds = (0.5,)
+    if thresholded_metrics:
+        thresholds = (0.5,)
+        for t in thresholds:
+            hd = []
+            hd_dice = []
+            for t, p in zip(truth, pred):
+                thresholded = largest_connected_component(p > t)
 
-    for threshold in thresholds:
-        hd = []
-        hd_dice = []
-        for t, p in zip(truth, pred):
-            thresholded = largest_connected_component(p > threshold)
+                distance = hausdorff_distance(t, thresholded)
 
-            distance = hausdorff_distance(t, thresholded)
+                hd.append(1 - distance)
 
-            hd.append(1 - distance)
+                hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
 
-            hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
-
-        df[f"1-Hausdorff_{threshold}"] = hd
-        df[f"Hausdorff_Dice_{threshold}"] = hd_dice
+            df[f"1-Hausdorff_{t}"] = hd
+            df[f"Hausdorff_Dice_{t}"] = hd_dice
 
     return df

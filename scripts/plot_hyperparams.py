@@ -17,6 +17,7 @@ from sklearn.metrics import roc_curve, auc
 
 from fishjaw.util import files
 from fishjaw.images import metrics
+from fishjaw.visualisation import images_3d
 
 
 @dataclass
@@ -71,23 +72,40 @@ def _write_metrics_file(results_dir: pathlib.Path) -> None:
         if not p.min() >= 0 and p.max() <= 1:
             raise ValueError("Prediction should be scaled to between 0 and 1")
 
-    # Plot ROC curves
+    # Plot ROC curves and thresholded at 0.5 with largest component
     for i, (p, t) in enumerate(zip(pred, truth)):
-        fig, axis = plt.subplots()
-        fpr, tpr, threshold = roc_curve(t.ravel(), p.ravel())
+        roc_path = results_dir / f"roc_curve_{i}.png"
+        if not roc_path.exists():
+            fig, axis = plt.subplots()
+            try:
+                fpr, tpr, threshold = roc_curve(t.ravel(), p.ravel())
+            except ValueError as e:
+                print(e)
+                continue
 
-        axis.plot(fpr, tpr)
-        scatter = axis.scatter(fpr, tpr, c=threshold)
+            axis.plot(fpr, tpr)
+            scatter = axis.scatter(fpr, tpr, c=threshold)
 
-        cbar = fig.colorbar(scatter)
-        cbar.set_label("Threshold")
+            cbar = fig.colorbar(scatter)
+            cbar.set_label("Threshold")
 
-        axis.set_xlabel("FPR")
-        axis.set_ylabel("TPR")
-        axis.set_title(f"ROC curve for validation image {i}: AUC = {auc(fpr, tpr):.3f}")
+            axis.set_xlabel("FPR")
+            axis.set_ylabel("TPR")
+            axis.set_title(
+                f"ROC curve for validation image {i}: AUC = {auc(fpr, tpr):.3f}"
+            )
 
-        fig.tight_layout()
-        fig.savefig(results_dir / f"roc_curve_{i}.png")
+            fig.tight_layout()
+            fig.savefig(roc_path)
+            plt.close(fig)
+
+        # Make thresholded plots
+        threshold_path = results_dir / f"thresholded_{i}.png"
+        if not threshold_path.exists():
+            thresholded = metrics.largest_connected_component(p > 0.5)
+            fig, _ = images_3d.plot_slices(thresholded)
+            fig.savefig(threshold_path)
+            plt.close(fig)
 
     table = metrics.table(truth, pred)
     with open(metrics_file, "w", encoding="utf-8") as f:
@@ -139,7 +157,6 @@ def _metric(results_dir: pathlib.Path, metric: str) -> float:
     if not metrics_file.exists():
         raise FileNotFoundError(f"No metrics file found in {results_dir}")
 
-    # get the average DICE score from the metrics file
     df = _metrics_df(metrics_file)
 
     return df[metric].mean()
@@ -216,7 +233,7 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     metric must either be "dice" or "loss"
 
     """
-    data_dirs = list(data_dir.glob("*"))
+    data_dirs = sorted(list(data_dir.glob("*")))
     runs = []
 
     for dir_ in data_dirs:
@@ -246,11 +263,13 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
         )
 
     # Print the best params
+    print(f"Top {metric} scores:")
     n = 5
     top_dice_scores = set(sorted([r.score for r in runs], reverse=True)[:n])
     for r, d in zip(runs, data_dirs):
         if r.score in top_dice_scores:
             print(r, d.name)
+    print("=" * 80)
 
     return _plot_scores(runs)
 
@@ -270,6 +289,7 @@ def main(mode: str, out_dir: str):
         fig.savefig(output_dir / "scores.png")
     else:
         for metric in [
+            "Z_dist_score",
             "Dice",
             "1-FPR",
             "TPR",
@@ -278,10 +298,12 @@ def main(mode: str, out_dir: str):
             "Jaccard",
             "ROC AUC",
             "G_Measure",
-            "Hausdorff_0.5",
+            # "1-Hausdorff_0.5",
+            # "Hausdorff_Dice_0.5",
         ]:
             fig = _plot_scatters(input_dir, metric=metric)
             fig.savefig(output_dir / f"{metric}.png")
+            plt.close(fig)
 
 
 if __name__ == "__main__":
