@@ -12,7 +12,7 @@ dicom_dirs:
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
-model_path: "alpha_001_beta_099_model.pkl"
+model_path: "with_attention.pkl"
 
 # Which ones to use for testing and validation
 # all the others will be used for testing
@@ -33,8 +33,8 @@ loss: "monai.losses.TverskyLoss"
 loss_options: {
   "include_background": false,
   "to_onehot_y": true,
-  "alpha": 0.01,
-  "beta": 0.99,
+  "alpha": 0.2,
+  "beta": 0.8,
   "sigmoid": true,
 }
 
@@ -51,8 +51,8 @@ test_train_seed: 1
 device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
-batch_size: 6
-epochs: 400
+batch_size: 12
+epochs: 450
 lr_lambda: 0.99999 # Exponential decay factor (multiplicative with each epoch)
 
 # Options should be passed
