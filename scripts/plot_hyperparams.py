@@ -157,7 +157,6 @@ def _metric(results_dir: pathlib.Path, metric: str) -> float:
     if not metrics_file.exists():
         raise FileNotFoundError(f"No metrics file found in {results_dir}")
 
-    # get the average DICE score from the metrics file
     df = _metrics_df(metrics_file)
 
     return df[metric].mean()
@@ -234,7 +233,7 @@ def _plot_scatters(data_dir: pathlib.Path, metric: str) -> plt.Figure:
     metric must either be "dice" or "loss"
 
     """
-    data_dirs = list(data_dir.glob("*"))
+    data_dirs = sorted(list(data_dir.glob("*")))
     runs = []
 
     for dir_ in data_dirs:
@@ -290,6 +289,7 @@ def main(mode: str, out_dir: str):
         fig.savefig(output_dir / "scores.png")
     else:
         for metric in [
+            "Z_dist_score",
             "Dice",
             "1-FPR",
             "TPR",
@@ -300,7 +300,6 @@ def main(mode: str, out_dir: str):
             "G_Measure",
             # "1-Hausdorff_0.5",
             # "Hausdorff_Dice_0.5",
-            "Z_dist_score",
         ]:
             fig = _plot_scatters(input_dir, metric=metric)
             fig.savefig(output_dir / f"{metric}.png")
