@@ -296,6 +296,15 @@ def z_distance_score(truth: np.ndarray, pred: np.ndarray) -> float:
     :raises: ValueError if the prediction array is not binary.
 
     """
+    _check_arrays(truth, pred)
+
+    truth_slice_sums = np.sum(truth, axis=(1, 2))
+    pred_slice_sums = np.sum(pred, axis=(1, 2))
+
+    numerator = np.sum((truth_slice_sums - pred_slice_sums) ** 2)
+    denominator = np.sum(truth_slice_sums**2) + np.sum(pred_slice_sums**2)
+
+    return 1 - numerator / denominator
 
 
 def largest_connected_component(binary_array: np.ndarray) -> np.ndarray:
