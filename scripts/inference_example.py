@@ -9,16 +9,14 @@ import argparse
 import torch
 import tifffile
 import numpy as np
-from stl import mesh
 import torchio as tio
-from skimage import measure
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import metrics
 from fishjaw.visualisation import images_3d
-from fishjaw.inference import read
+from fishjaw.inference import read, mesh
 
 
 def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
@@ -91,12 +89,9 @@ def _save_mesh(
     Turn a segmentation into a mesh and save it
 
     """
-    # Marching cubes
-    verts, faces, *_ = measure.marching_cubes(segmentation, level=threshold)
 
     # Save as STL
-    stl_mesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
-    stl_mesh.vectors = verts[faces]
+    stl_mesh = mesh.cubic_mesh(segmentation > threshold)
 
     stl_mesh.save(f"inference/{subject_name}_mesh_{threshold:.3f}.stl")
 
