@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
-from fishjaw.images import transform, metrics
+from fishjaw.images import metrics
 from fishjaw.visualisation import images_3d
 from fishjaw.inference import read
 
