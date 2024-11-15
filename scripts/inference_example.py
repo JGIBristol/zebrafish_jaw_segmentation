@@ -6,6 +6,7 @@ Perform inference on an out-of-sample subject
 import pathlib
 import argparse
 
+import stl
 import torch
 import tifffile
 import numpy as np
@@ -15,7 +16,7 @@ import matplotlib.pyplot as plt
 from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import metrics
-from fishjaw.visualisation import images_3d
+from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
 
 
@@ -31,51 +32,15 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     )
 
 
-def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
+def _mesh_projections(stl_mesh: stl.Mesh) -> plt.Figure:
     """
     Visualize the mesh from three different angles
 
     """
-    vertices = stl_mesh.vectors.reshape(-1, 3)
-    faces = np.arange(vertices.shape[0]).reshape(-1, 3)
 
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
-    plot_kw = {"cmap": "bone_r", "edgecolor": "k", "lw": 0.05}
-    # First subplot: view from the front
-    axes[0].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[0].view_init(elev=0, azim=0)
-
-    # Second subplot: view from the top
-    axes[1].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[1].view_init(elev=90, azim=0)
-
-    # Third subplot: view from the side
-    axes[2].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[2].view_init(elev=0, azim=90)
-
-    for ax in axes:
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
+    plot_meshes.projections(axes, stl_mesh)
 
     fig.tight_layout()
     return fig
