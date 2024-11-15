@@ -21,11 +21,12 @@ from fishjaw.inference import read, mesh
 from fishjaw.visualisation import plot_meshes
 
 
-def ablated_psi(module, input, output):
+def ablated_psi(module, input_, output):
     """
     Identity function to replace the attention mechanism
 
     """
+    # pylint: disable=unused-argument
     return torch.ones_like(output)
 
 
@@ -119,7 +120,9 @@ def main(args: argparse.Namespace):
     )
 
     fig.tight_layout()
-    fig.savefig(out_dir / "ablation.png")
+    fig.savefig(
+        out_dir / f"ablation_{'test' if args.subject is None else args.subject}.png"
+    )
 
 
 if __name__ == "__main__":
