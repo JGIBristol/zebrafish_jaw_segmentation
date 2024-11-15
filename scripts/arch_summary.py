@@ -3,13 +3,11 @@ Summarise the architecture of the model
 
 """
 
-import pickle
 import argparse
 
 import torch
 from prettytable import PrettyTable
 
-from fishjaw.util import files, util
 from fishjaw.model import model
 
 
