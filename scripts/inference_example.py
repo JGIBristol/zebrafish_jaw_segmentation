@@ -250,15 +250,11 @@ def main(args):
     Save the output image
 
     """
-    if not args.model_name.endswith(".pkl"):
-        raise ValueError("Model name should end with .pkl")
-
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
 
     # Load the model and training-time config
-    with open(str(files.model_path({"model_path": args.model_name})), "rb") as f:
-        model_state: model.ModelState = pickle.load(f)
+    model_state = model.load_model(args.model_name)
 
     config = model_state.config
     net = model_state.load_model(set_eval=True)

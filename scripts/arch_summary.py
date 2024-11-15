@@ -61,26 +61,16 @@ def replace_layers_with_tracker(net: torch.nn.Module):
             replace_layers_with_tracker(layer)
 
 
-def _load_model(config: dict) -> torch.nn.Module:
-    """
-    Load the model from disk
-
-    """
-
-    # Load the state dict
-    with open(str(files.model_path(config)), "rb") as f:
-        model_state: model.ModelState = pickle.load(f)
-    return model_state.load_model(set_eval=True)
-
-
-def main():
+def main(*, model_name: str):
     """
     Load the model, read the chosen image and perform inference
     Save the output image
 
     """
     # Load the model
-    net = _load_model(util.userconf())
+    model_state: model.ModelState = model.load_model(model_name)
+
+    net = model_state.load_model(set_eval=True)
     net.to("cuda")
 
     # Print the number of trainable parameters
@@ -98,7 +88,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Summarise the architecture of the model"
     )
+    parser.add_argument(
+        "model_name",
+        help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
 
-    # Not passing any arguments
-    parser.parse_args()
-    main()
+    main(**vars(parser.parse_args()))
