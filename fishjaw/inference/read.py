@@ -58,21 +58,29 @@ def inference_subject(config: dict, img_n: int) -> tio.Subject:
     return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
 
 
-def test_subject(model_path: str) -> tio.Subject:
+def test_subject(model_name: str) -> tio.Subject:
     """
     Load the testing subject that was dumped when we trained the model
 
-    :param model_path: the path to the model, as created by scripts/train_model.py.
-                       You might get this from userconf["model_path"]
+    :param model_name: the path to the model, as created by scripts/train_model.py.
+                       You might get this from userconf["model_path"] - e.g. "with_attention.pkl
 
     :returns: the testing subject
 
     """
+    if not model_name.endswith(".pkl"):
+        # This isn't technically a problem, but it's likely to be a mistake
+        # so let's raise an error because its likely that the wrong model
+        # name has been specified. It should be something like "my_model.pkl"
+        raise ValueError(
+            f"model_name should be name of a pickled model, not {model_name}"
+        )
+
     with open(
         str(
             files.script_out_dir()
             / "train_output"
-            / pathlib.Path(model_path).stem
+            / pathlib.Path(model_name).stem
             / "test_subject.pkl"
         ),
         "rb",

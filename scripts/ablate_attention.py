@@ -11,6 +11,7 @@ Then makes some plots showing the results with and without the attention mechani
 import argparse
 
 from fishjaw.model import model
+from fishjaw.inference import read
 
 
 def main(args: argparse.Namespace):
@@ -22,7 +23,12 @@ def main(args: argparse.Namespace):
     model_state = model.load_model(args.model_name)
     config = model_state.config
 
-    inference_subject = ...
+    # Load the subject to perform inference on
+    inference_subject = (
+        read.inference_subject(config, args.subject)
+        if args.subject
+        else read.test_subject(config["model_path"])
+    )
 
     net = model_state.load_model(set_eval=True)
     net.to("cuda")
