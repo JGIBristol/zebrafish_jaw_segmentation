@@ -30,17 +30,8 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     if args.test:
         return read.test_subject(config["model_path"])
 
-    # Otherwise we want to get a different subject, which we will need to crop
-    crop_lookup = {
-        218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
-        219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
-        # 247: (1710, 431, 290),  # 14month het sp7 sp7+/-
-        273: (1685, 221, 286),  # 9month het sp7 sp7 het
-        274: (1413, 174, 240),  # 9month hom sp7 sp7 mut
-        120: (1595, 251, 398),  # 10month wt giantin giantin sib
-        37: (1746, 431, 405),  # 7month wt wt col2:mcherry
-    }
-    return read.inference_subject(config, args.subject, crop_lookup[args.subject])
+    # Otherwise we want to get a different subject
+    return read.inference_subject(config, args.subject)
 
 
 def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
