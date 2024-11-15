@@ -16,7 +16,9 @@ import matplotlib.pyplot as plt
 from monai.networks.nets.attentionunet import AttentionBlock, AttentionUnet
 
 from fishjaw.model import model, data
-from fishjaw.inference import read
+from fishjaw.util import files
+from fishjaw.inference import read, mesh
+from fishjaw.visualisation import plot_meshes
 
 
 def ablated_psi(module, input, output):
@@ -40,6 +42,7 @@ def _plot(
     """
     # Remove the attention mechanism
     if not attention:
+        hooks = []
         for module in net.modules():
             if isinstance(module, AttentionBlock):
                 psi_found = False
@@ -47,7 +50,7 @@ def _plot(
                     if name == "psi":
                         if psi_found:
                             raise ValueError("Found multiple psi submodules")
-                        submodule.register_forward_hook(ablated_psi)
+                        hooks.append(submodule.register_forward_hook(ablated_psi))
                         psi_found = True
 
                 if not psi_found:
@@ -62,11 +65,12 @@ def _plot(
         activation=model.activation_name(config),
     )
 
-    # Plot it
+    # Create and plot a mesh
+    plot_meshes.projections(ax, mesh.cubic_mesh(prediction > 0.5))
 
     # Put the attention mechanism back
     if not attention:
-        for hook in net._forward_hooks.values():
+        for hook in hooks:
             hook.remove()
 
 
@@ -75,6 +79,13 @@ def main(args: argparse.Namespace):
     Get the model and data and run it with and without the attention mechanism.
 
     """
+    if not args.model_name.endswith(".pkl"):
+        raise ValueError("Model name must end with '.pkl'")
+
+    out_dir = files.script_out_dir() / "ablation" / args.model_name[:-4]
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
     # Load the model and training-time config
     model_state = model.load_model(args.model_name)
     config = model_state.config
@@ -95,10 +106,20 @@ def main(args: argparse.Namespace):
         else read.test_subject(config["model_path"])
     )
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
 
     for attention, ax in zip([True, False], axes):
         _plot(net, config, inference_subject, attention, ax)
+
+    axes[0, 0].set_zlabel("With attention")
+    axes[1, 0].set_zlabel("Without attention")
+
+    fig.suptitle(
+        f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+    )
+
+    fig.tight_layout()
+    fig.savefig(out_dir / "ablation.png")
 
 
 if __name__ == "__main__":
