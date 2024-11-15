@@ -12,6 +12,7 @@ import torchio as tio
 
 from fishjaw.util import files
 from fishjaw.images import transform
+from fishjaw.model import data
 
 
 def inference_subject(
@@ -29,7 +30,10 @@ def inference_subject(
     """
     img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"ak_{img_n}.tif")
 
-    img = transform.crop(img, crop_centre, config["crop_size"])
+    img = transform.crop(img, crop_centre, transform.window_size(config), centred=True)
+
+    # Scale to [0, 1]
+    img = data.ints2float(img)
 
     # Add a channel dimension
     tensor = torch.as_tensor(img, dtype=torch.float32).unsqueeze(0)

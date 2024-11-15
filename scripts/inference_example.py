@@ -3,7 +3,6 @@ Perform inference on an out-of-sample subject
 
 """
 
-import pickle
 import pathlib
 import argparse
 
@@ -19,24 +18,7 @@ from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import transform, metrics
 from fishjaw.visualisation import images_3d
-
-
-def _read_img(config: dict, img_n: int) -> np.ndarray:
-    """
-    Read the chosen image
-
-    """
-    path = files.wahab_3d_tifs_dir(config) / f"ak_{img_n}.tif"
-    return tifffile.imread(path)
-
-
-def _get_subject(img: np.ndarray) -> tio.Subject:
-    """
-    Convert the image into a subject
-
-    """
-    tensor = torch.as_tensor(img, dtype=torch.float32).unsqueeze(0)
-    return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
+from fishjaw.inference import read
 
 
 def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
@@ -46,25 +28,9 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     """
     # Load the testing subject
     if args.test:
-        with open(
-            str(
-                files.script_out_dir()
-                / "train_output"
-                / pathlib.Path(config["model_path"]).stem
-                / "test_subject.pkl"
-            ),
-            "rb",
-        ) as f:
-            return pickle.load(f)
-    else:
-        window_size = transform.window_size(config)
+        return read.test_subject(config["model_path"])
 
-    # Create a subject from the chosen image
-    # Read the chosen image
-    img_n = args.subject
-    img = _read_img(config, img_n)
-
-    # Crop it to the jaw
+    # Otherwise we want to get a different subject, which we will need to crop
     crop_lookup = {
         218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
         219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
@@ -74,13 +40,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
         120: (1595, 251, 398),  # 10month wt giantin giantin sib
         37: (1746, 431, 405),  # 7month wt wt col2:mcherry
     }
-    img = transform.crop(img, crop_lookup[img_n], window_size, centred=True)
-
-    # Scale to [0, 1]
-    img = data.ints2float(img)
-
-    # Create a subject
-    return _get_subject(img)
+    return read.inference_subject(config, args.subject, crop_lookup[args.subject])
 
 
 def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
