@@ -10,8 +10,55 @@ Then makes some plots showing the results with and without the attention mechani
 
 import argparse
 
-from fishjaw.model import model
+import torch
+import torchio as tio
+import matplotlib.pyplot as plt
+from monai.networks.nets.attentionunet import AttentionBlock
+
+from fishjaw.model import model, data
 from fishjaw.inference import read
+
+
+def identity_hook(module, input, output):
+    """
+    Identity function to replace the attention mechanism
+
+    """
+    return input[1]
+
+
+def _plot(
+    net: torch.nn.Module,
+    config: dict,
+    inference_subject: tio.Subject,
+    attention: bool,
+    ax: tuple[plt.Axes, plt.Axes, plt.Axes],
+) -> None:
+    """
+    Run inference and plot the results on the provided axes
+
+    """
+    # Remove the attention mechanism
+    if not attention:
+        for module in net.modules():
+            if isinstance(module, AttentionBlock):
+                module.register_forward_hook(identity_hook)
+
+    # Perform inference
+    prediction = model.predict(
+        net,
+        inference_subject,
+        patch_size=data.get_patch_size(config),
+        patch_overlap=(4, 4, 4),
+        activation=model.activation_name(config),
+    )
+
+    # Plot it
+
+    # Put the attention mechanism back
+    if not attention:
+        for hook in net._forward_hooks.values():
+            hook.remove()
 
 
 def main(args: argparse.Namespace):
@@ -32,6 +79,11 @@ def main(args: argparse.Namespace):
 
     net = model_state.load_model(set_eval=True)
     net.to("cuda")
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+    for attention, ax in zip([True, False], axes):
+        _plot(net, config, inference_subject, attention, ax)
 
 
 if __name__ == "__main__":
