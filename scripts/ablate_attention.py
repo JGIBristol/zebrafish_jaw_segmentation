@@ -13,18 +13,18 @@ import argparse
 import torch
 import torchio as tio
 import matplotlib.pyplot as plt
-from monai.networks.nets.attentionunet import AttentionBlock
+from monai.networks.nets.attentionunet import AttentionBlock, AttentionUnet
 
 from fishjaw.model import model, data
 from fishjaw.inference import read
 
 
-def identity_hook(module, input, output):
+def ablated_psi(module, input, output):
     """
     Identity function to replace the attention mechanism
 
     """
-    return input[1]
+    return torch.ones_like(output)
 
 
 def _plot(
@@ -42,7 +42,16 @@ def _plot(
     if not attention:
         for module in net.modules():
             if isinstance(module, AttentionBlock):
-                module.register_forward_hook(identity_hook)
+                psi_found = False
+                for name, submodule in module.named_children():
+                    if name == "psi":
+                        if psi_found:
+                            raise ValueError("Found multiple psi submodules")
+                        submodule.register_forward_hook(ablated_psi)
+                        psi_found = True
+
+                if not psi_found:
+                    raise ValueError("Couldn't find the psi submodule")
 
     # Perform inference
     prediction = model.predict(
@@ -70,15 +79,21 @@ def main(args: argparse.Namespace):
     model_state = model.load_model(args.model_name)
     config = model_state.config
 
+    net = model_state.load_model(set_eval=True)
+    net.to("cuda")
+
+    # Check that the model is the monai AttentionUnet - otherwise the ablation here won't work
+    if not isinstance(net, AttentionUnet):
+        raise ValueError(
+            f"This script only works with the monai AttentionUnet, not {type(net)}"
+        )
+
     # Load the subject to perform inference on
     inference_subject = (
         read.inference_subject(config, args.subject)
         if args.subject
         else read.test_subject(config["model_path"])
     )
-
-    net = model_state.load_model(set_eval=True)
-    net.to("cuda")
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
@@ -88,7 +103,7 @@ def main(args: argparse.Namespace):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Perform inference on an out-of-sample subject"
+        description="Perform inference with and without attention"
     )
 
     parser.add_argument(
