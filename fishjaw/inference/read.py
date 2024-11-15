@@ -3,6 +3,9 @@ Functions to read in our data in a format that can be used for inference
 
 """
 
+import pickle
+import pathlib
+
 import torch
 import tifffile
 import torchio as tio
@@ -32,3 +35,25 @@ def inference_subject(
     tensor = torch.as_tensor(img, dtype=torch.float32).unsqueeze(0)
 
     return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
+
+
+def test_subject(model_path: str) -> tio.Subject:
+    """
+    Load the testing subject that was dumped when we trained the model
+
+    :param model_path: the path to the model, as created by scripts/train_model.py.
+                       You might get this from userconf["model_path"]
+
+    :returns: the testing subject
+
+    """
+    with open(
+        str(
+            files.script_out_dir()
+            / "train_output"
+            / pathlib.Path(model_path).stem
+            / "test_subject.pkl"
+        ),
+        "rb",
+    ) as f:
+        return pickle.load(f)
