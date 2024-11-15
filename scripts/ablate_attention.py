@@ -22,6 +22,8 @@ def main(args: argparse.Namespace):
     model_state = model.load_model(args.model_name)
     config = model_state.config
 
+    inference_subject = ...
+
     net = model_state.load_model(set_eval=True)
     net.to("cuda")
 
