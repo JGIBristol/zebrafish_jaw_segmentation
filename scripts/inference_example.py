@@ -3,40 +3,21 @@ Perform inference on an out-of-sample subject
 
 """
 
-import pickle
 import pathlib
 import argparse
 
+import stl
 import torch
 import tifffile
 import numpy as np
-from stl import mesh
 import torchio as tio
-from skimage import measure
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
-from fishjaw.images import transform, metrics
-from fishjaw.visualisation import images_3d
-
-
-def _read_img(config: dict, img_n: int) -> np.ndarray:
-    """
-    Read the chosen image
-
-    """
-    path = files.wahab_3d_tifs_dir(config) / f"ak_{img_n}.tif"
-    return tifffile.imread(path)
-
-
-def _get_subject(img: np.ndarray) -> tio.Subject:
-    """
-    Convert the image into a subject
-
-    """
-    tensor = torch.as_tensor(img, dtype=torch.float32).unsqueeze(0)
-    return tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
+from fishjaw.images import metrics
+from fishjaw.visualisation import images_3d, plot_meshes
+from fishjaw.inference import read, mesh
 
 
 def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
@@ -44,90 +25,22 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     Either read the image of choice and turn it into a Subject, or load the testing subject
 
     """
-    # Load the testing subject
-    if args.test:
-        with open(
-            str(
-                files.script_out_dir()
-                / "train_output"
-                / pathlib.Path(config["model_path"]).stem
-                / "test_subject.pkl"
-            ),
-            "rb",
-        ) as f:
-            return pickle.load(f)
-    else:
-        window_size = transform.window_size(config)
-
-    # Create a subject from the chosen image
-    # Read the chosen image
-    img_n = args.subject
-    img = _read_img(config, img_n)
-
-    # Crop it to the jaw
-    crop_lookup = {
-        218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
-        219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
-        # 247: (1710, 431, 290),  # 14month het sp7 sp7+/-
-        273: (1685, 221, 286),  # 9month het sp7 sp7 het
-        274: (1413, 174, 240),  # 9month hom sp7 sp7 mut
-        120: (1595, 251, 398),  # 10month wt giantin giantin sib
-        37: (1746, 431, 405),  # 7month wt wt col2:mcherry
-    }
-    img = transform.crop(img, crop_lookup[img_n], window_size, centred=True)
-
-    # Scale to [0, 1]
-    img = data.ints2float(img)
-
-    # Create a subject
-    return _get_subject(img)
+    return (
+        read.test_subject(config["model_path"])
+        if args.test
+        else read.inference_subject(config, args.subject)
+    )
 
 
-def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
+def _mesh_projections(stl_mesh: stl.Mesh) -> plt.Figure:
     """
     Visualize the mesh from three different angles
 
     """
-    vertices = stl_mesh.vectors.reshape(-1, 3)
-    faces = np.arange(vertices.shape[0]).reshape(-1, 3)
 
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
-    plot_kw = {"cmap": "bone_r", "edgecolor": "k", "lw": 0.05}
-    # First subplot: view from the front
-    axes[0].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[0].view_init(elev=0, azim=0)
-
-    # Second subplot: view from the top
-    axes[1].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[1].view_init(elev=90, azim=0)
-
-    # Third subplot: view from the side
-    axes[2].plot_trisurf(
-        vertices[:, 0],
-        vertices[:, 1],
-        vertices[:, 2],
-        triangles=faces,
-        **plot_kw,
-    )
-    axes[2].view_init(elev=0, azim=90)
-
-    for ax in axes:
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
+    plot_meshes.projections(axes, stl_mesh)
 
     fig.tight_layout()
     return fig
@@ -140,12 +53,9 @@ def _save_mesh(
     Turn a segmentation into a mesh and save it
 
     """
-    # Marching cubes
-    verts, faces, *_ = measure.marching_cubes(segmentation, level=threshold)
 
     # Save as STL
-    stl_mesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
-    stl_mesh.vectors = verts[faces]
+    stl_mesh = mesh.cubic_mesh(segmentation > threshold)
 
     stl_mesh.save(f"inference/{subject_name}_mesh_{threshold:.3f}.stl")
 
