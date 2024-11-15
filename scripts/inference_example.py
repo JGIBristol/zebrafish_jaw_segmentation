@@ -24,12 +24,11 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     Either read the image of choice and turn it into a Subject, or load the testing subject
 
     """
-    # Load the testing subject
-    if args.test:
-        return read.test_subject(config["model_path"])
-
-    # Otherwise we want to get a different subject
-    return read.inference_subject(config, args.subject)
+    return (
+        read.test_subject(config["model_path"])
+        if args.test
+        else read.inference_subject(config, args.subject)
+    )
 
 
 def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
