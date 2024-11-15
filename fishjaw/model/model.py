@@ -15,7 +15,7 @@ from tqdm import trange
 from torch.cuda.amp import autocast, GradScaler
 
 from .data import DataConfig
-from ..util import util
+from ..util import util, files
 
 
 @dataclass(frozen=True)
@@ -461,3 +461,23 @@ def predict(
     aggregator.add_batch(prediction, locations=locations)
 
     return aggregator.get_output_tensor()[1].numpy()
+
+
+def load_model(model_name: str) -> ModelState:
+    """
+    Load a pickled model from disk given its name
+
+    :param model_name: the name of the model to load, e.g. "model_state.pkl", as specified
+                       in userconf.yml. Must end in ".pkl".
+
+    :returns: the model
+
+    :raises FileNotFoundError: if the model file does not exist
+    :raises ValueError: if the model name does not end in ".pkl"
+
+    """
+    if not model_name.endswith(".pkl"):
+        raise ValueError(f"Model name should end with .pkl: {model_name}")
+
+    with open(files.model_path({"model_path": model_name}), "rb") as f:
+        return pickle.load(f)

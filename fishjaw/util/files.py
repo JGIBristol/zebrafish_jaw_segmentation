@@ -140,7 +140,8 @@ def model_path(config: dict) -> pathlib.Path:
     configuration used to initialise the model/define the architecture and
     training parameters all in one place.
 
-    :param config: the configuration, e.g. from userconf.yml
+    :param config: the configuration, e.g. from userconf.yml.
+                   Just needs to have a "model_path" key
     :returns: Path to the model. If the path doesn't end in .pkl, it will be appended
 
     """
