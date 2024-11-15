@@ -133,7 +133,9 @@ def _mesh_projections(stl_mesh: mesh.Mesh) -> plt.Figure:
     return fig
 
 
-def _save_mesh(segmentation: np.ndarray, subject_name: str, threshold: float) -> None:
+def _save_mesh(
+    segmentation: np.ndarray, subject_name: str, threshold: float, out_dir: pathlib.Path
+) -> None:
     """
     Turn a segmentation into a mesh and save it
 
@@ -149,7 +151,7 @@ def _save_mesh(segmentation: np.ndarray, subject_name: str, threshold: float) ->
 
     # Save projections
     fig = _mesh_projections(stl_mesh)
-    fig.savefig(f"inference/{subject_name}_mesh_{threshold:.3f}_projections.png")
+    fig.savefig(f"{out_dir}/{subject_name}_mesh_{threshold:.3f}_projections.png")
     plt.close(fig)
 
 
@@ -213,8 +215,13 @@ def _make_plots(
 
     # Save the mesh
     if args.mesh:
+
         for threshold in np.arange(0.1, 1, 0.1):
-            _save_mesh(prediction, args.subject, threshold)
+            _save_mesh(prediction, prefix, threshold, out_dir)
+
+        if args.test:
+            # Mesh the ground truth too
+            _save_mesh(truth, f"{prefix}_truth", 0.5, out_dir)
 
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
