@@ -16,6 +16,7 @@ import numpy as np
 import torchio as tio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from monai.networks.nets.attentionunet import AttentionBlock, AttentionUnet
 
 from fishjaw.model import model, data
@@ -139,6 +140,8 @@ def main(args: argparse.Namespace):
         for _ in to_ablate
     ]
 
+    dice_matrix = np.zeros((n_attention_blocks, n_attention_blocks))
+
     for indices, (fig, axes) in tqdm(
         zip(to_ablate, projection_fig_ax), total=len(to_ablate)
     ):
@@ -157,6 +160,11 @@ def main(args: argparse.Namespace):
 
         # Find the Dice similarity between them
         dice = metrics.float_dice(with_attention, without_attention)
+        if len(indices) == 1:
+            dice_matrix[indices[0], indices[0]] = dice
+        if len(indices) == 2:
+            dice_matrix[indices] = dice
+            dice_matrix[indices[::-1]] = dice
 
         fig.suptitle(
             f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
@@ -171,6 +179,22 @@ def main(args: argparse.Namespace):
             f"_{'_'.join(str(index) for index in indices)}.png"
         )
         plt.close(fig)
+
+    # Heatmap of Dice similarities
+    fig, axis = plt.subplots()
+
+    im = axis.imshow(dice_matrix, cmap="plasma_r")
+    axis.set_xlabel("Removed attention block(s)")
+    axis.set_ylabel("Removed attention block(s)")
+
+    divider = make_axes_locatable(axis)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+
+    fig.tight_layout()
+    fig.savefig(
+        out_dir / f"dice_heatmap_{'test' if args.subject is None else args.subject}.png"
+    )
 
 
 if __name__ == "__main__":
