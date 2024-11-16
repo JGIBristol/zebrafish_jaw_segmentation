@@ -30,12 +30,33 @@ def ablated_psi(module, input_, output):
     return torch.ones_like(output)
 
 
+def register_hooks(
+    net: torch.nn.Module, indices: list[int]
+) -> list[torch.utils.hooks.RemovableHandle]:
+    """
+    Register hooks to replace the attention mechanism with the identity function
+
+    """
+    hooks = []
+    attention_block_index = 0
+    for module in net.modules():
+        if isinstance(module, AttentionBlock):
+            for name, submodule in module.named_children():
+                if name == "psi" and attention_block_index in indices:
+                    hooks.append(submodule.register_forward_hook(ablated_psi))
+
+            attention_block_index += 1
+
+    return hooks
+
+
 def _plot(
     net: torch.nn.Module,
     config: dict,
     inference_subject: tio.Subject,
     attention: bool,
     ax: tuple[plt.Axes, plt.Axes, plt.Axes],
+    idx: int,
 ) -> None:
     """
     Run inference and plot the results on the provided axes
@@ -43,19 +64,7 @@ def _plot(
     """
     # Remove the attention mechanism
     if not attention:
-        hooks = []
-        for module in net.modules():
-            if isinstance(module, AttentionBlock):
-                psi_found = False
-                for name, submodule in module.named_children():
-                    if name == "psi":
-                        if psi_found:
-                            raise ValueError("Found multiple psi submodules")
-                        hooks.append(submodule.register_forward_hook(ablated_psi))
-                        psi_found = True
-
-                if not psi_found:
-                    raise ValueError("Couldn't find the psi submodule")
+        hooks = register_hooks(net, [idx])
 
     # Perform inference
     prediction = model.predict(
@@ -107,22 +116,28 @@ def main(args: argparse.Namespace):
         else read.test_subject(config["model_path"])
     )
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
+    # the number of attention layers
+    for idx in range(5):
+        fig, axes = plt.subplots(
+            2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"}
+        )
 
-    for attention, ax in zip([True, False], axes):
-        _plot(net, config, inference_subject, attention, ax)
+        for attention, ax in zip([True, False], axes):
+            _plot(net, config, inference_subject, attention, ax, idx)
 
-    axes[0, 0].set_zlabel("With attention")
-    axes[1, 0].set_zlabel("Without attention")
+        axes[0, 0].set_zlabel("With attention")
+        axes[1, 0].set_zlabel("Without attention")
 
-    fig.suptitle(
-        f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
-    )
+        fig.suptitle(
+            f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+        )
 
-    fig.tight_layout()
-    fig.savefig(
-        out_dir / f"ablation_{'test' if args.subject is None else args.subject}.png"
-    )
+        fig.tight_layout()
+        fig.savefig(
+            out_dir
+            / f"ablation_{'test' if args.subject is None else args.subject}_{idx}.png"
+        )
+        plt.close(fig)
 
 
 if __name__ == "__main__":
