@@ -1,5 +1,6 @@
 """
-Perform an ablation study on the requested data.
+Perform an ablation study on the requested data, assuming the model is a monai
+AttentionUnet (which it probably is?).
 
 This will run the model on some data with and without the attention mechanism enabled-
 we replace the attention block with the identity function, effectively disabling it.
@@ -11,7 +12,9 @@ Then makes some plots showing the results with and without the attention mechani
 import argparse
 
 import torch
+import numpy as np
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from monai.networks.nets.attentionunet import AttentionBlock, AttentionUnet
 
@@ -19,6 +22,7 @@ from fishjaw.model import model, data
 from fishjaw.util import files
 from fishjaw.inference import read, mesh
 from fishjaw.visualisation import plot_meshes
+from fishjaw.images import metrics
 
 
 def ablated_psi(module, input_, output):
@@ -56,7 +60,7 @@ def _plot(
     inference_subject: tio.Subject,
     ax: tuple[plt.Axes, plt.Axes, plt.Axes],
     indices: tuple[int] | None = None,
-) -> None:
+) -> np.ndarray:
     """
     Possibly disable some attention mechanism(s), Run inference
     and plot the results on the provided axes
@@ -82,6 +86,8 @@ def _plot(
     if indices is not None:
         for hook in hooks:
             hook.remove()
+
+    return prediction
 
 
 def main(args: argparse.Namespace):
@@ -116,28 +122,51 @@ def main(args: argparse.Namespace):
         else read.test_subject(config["model_path"])
     )
 
-    # the number of attention layers
-    for idx in range(5):
-        fig, axes = plt.subplots(
-            2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"}
-        )
+    # Choose which layers(and combinations of indices) to ablate
+    n_attention_blocks = sum(
+        1 for module in net.modules() if isinstance(module, AttentionBlock)
+    )
+    to_ablate = [(i,) for i in range(n_attention_blocks)] + [  # Single layers
+        # Pairs
+        (i, j)
+        for i in range(n_attention_blocks)
+        for j in range(n_attention_blocks)
+        if i != j
+    ]
 
+    # Create figures for showing the projections with and without attention
+    projection_fig_ax = [
+        plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
+        for _ in to_ablate
+    ]
+
+    for indices, (fig, axes) in tqdm(
+        zip(to_ablate, projection_fig_ax), total=len(to_ablate)
+    ):
         # Plot with attention
-        _plot(net, config, inference_subject, axes[0])
+        with_attention = _plot(net, config, inference_subject, axes[0])
         axes[0, 0].set_zlabel("With attention")
 
         # Plot without attention
-        _plot(net, config, inference_subject, axes[0], indices=(idx,))
+        without_attention = _plot(
+            net, config, inference_subject, axes[1], indices=indices
+        )
         axes[1, 0].set_zlabel("Without attention")
+
+        # Find the Dice similarity between them
+        dice = metrics.float_dice(with_attention, without_attention)
 
         fig.suptitle(
             f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+            f"\nDice similarity: {dice:.4f}"
+            f"\nRemoved attention blocks: {indices}"
+            "\nThresholded at 0.5"
         )
 
         fig.tight_layout()
         fig.savefig(
-            out_dir
-            / f"ablation_{'test' if args.subject is None else args.subject}_{idx}.png"
+            out_dir / f"ablation_{'test' if args.subject is None else args.subject}"
+            f"_{'_'.join(str(index) for index in indices)}.png"
         )
         plt.close(fig)
 

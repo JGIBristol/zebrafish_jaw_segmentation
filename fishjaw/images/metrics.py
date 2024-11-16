@@ -49,7 +49,35 @@ def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
     volume1 = np.sum(truth)
     volume2 = np.sum(pred)
 
-    # Both arrays are empty, consider Dice score as 1
+    # Both arrays are empty, consider Dice score to be 1
+    if volume1 + volume2 == 0:
+        warnings.warn("Both arrays are empty, returning Dice score of 1")
+        return 1.0
+
+    return 2.0 * intersection / (volume1 + volume2)
+
+
+def float_dice(arr1: np.ndarray, arr2: np.ndarray) -> float:
+    """
+    Calculate the Dice score between two float arrays.
+
+    :param arr1: float array.
+    :param arr2: float array.
+
+    :returns: "Dice" score - actually just the product divided by the sum
+    :raises: ValueError if the shapes of the arrays do not match.
+
+    """
+    if arr1.shape != arr2.shape:
+        raise ValueError(
+            f"Shape mismatch: {arr1.shape=} and {arr2.shape=}"
+        )
+
+    intersection = np.sum(arr1 * arr2)
+    volume1 = np.sum(arr1)
+    volume2 = np.sum(arr2)
+
+    # Both arrays are empty, consider Dice score to be 1
     if volume1 + volume2 == 0:
         warnings.warn("Both arrays are empty, returning Dice score of 1")
         return 1.0
