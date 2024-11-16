@@ -54,11 +54,10 @@ def register_hooks(
     return hooks
 
 
-def _plot(
+def _predict(
     net: torch.nn.Module,
     config: dict,
     inference_subject: tio.Subject,
-    ax: tuple[plt.Axes, plt.Axes, plt.Axes],
     indices: tuple[int] | None = None,
 ) -> np.ndarray:
     """
@@ -78,9 +77,6 @@ def _plot(
         patch_overlap=(4, 4, 4),
         activation=model.activation_name(config),
     )
-
-    # Create and plot a mesh
-    plot_meshes.projections(ax, mesh.cubic_mesh(prediction > 0.5))
 
     # Put the attention mechanism back
     if indices is not None:
@@ -134,6 +130,9 @@ def main(args: argparse.Namespace):
         if i != j
     ]
 
+    # Perform inference with attention
+    with_attention = _predict(net, config, inference_subject)
+
     # Create figures for showing the projections with and without attention
     projection_fig_ax = [
         plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
@@ -144,14 +143,17 @@ def main(args: argparse.Namespace):
         zip(to_ablate, projection_fig_ax), total=len(to_ablate)
     ):
         # Plot with attention
-        with_attention = _plot(net, config, inference_subject, axes[0])
         axes[0, 0].set_zlabel("With attention")
+        plot_meshes.projections(
+            axes[0], mesh.cubic_mesh(with_attention > args.threshold)
+        )
 
         # Plot without attention
-        without_attention = _plot(
-            net, config, inference_subject, axes[1], indices=indices
-        )
+        without_attention = _predict(net, config, inference_subject, indices=indices)
         axes[1, 0].set_zlabel("Without attention")
+        plot_meshes.projections(
+            axes[1], mesh.cubic_mesh(without_attention > args.threshold)
+        )
 
         # Find the Dice similarity between them
         dice = metrics.float_dice(with_attention, without_attention)
@@ -160,7 +162,7 @@ def main(args: argparse.Namespace):
             f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
             f"\nDice similarity: {dice:.4f}"
             f"\nRemoved attention blocks: {indices}"
-            "\nThresholded at 0.5"
+            f"\nThresholded at {args.threshold}",
         )
 
         fig.tight_layout()
@@ -187,6 +189,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.5,
+        help="Threshold for binarising the output (needed for meshing)",
     )
 
     main(parser.parse_args())
