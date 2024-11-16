@@ -54,17 +54,17 @@ def _plot(
     net: torch.nn.Module,
     config: dict,
     inference_subject: tio.Subject,
-    attention: bool,
     ax: tuple[plt.Axes, plt.Axes, plt.Axes],
-    idx: int,
+    indices: tuple[int] | None = None,
 ) -> None:
     """
-    Run inference and plot the results on the provided axes
+    Possibly disable some attention mechanism(s), Run inference
+    and plot the results on the provided axes
 
     """
     # Remove the attention mechanism
-    if not attention:
-        hooks = register_hooks(net, [idx])
+    if indices is not None:
+        hooks = register_hooks(net, indices)
 
     # Perform inference
     prediction = model.predict(
@@ -79,7 +79,7 @@ def _plot(
     plot_meshes.projections(ax, mesh.cubic_mesh(prediction > 0.5))
 
     # Put the attention mechanism back
-    if not attention:
+    if indices is not None:
         for hook in hooks:
             hook.remove()
 
@@ -122,10 +122,12 @@ def main(args: argparse.Namespace):
             2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"}
         )
 
-        for attention, ax in zip([True, False], axes):
-            _plot(net, config, inference_subject, attention, ax, idx)
-
+        # Plot with attention
+        _plot(net, config, inference_subject, axes[0])
         axes[0, 0].set_zlabel("With attention")
+
+        # Plot without attention
+        _plot(net, config, inference_subject, axes[0], indices=(idx,))
         axes[1, 0].set_zlabel("Without attention")
 
         fig.suptitle(
