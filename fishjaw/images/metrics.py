@@ -69,9 +69,7 @@ def float_dice(arr1: np.ndarray, arr2: np.ndarray) -> float:
 
     """
     if arr1.shape != arr2.shape:
-        raise ValueError(
-            f"Shape mismatch: {arr1.shape=} and {arr2.shape=}"
-        )
+        raise ValueError(f"Shape mismatch: {arr1.shape=} and {arr2.shape=}")
 
     intersection = np.sum(arr1 * arr2)
     volume1 = np.sum(arr1)
