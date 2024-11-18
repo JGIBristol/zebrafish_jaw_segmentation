@@ -1,5 +1,6 @@
 """
-Perform an ablation study on the requested data.
+Perform an ablation study on the requested data, assuming the model is a monai
+AttentionUnet (which it probably is?).
 
 This will run the model on some data with and without the attention mechanism enabled-
 we replace the attention block with the identity function, effectively disabling it.
@@ -11,14 +12,18 @@ Then makes some plots showing the results with and without the attention mechani
 import argparse
 
 import torch
+import numpy as np
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from monai.networks.nets.attentionunet import AttentionBlock, AttentionUnet
 
 from fishjaw.model import model, data
 from fishjaw.util import files
 from fishjaw.inference import read, mesh
 from fishjaw.visualisation import plot_meshes
+from fishjaw.images import metrics
 
 
 def ablated_psi(module, input_, output):
@@ -30,32 +35,40 @@ def ablated_psi(module, input_, output):
     return torch.ones_like(output)
 
 
-def _plot(
+def register_hooks(
+    net: torch.nn.Module, indices: list[int]
+) -> list[torch.utils.hooks.RemovableHandle]:
+    """
+    Register hooks to replace the attention mechanism with the identity function
+
+    """
+    hooks = []
+    attention_block_index = 0
+    for module in net.modules():
+        if isinstance(module, AttentionBlock):
+            for name, submodule in module.named_children():
+                if name == "psi" and attention_block_index in indices:
+                    hooks.append(submodule.register_forward_hook(ablated_psi))
+
+            attention_block_index += 1
+
+    return hooks
+
+
+def _predict(
     net: torch.nn.Module,
     config: dict,
     inference_subject: tio.Subject,
-    attention: bool,
-    ax: tuple[plt.Axes, plt.Axes, plt.Axes],
-) -> None:
+    indices: tuple[int] | None = None,
+) -> np.ndarray:
     """
-    Run inference and plot the results on the provided axes
+    Possibly disable some attention mechanism(s), Run inference
+    and plot the results on the provided axes
 
     """
     # Remove the attention mechanism
-    if not attention:
-        hooks = []
-        for module in net.modules():
-            if isinstance(module, AttentionBlock):
-                psi_found = False
-                for name, submodule in module.named_children():
-                    if name == "psi":
-                        if psi_found:
-                            raise ValueError("Found multiple psi submodules")
-                        hooks.append(submodule.register_forward_hook(ablated_psi))
-                        psi_found = True
-
-                if not psi_found:
-                    raise ValueError("Couldn't find the psi submodule")
+    if indices is not None:
+        hooks = register_hooks(net, indices)
 
     # Perform inference
     prediction = model.predict(
@@ -66,13 +79,12 @@ def _plot(
         activation=model.activation_name(config),
     )
 
-    # Create and plot a mesh
-    plot_meshes.projections(ax, mesh.cubic_mesh(prediction > 0.5))
-
     # Put the attention mechanism back
-    if not attention:
+    if indices is not None:
         for hook in hooks:
             hook.remove()
+
+    return prediction
 
 
 def main(args: argparse.Namespace):
@@ -107,21 +119,81 @@ def main(args: argparse.Namespace):
         else read.test_subject(config["model_path"])
     )
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
-
-    for attention, ax in zip([True, False], axes):
-        _plot(net, config, inference_subject, attention, ax)
-
-    axes[0, 0].set_zlabel("With attention")
-    axes[1, 0].set_zlabel("Without attention")
-
-    fig.suptitle(
-        f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+    # Choose which layers(and combinations of indices) to ablate
+    n_attention_blocks = sum(
+        1 for module in net.modules() if isinstance(module, AttentionBlock)
     )
+    to_ablate = [(i,) for i in range(n_attention_blocks)] + [  # Single layers
+        # Pairs
+        (i, j)
+        for i in range(n_attention_blocks)
+        for j in range(n_attention_blocks)
+        if i != j
+    ]
+
+    # Perform inference with attention
+    with_attention = _predict(net, config, inference_subject)
+
+    # Create figures for showing the projections with and without attention
+    projection_fig_ax = [
+        plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
+        for _ in to_ablate
+    ]
+
+    dice_matrix = np.zeros((n_attention_blocks, n_attention_blocks))
+
+    for indices, (fig, axes) in tqdm(
+        zip(to_ablate, projection_fig_ax), total=len(to_ablate)
+    ):
+        # Plot with attention
+        axes[0, 0].set_zlabel("With attention")
+        plot_meshes.projections(
+            axes[0], mesh.cubic_mesh(with_attention > args.threshold)
+        )
+
+        # Plot without attention
+        without_attention = _predict(net, config, inference_subject, indices=indices)
+        axes[1, 0].set_zlabel("Without attention")
+        plot_meshes.projections(
+            axes[1], mesh.cubic_mesh(without_attention > args.threshold)
+        )
+
+        # Find the Dice similarity between them
+        dice = metrics.float_dice(with_attention, without_attention)
+        if len(indices) == 1:
+            dice_matrix[indices[0], indices[0]] = dice
+        if len(indices) == 2:
+            dice_matrix[indices] = dice
+            dice_matrix[indices[::-1]] = dice
+
+        fig.suptitle(
+            f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+            f"\nDice similarity: {dice:.4f}"
+            f"\nRemoved attention blocks: {indices}"
+            f"\nThresholded at {args.threshold}",
+        )
+
+        fig.tight_layout()
+        fig.savefig(
+            out_dir / f"ablation_{'test' if args.subject is None else args.subject}"
+            f"_{'_'.join(str(index) for index in indices)}.png"
+        )
+        plt.close(fig)
+
+    # Heatmap of Dice similarities
+    fig, axis = plt.subplots()
+
+    im = axis.imshow(dice_matrix, cmap="plasma_r", vmin=0, vmax=1)
+    axis.set_xlabel("Removed attention block(s)")
+    axis.set_ylabel("Removed attention block(s)")
+
+    divider = make_axes_locatable(axis)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
 
     fig.tight_layout()
     fig.savefig(
-        out_dir / f"ablation_{'test' if args.subject is None else args.subject}.png"
+        out_dir / f"dice_heatmap_{'test' if args.subject is None else args.subject}.png"
     )
 
 
@@ -141,6 +213,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.5,
+        help="Threshold for binarising the output (needed for meshing)",
     )
 
     main(parser.parse_args())
