@@ -163,3 +163,17 @@ def script_out_dir() -> pathlib.Path:
     if not retval.is_dir():
         retval.mkdir()
     return retval
+
+
+def boring_script_out_dir() -> pathlib.Path:
+    """
+    Get the directory where the output of the extra scripts is stored,
+    creating it if it doesn't exist
+
+    :returns: Path to the directory
+
+    """
+    retval = pathlib.Path(__file__).parents[2] / "boring_script_output"
+    if not retval.is_dir():
+        retval.mkdir()
+    return retval
