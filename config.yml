@@ -14,3 +14,4 @@ wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training s
 
 # Where random stuff from the scripts should go, relative to the root of the repository
 script_output: "script_output/"
+boring_script_output: "script_output/boring_stuff/"
