@@ -8,6 +8,24 @@ dicom_dirs:
   - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
 TODO fix this
 
+This script works by reading in the TIFF labels and images that live on the RDSF and creating
+DICOM files from them, which it then saves to disk. This is useful because it keeps the image
+and label together in the same file (we don't want to get confused between files; they may have
+different numbering schemes, may be partially labelled, and/or may live in different places on
+the RDSF).
+It is also much faster to read in a DICOM file than it is to read the TIFFs from the RDSF (which
+is a network drive) every time we want to perform inference, train a model, plot something, etc.
+There are three basic categories of files at the moment:
+ - Training set 1 - Wahab's segmented images
+ - Training set 2 - the first set of images that Felix segmented
+ - Training set 3 - the second set of images that Felix segmented; only the rear part of the jaw
+                    has been segmented.
+
+This script just translates Training sets 2 and 3 directly to DICOMs.
+For Training set 1, Wahab has segmented both the jawbones we're interested in and the quadrate
+bones - these have been given different labels, so we ignore the quadrates and keep only the
+other ones.
+
 """
 
 import pathlib
@@ -36,8 +54,10 @@ class Dicom:
     def __post_init__(self):
         self.label = tifffile.imread(self.label_path)
         if self.binarise:
-            # These are the labels that Wahab used
-            self.label[np.isin(self.label, [2, 3, 4, 5])] = 1
+            # These are the jaw labels that Wahab used
+            self.label[np.isin(self.label, [2, 3])] = 1
+            # These are the quadrate labels that Wahab used
+            self.label[np.isin(self.label, [4, 5])] = 0
 
         self.image = tifffile.imread(self.image_path)
 

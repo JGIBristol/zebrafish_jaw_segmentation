@@ -39,7 +39,7 @@ def main(args: argparse.Namespace):
     # Plot the voxels
     fig, axes = plt.subplots(1, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
     pbar = tqdm(total=3 * (len(unique_labels) - 1))
-    for axis, elev, azim in zip(axes, [0, 0, 90], [0, 90, 90]):
+    for axis, elev, azim in zip(axes, [0, 0, 90], [0, 90, 0]):
         for label in unique_labels:
             # Don't plot the background
             if not label:
