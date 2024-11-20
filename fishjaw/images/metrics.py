@@ -244,7 +244,9 @@ def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
         raise ValueError(f"prediction array is not binary: {np.unique(pred)=}")
 
 
-def hausdorff_points(truth: np.ndarray, pred: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def hausdorff_points(
+    truth: np.ndarray, pred: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Find the points of the binary mask (truth) and a binary array (pred) that are
     separated by the two-directional Hausdorff distance.
@@ -265,7 +267,6 @@ def hausdorff_points(truth: np.ndarray, pred: np.ndarray) -> tuple[np.ndarray, n
     return skimage_m.hausdorff_pair(truth, pred)
 
 
-# TODO change to points
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred),
