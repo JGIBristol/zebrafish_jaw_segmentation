@@ -382,11 +382,11 @@ def table(
     # Threshold the prediction
     if thresholded_metrics:
         thresholds = (0.5,)
-        for t in thresholds:
+        for threshold in thresholds:
             hd = []
             hd_dice = []
             for t, p in zip(truth, pred):
-                thresholded = p > t
+                thresholded = p > threshold
 
                 # I don't actually think I want to take the largest component - for now
                 # thresholded = largest_connected_component(thresholded)
@@ -396,7 +396,7 @@ def table(
                 hd.append(1 - distance)
                 hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
 
-            df[f"1-Hausdorff_{t}"] = hd
-            df[f"Hausdorff_Dice_{t}"] = hd_dice
+            df[f"1-Hausdorff_{threshold}"] = hd
+            df[f"Hausdorff_Dice_{threshold}"] = hd_dice
 
     return df
