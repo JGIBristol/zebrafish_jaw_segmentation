@@ -27,10 +27,9 @@ def plot_losses(
     log_train_loss = np.log(train_loss - min_loss + 1)
     log_val_loss = np.log(val_loss - min_loss + 1)
 
-    fig, (axis, log_axis) = plt.subplots(1, 2)
+    fig, axis = plt.subplots()
 
     axis.plot(epochs, train_loss, label="Train")
-    log_axis.plot(epochs, log_train_loss, label="Train")
 
     # Find quartiles - the mean might be outside this, which would be interesting wouldn't it
     train_loss_upper = [np.percentile(epoch_loss, 75) for epoch_loss in train_losses]
@@ -38,7 +37,6 @@ def plot_losses(
     axis.fill_between(epochs, train_loss_lower, train_loss_upper, alpha=0.5, color="C0")
 
     axis.plot(epochs, val_loss, label="Validation")
-    log_axis.plot(epochs, log_val_loss, label="Train")
 
     val_loss_upper = [np.percentile(epoch_loss, 75) for epoch_loss in val_losses]
     val_loss_lower = [np.percentile(epoch_loss, 25) for epoch_loss in val_losses]
@@ -47,9 +45,6 @@ def plot_losses(
     axis.set_title("Loss")
     axis.set_xlabel("Epoch")
     axis.legend()
-
-    log_axis.set_title("Log Loss")
-    log_axis.set_xlabel("Epoch")
 
     fig.tight_layout()
     return fig
