@@ -32,22 +32,32 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     )
 
 
-def _mesh_projections(stl_mesh: stl.Mesh) -> plt.Figure:
+def _mesh_projections(
+    stl_mesh: stl.Mesh, hausdorff_points: tuple[np.ndarray, np.ndarray]
+) -> plt.Figure:
     """
     Visualize the mesh from three different angles
 
     """
-
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
     plot_meshes.projections(axes, stl_mesh)
+
+    # Plot the Hausdorff points on each axis
+    x, y, z = zip(*hausdorff_points)
+    for ax in axes:
+        ax.plot(x, y, z, "rx-", markersize=4)
 
     fig.tight_layout()
     return fig
 
 
 def _save_mesh(
-    segmentation: np.ndarray, subject_name: str, threshold: float, out_dir: pathlib.Path
+    segmentation: np.ndarray,
+    subject_name: str,
+    threshold: float,
+    out_dir: pathlib.Path,
+    hausdorff_points: np.ndarray,
 ) -> None:
     """
     Turn a segmentation into a mesh and save it
@@ -60,7 +70,7 @@ def _save_mesh(
     stl_mesh.save(f"inference/{subject_name}_mesh_{threshold:.3f}.stl")
 
     # Save projections
-    fig = _mesh_projections(stl_mesh)
+    fig = _mesh_projections(stl_mesh, hausdorff_points)
     fig.savefig(f"{out_dir}/{subject_name}_mesh_{threshold:.3f}_projections.png")
     plt.close(fig)
 
@@ -115,7 +125,9 @@ def _make_plots(
         tifffile.imwrite(out_dir / f"{prefix}_truth.tif", truth)
 
         # Print a table of metrics
-        print(metrics.table([truth], [prediction]).to_markdown())
+        print(
+            metrics.table([truth], [prediction], thresholded_metrics=True).to_markdown()
+        )
 
     else:
         fig.suptitle(f"Inference: ID {args.subject}", y=0.99)
@@ -126,12 +138,16 @@ def _make_plots(
     # Save the mesh
     if args.mesh:
 
-        for threshold in np.arange(0.1, 1, 0.1):
-            _save_mesh(prediction, prefix, threshold, out_dir)
+        # for threshold in np.arange(0.1, 1, 0.1):
+        for threshold in [0.5]:
+            # Find the Hausdorff points
+            h_points = metrics.hausdorff_points(truth, prediction > threshold)
+            _save_mesh(prediction, prefix, threshold, out_dir, h_points)
 
-        if args.test:
-            # Mesh the ground truth too
-            _save_mesh(truth, f"{prefix}_truth", 0.5, out_dir)
+            # Don't really need to save this multiple times, but the hausdorff points might change
+            if args.test:
+                # Mesh the ground truth too
+                _save_mesh(truth, f"{prefix}_truth", threshold, out_dir, h_points)
 
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:

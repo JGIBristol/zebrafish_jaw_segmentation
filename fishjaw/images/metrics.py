@@ -244,6 +244,29 @@ def _check_arrays_binary(truth: np.ndarray, pred: np.ndarray) -> None:
         raise ValueError(f"prediction array is not binary: {np.unique(pred)=}")
 
 
+def hausdorff_points(
+    truth: np.ndarray, pred: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Find the points of the binary mask (truth) and a binary array (pred) that are
+    separated by the two-directional Hausdorff distance.
+
+    :param truth: Binary mask array.
+    :param pred: Float prediction array.
+
+    :returns: Array representing xyz of one point
+    :returns: Array representing xyz of the other point
+
+    :raises: ValueError if the shapes of the arrays do not match.
+    :raises: ValueError if the truth array is not binary.
+    :raises: ValueError if the prediction array is not binary.
+
+    """
+    _check_arrays_binary(truth, pred)
+
+    return skimage_m.hausdorff_pair(truth, pred)
+
+
 def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
     """
     Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred),
@@ -368,31 +391,35 @@ def table(
     df = pd.DataFrame()
 
     df["Dice"] = [dice_score(t, p) for t, p in zip(truth, pred)]
-    df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
-    df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
-    df["Precision"] = [precision(t, p) for t, p in zip(truth, pred)]
-    df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
-    df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
-    df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
-    df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
     df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
+
+    # I don't care about these
+    # df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
+    # df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
+    # df["Precision"] = [precision(t, p) for t, p in zip(truth, pred)]
+    # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
+    # df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
+    # df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
+    # df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
 
     # Threshold the prediction
     if thresholded_metrics:
         thresholds = (0.5,)
-        for t in thresholds:
+        for threshold in thresholds:
             hd = []
             hd_dice = []
             for t, p in zip(truth, pred):
-                thresholded = largest_connected_component(p > t)
+                thresholded = p > threshold
+
+                # I don't actually think I want to take the largest component - for now
+                # thresholded = largest_connected_component(thresholded)
 
                 distance = hausdorff_distance(t, thresholded)
 
                 hd.append(1 - distance)
-
                 hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
 
-            df[f"1-Hausdorff_{t}"] = hd
-            df[f"Hausdorff_Dice_{t}"] = hd_dice
+            df[f"1-Hausdorff_{threshold}"] = hd
+            df[f"Hausdorff_Dice_{threshold}"] = hd_dice
 
     return df
