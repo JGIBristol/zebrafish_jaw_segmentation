@@ -46,7 +46,7 @@ def _mesh_projections(
     # Plot the Hausdorff points on each axis
     x, y, z = zip(*hausdorff_points)
     for ax in axes:
-        ax.plot(x, y, z, "rx-", markersize=8)
+        ax.plot(x, y, z, "rx-", markersize=4)
 
     fig.tight_layout()
     return fig
