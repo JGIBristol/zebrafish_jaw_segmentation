@@ -23,10 +23,6 @@ def plot_losses(
     train_loss = np.array([np.mean(epoch_loss) for epoch_loss in train_losses])
     val_loss = np.array([np.mean(epoch_loss) for epoch_loss in val_losses])
 
-    min_loss = min(np.min(train_loss), np.min(val_loss))
-    log_train_loss = np.log(train_loss - min_loss + 1)
-    log_val_loss = np.log(val_loss - min_loss + 1)
-
     fig, axis = plt.subplots()
 
     axis.plot(epochs, train_loss, label="Train")
