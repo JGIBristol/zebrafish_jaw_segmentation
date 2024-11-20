@@ -368,14 +368,16 @@ def table(
     df = pd.DataFrame()
 
     df["Dice"] = [dice_score(t, p) for t, p in zip(truth, pred)]
-    df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
-    df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
-    df["Precision"] = [precision(t, p) for t, p in zip(truth, pred)]
-    df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
-    df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
-    df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
-    df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
     df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
+
+    # I don't care about these
+    # df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
+    # df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
+    # df["Precision"] = [precision(t, p) for t, p in zip(truth, pred)]
+    # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
+    # df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
+    # df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
+    # df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
 
     # Threshold the prediction
     if thresholded_metrics:
@@ -384,12 +386,14 @@ def table(
             hd = []
             hd_dice = []
             for t, p in zip(truth, pred):
-                thresholded = largest_connected_component(p > t)
+                thresholded = p > t
+
+                # I don't actually think I want to take the largest component - for now
+                # thresholded = largest_connected_component(thresholded)
 
                 distance = hausdorff_distance(t, thresholded)
 
                 hd.append(1 - distance)
-
                 hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
 
             df[f"1-Hausdorff_{t}"] = hd
