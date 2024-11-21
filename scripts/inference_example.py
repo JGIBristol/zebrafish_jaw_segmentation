@@ -41,7 +41,7 @@ def _mesh_projections(
     """
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
-    plot_meshes.projections(axes, stl_mesh)
+    plot_meshes.projections(axes, stl_mesh, plot_kw={"alpha": 0.4, "edgecolor": "none"})
 
     # Plot the Hausdorff points on each axis
     x, y, z = zip(*hausdorff_points)

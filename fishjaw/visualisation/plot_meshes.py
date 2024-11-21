@@ -8,12 +8,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def projections(axes: tuple[plt.Axes, plt.Axes, plt.Axes], mesh: stl.Mesh) -> None:
+def projections(
+    axes: tuple[plt.Axes, plt.Axes, plt.Axes],
+    mesh: stl.Mesh,
+    *,
+    plot_kw: dict | None = None,
+) -> None:
     """
     Plot projections of the mesh from three different angles
 
     :param axes: Three axes to plot on
     :param mesh: The mesh to plot
+    :param plot_kw: extra keyword arguments for the plot_trisurf function
 
     """
     if len(axes) != 3:
@@ -22,7 +28,14 @@ def projections(axes: tuple[plt.Axes, plt.Axes, plt.Axes], mesh: stl.Mesh) -> No
     vertices = mesh.vectors.reshape(-1, 3)
     faces = np.arange(vertices.shape[0]).reshape(-1, 3)
 
-    plot_kw = {"cmap": "bone_r", "edgecolor": "k", "lw": 0.05}
+    # Don't overwrite values if they've been provided in plot_kw
+    plot_kw = plot_kw or {}
+    plot_kw = {
+        "cmap": plot_kw.get("cmap", "cividis_r"),
+        "edgecolor": plot_kw.get("edgecolor", "k"),
+        "lw": plot_kw.get("lw", 0.05),
+        **plot_kw,
+    }
 
     # First subplot: view from the front
     for axis, elev, azim in zip(axes, [0, 90, 0], [0, 0, 90]):
