@@ -137,16 +137,14 @@ def _make_plots(
 
     # Save the mesh
     if args.mesh:
-
-        # for threshold in np.arange(0.1, 1, 0.1):
-        for threshold in [0.5]:
+        thresholds = (0.5,)
+        for threshold in thresholds:
             # Find the Hausdorff points
             h_points = metrics.hausdorff_points(truth, prediction > threshold)
             _save_mesh(prediction, prefix, threshold, out_dir, h_points)
 
-            # Don't really need to save this multiple times, but the hausdorff points might change
-            if args.test:
-                # Mesh the ground truth too
+            # Mesh the ground truth too, but we only need to do this once
+            if args.test and threshold == thresholds[0]:
                 _save_mesh(truth, f"{prefix}_truth", threshold, out_dir, h_points)
 
 
