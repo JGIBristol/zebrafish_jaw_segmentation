@@ -80,14 +80,20 @@ def _save_test_meshes(
 
     # Make projections of the meshes
     plot_meshes.projections(
-        axes, prediction_mesh, plot_kw={"alpha": 0.3, "color": "blue"}
+        axes,
+        prediction_mesh,
+        plot_kw={"alpha": 0.2, "color": "blue", "label": "Prediction"},
     )
-    plot_meshes.projections(axes, truth_mesh, plot_kw={"alpha": 0.2, "color": "orange"})
+    plot_meshes.projections(
+        axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Truth"}
+    )
 
     # Indicate Hausdorff distance
     x, y, z = zip(*hausdorff_points)
     for ax in axes:
-        ax.plot(x, y, z, "gx-", markersize=4)
+        ax.plot(x, y, z, "rx-", markersize=4, label="Hausdorff distance")
+
+    axes[0].legend()
 
     fig.savefig(f"{out_dir}/test_mesh_overlaid_projections.png")
     plt.close(fig)

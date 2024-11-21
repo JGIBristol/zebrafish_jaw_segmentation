@@ -313,23 +313,28 @@ def hausdorff_profile(
     return [hausdorff_distance(truth, pred > threshold) for threshold in thresholds]
 
 
-def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
+def hausdorff_dice(truth: np.ndarray, pred: np.ndarray, k: float = 0.25) -> float:
     """
     Calculate the combined Hausdorff-Dice metric between a binary mask (truth)
     and a binary array (pred).
 
     :param truth: Binary mask array.
     :param pred: Float prediction array.
+    :param k: Weighting factor for the Dice score.
 
     :returns: Hausdorff-Dice distance
     :raises: ValueError if the shapes of the arrays do not match.
     :raises: ValueError if the truth array is not binary.
     :raises: ValueError if the prediction array is not binary.
+    :raises: ValueError if k is not between 0 and 1
 
     """
     _check_arrays_binary(truth, pred)
 
-    return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
+    if not 0 < k < 1:
+        raise ValueError(f"Expected k to be between 0 and 1, got {k}")
+
+    return k * dice_score(truth, pred) + (1 - k) * (1 - hausdorff_distance(truth, pred))
 
 
 def z_distance_score(truth: np.ndarray, pred: np.ndarray) -> float:
