@@ -38,7 +38,7 @@ def projections(
         plot_kw.get("cmap", "cividis_r") if "color" not in plot_kw else None
     )
     plot_kw = {
-        "edgecolor": plot_kw.get("edgecolor", "k"),
+        "edgecolor": plot_kw.get("edgecolor", "none"),
         "lw": plot_kw.get("lw", 0.05),
         **plot_kw,
     }

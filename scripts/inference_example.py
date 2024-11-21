@@ -6,7 +6,6 @@ Perform inference on an out-of-sample subject
 import pathlib
 import argparse
 
-import stl
 import torch
 import tifffile
 import numpy as np
@@ -25,6 +24,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     Either read the image of choice and turn it into a Subject, or load the testing subject
 
     """
+    print("Reading subject")
     return (
         read.test_subject(config["model_path"])
         if args.test
@@ -32,35 +32,11 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
     )
 
 
-def _mesh_projections(
-    stl_mesh: stl.Mesh, hausdorff_points: tuple[np.ndarray, np.ndarray] | None = None
-) -> plt.Figure:
-    """
-    Visualize the mesh from three different angles
-
-    """
-    fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
-
-    plot_meshes.projections(
-        axes, stl_mesh, plot_kw={"alpha": 0.4, "edgecolor": "none", "color": "grey"}
-    )
-
-    # Plot the Hausdorff points on each axis
-    if hausdorff_points is not None:
-        x, y, z = zip(*hausdorff_points)
-        for ax in axes:
-            ax.plot(x, y, z, "rx-", markersize=4)
-
-    fig.tight_layout()
-    return fig
-
-
 def _save_mesh(
     segmentation: np.ndarray,
     subject_name: str,
     threshold: float,
     out_dir: pathlib.Path,
-    hausdorff_points: np.ndarray | None = None,
 ) -> None:
     """
     Turn a segmentation into a mesh and save it
@@ -73,8 +49,47 @@ def _save_mesh(
     stl_mesh.save(f"inference/{subject_name}_mesh_{threshold:.3f}.stl")
 
     # Save projections
-    fig = _mesh_projections(stl_mesh, hausdorff_points)
+    fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
+    plot_meshes.projections(axes, stl_mesh, plot_kw={"alpha": 0.4, "cmap": "cividis_r"})
+
+    fig.tight_layout()
     fig.savefig(f"{out_dir}/{subject_name}_mesh_{threshold:.3f}_projections.png")
+    plt.close(fig)
+
+
+def _save_test_meshes(
+    thresholded_pred: np.ndarray,
+    truth: np.ndarray,
+    out_dir: pathlib.Path,
+) -> None:
+    """
+    Turn a segmentation into a mesh and save it
+
+    """
+    # Save the prediction and truth as STLs
+    prediction_mesh = mesh.cubic_mesh(thresholded_pred)
+    prediction_mesh.save(f"{out_dir}/test_mesh.stl")
+    truth_mesh = mesh.cubic_mesh(truth)
+    truth_mesh.save(f"{out_dir}/test_mesh_truth.stl")
+
+    # Create the figure
+    fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
+
+    # Find the Hausdorff points
+    hausdorff_points = metrics.hausdorff_points(truth, thresholded_pred)
+
+    # Make projections of the meshes
+    plot_meshes.projections(
+        axes, prediction_mesh, plot_kw={"alpha": 0.3, "color": "blue"}
+    )
+    plot_meshes.projections(axes, truth_mesh, plot_kw={"alpha": 0.2, "color": "orange"})
+
+    # Indicate Hausdorff distance
+    x, y, z = zip(*hausdorff_points)
+    for ax in axes:
+        ax.plot(x, y, z, "gx-", markersize=4)
+
+    fig.savefig(f"{out_dir}/test_mesh_overlaid_projections.png")
     plt.close(fig)
 
 
@@ -98,6 +113,7 @@ def _make_plots(
         out_dir.mkdir(parents=True)
 
     # Perform inference
+    print("Performing inference")
     prediction = model.predict(
         net,
         subject,
@@ -140,15 +156,15 @@ def _make_plots(
 
     # Save the mesh
     if args.mesh:
-        thresholds = (0.5,)
-        for threshold in thresholds:
-            _save_mesh(prediction, prefix, threshold, out_dir)
+        threshold = 0.5
+        print("Saving predicted mesh")
+        _save_mesh(prediction, prefix, threshold, out_dir)
 
-            # Mesh the ground truth too, but we only need to do this once
-            if args.test and threshold == thresholds[0]:
-                # Find the Hausdorff points
-                h_points = metrics.hausdorff_points(truth, prediction > threshold)
-                _save_mesh(truth, f"{prefix}_truth", threshold, out_dir, h_points)
+        # Save the mesh on top of the ground truth
+        if args.test:
+            print("Saving test meshes")
+            thresholded = prediction > threshold
+            _save_test_meshes(thresholded, truth, out_dir)
 
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
@@ -181,6 +197,7 @@ def main(args):
         raise RuntimeError("I think this one was in the training dataset...")
 
     # Load the model and training-time config
+    print("Loading model")
     model_state = model.load_model(args.model_name)
 
     config = model_state.config
