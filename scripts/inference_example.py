@@ -33,7 +33,7 @@ def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
 
 
 def _mesh_projections(
-    stl_mesh: stl.Mesh, hausdorff_points: tuple[np.ndarray, np.ndarray]
+    stl_mesh: stl.Mesh, hausdorff_points: tuple[np.ndarray, np.ndarray] | None = None
 ) -> plt.Figure:
     """
     Visualize the mesh from three different angles
@@ -41,12 +41,15 @@ def _mesh_projections(
     """
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
-    plot_meshes.projections(axes, stl_mesh, plot_kw={"alpha": 0.4, "edgecolor": "none"})
+    plot_meshes.projections(
+        axes, stl_mesh, plot_kw={"alpha": 0.4, "edgecolor": "none", "color": "grey"}
+    )
 
     # Plot the Hausdorff points on each axis
-    x, y, z = zip(*hausdorff_points)
-    for ax in axes:
-        ax.plot(x, y, z, "rx-", markersize=4)
+    if hausdorff_points is not None:
+        x, y, z = zip(*hausdorff_points)
+        for ax in axes:
+            ax.plot(x, y, z, "rx-", markersize=4)
 
     fig.tight_layout()
     return fig
@@ -57,7 +60,7 @@ def _save_mesh(
     subject_name: str,
     threshold: float,
     out_dir: pathlib.Path,
-    hausdorff_points: np.ndarray,
+    hausdorff_points: np.ndarray | None = None,
 ) -> None:
     """
     Turn a segmentation into a mesh and save it
@@ -139,12 +142,12 @@ def _make_plots(
     if args.mesh:
         thresholds = (0.5,)
         for threshold in thresholds:
-            # Find the Hausdorff points
-            h_points = metrics.hausdorff_points(truth, prediction > threshold)
-            _save_mesh(prediction, prefix, threshold, out_dir, h_points)
+            _save_mesh(prediction, prefix, threshold, out_dir)
 
             # Mesh the ground truth too, but we only need to do this once
             if args.test and threshold == thresholds[0]:
+                # Find the Hausdorff points
+                h_points = metrics.hausdorff_points(truth, prediction > threshold)
                 _save_mesh(truth, f"{prefix}_truth", threshold, out_dir, h_points)
 
 
