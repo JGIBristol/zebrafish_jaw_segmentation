@@ -419,10 +419,10 @@ def table(
                 # I don't actually think I want to take the largest component - for now
                 # thresholded = largest_connected_component(thresholded)
 
-                distance = hausdorff_distance(t, thresholded)
+                hd.append(1 - hausdorff_distance(t, thresholded))
 
-                hd.append(1 - distance)
-                hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
+                # A bit inefficient but keeps the implementation in one place
+                hd_dice.append(hausdorff_dice(t, thresholded))
 
             df[f"1-Hausdorff_{threshold}"] = hd
             df[f"Hausdorff_Dice_{threshold}"] = hd_dice
