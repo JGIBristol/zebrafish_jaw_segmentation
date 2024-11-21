@@ -93,7 +93,7 @@ def _save_test_meshes(
     for ax in axes:
         ax.plot(x, y, z, "rx-", markersize=4, label="Hausdorff distance")
 
-    axes[0].legend()
+    axes[0].legend(loc="upper right")
 
     fig.savefig(f"{out_dir}/test_mesh_overlaid_projections.png")
     plt.close(fig)
