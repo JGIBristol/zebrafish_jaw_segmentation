@@ -313,23 +313,28 @@ def hausdorff_profile(
     return [hausdorff_distance(truth, pred > threshold) for threshold in thresholds]
 
 
-def hausdorff_dice(truth: np.ndarray, pred: np.ndarray) -> float:
+def hausdorff_dice(truth: np.ndarray, pred: np.ndarray, k: float = 0.25) -> float:
     """
     Calculate the combined Hausdorff-Dice metric between a binary mask (truth)
     and a binary array (pred).
 
     :param truth: Binary mask array.
     :param pred: Float prediction array.
+    :param k: Weighting factor for the Dice score.
 
     :returns: Hausdorff-Dice distance
     :raises: ValueError if the shapes of the arrays do not match.
     :raises: ValueError if the truth array is not binary.
     :raises: ValueError if the prediction array is not binary.
+    :raises: ValueError if k is not between 0 and 1
 
     """
     _check_arrays_binary(truth, pred)
 
-    return hausdorff_distance(truth, pred) + (1 - dice_score(truth, pred))
+    if not 0 < k < 1:
+        raise ValueError(f"Expected k to be between 0 and 1, got {k}")
+
+    return k * dice_score(truth, pred) + (1 - k) * (1 - hausdorff_distance(truth, pred))
 
 
 def z_distance_score(truth: np.ndarray, pred: np.ndarray) -> float:
@@ -414,10 +419,10 @@ def table(
                 # I don't actually think I want to take the largest component - for now
                 # thresholded = largest_connected_component(thresholded)
 
-                distance = hausdorff_distance(t, thresholded)
+                hd.append(1 - hausdorff_distance(t, thresholded))
 
-                hd.append(1 - distance)
-                hd_dice.append(0.5 * (1 - distance + dice_score(t, thresholded)))
+                # A bit inefficient but keeps the implementation in one place
+                hd_dice.append(hausdorff_dice(t, thresholded))
 
             df[f"1-Hausdorff_{threshold}"] = hd
             df[f"Hausdorff_Dice_{threshold}"] = hd_dice
