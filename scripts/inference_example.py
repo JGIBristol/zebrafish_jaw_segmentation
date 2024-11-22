@@ -114,6 +114,10 @@ def _make_plots(
     out_dir, _ = args.model_name.split(".pkl")
     assert not _, "Model name should end with .pkl"
 
+    # Append _speckle if we're removing voxels
+    if args.speckle:
+        out_dir += "_speckle"
+
     out_dir = files.script_out_dir() / "inference" / out_dir
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
@@ -127,6 +131,13 @@ def _make_plots(
         patch_overlap=(4, 4, 4),
         activation=activation,
     )
+
+    # Remove every second voxel to make the segmentation worse
+    if args.speckle:
+        prediction[::2, ::2, ::2] = 0
+        prediction[1::2, 1::2, ::2] = 0
+        prediction[::2, 1::2, 1::2] = 0
+        prediction[1::2, ::2, 1::2] = 0
 
     # Convert the image to a 3d numpy array - for plotting
     image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
@@ -238,6 +249,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
+    parser.add_argument(
+        "--speckle",
+        help="Make the segmentation worse by removing every second predicted voxel"
+        "(to illustrate the effect on our metrics)",
+        action="store_true",
     )
 
     main(parser.parse_args())
