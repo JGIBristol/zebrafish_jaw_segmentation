@@ -4,6 +4,8 @@ uncropped cases.
 
 """
 
+import argparse
+
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -20,7 +22,7 @@ def _hist(cropped_means: list[float]) -> None:
     fig, axis = plt.subplots()
 
     axis.hist(cropped_means)
-    axis.set_xlabel("Occupancy (\u2030)")
+    axis.set_xlabel("Occupancy (%)")
     axis.set_ylabel("Frequency")
     axis.set_title("Histogram jaw occupancy after cropping")
 
@@ -50,7 +52,7 @@ def _scatter(cropped_means, ages) -> None:
     axis.set_title("Cropped Jaw Occupancy vs Age")
 
     axis.set_xlabel("Age (months)")
-    axis.set_ylabel("Occupancy (\u2030)")
+    axis.set_ylabel("Occupancy (%)")
 
     fig.tight_layout()
     fig.savefig(f"{files.script_out_dir()}/jaw_occupancy_age.png")
@@ -64,8 +66,7 @@ def main():
     config = util.userconf()
     window_size = transform.window_size(config)
 
-    # Don't need to pass a config in if we're reading all the DICOMs
-    paths = files.dicom_paths(None, "all")
+    paths = files.dicom_paths(config, "all")
 
     # We only want the complete jaws
     paths = [path for path in paths if "Training set 3 (base of jaw)" not in str(path)]
@@ -87,15 +88,15 @@ def main():
         mask = transform.crop(mask, crop_coords, window_size, around_centre)
         cropped_means.append(1000 * mask.mean())
 
-    # Per mil character
-    print(f"Uncropped: {np.mean(means):.2f} +/- {np.std(means):.2f}\u2030")
-    print(
-        f"Cropped: {np.mean(cropped_means):.2f} +/- {np.std(cropped_means):.2f}\u2030"
-    )
+    print(f"Uncropped: {np.mean(means):.2f} +/- {np.std(means):.2f}%")
+    print(f"Cropped: {np.mean(cropped_means):.2f} +/- {np.std(cropped_means):.2f}%")
 
     _hist(cropped_means)
     _scatter(cropped_means, ages)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Find jaw occupancy for the jaws in training sets 1 and 2"
+    )
+    main(**vars(parser.parse_args()))
