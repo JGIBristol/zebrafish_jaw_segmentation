@@ -99,6 +99,39 @@ def _save_test_meshes(
     plt.close(fig)
 
 
+def _add_random_blobs(rng: np.random.Generator, segmentation: np.ndarray) -> np.ndarray:
+    """
+    Add random blobs to the segmentation
+
+    """
+    # Randomly choose the number of blobs
+    n_blobs = rng.integers(1, 30)
+
+    # Randomly choose their location
+    z = rng.integers(0, segmentation.shape[0], size=n_blobs)
+    x = rng.integers(0, segmentation.shape[1], size=n_blobs)
+    y = rng.integers(0, segmentation.shape[2], size=n_blobs)
+    co_ords = np.stack((z, x, y), axis=1)
+
+    # Randomly choose the size of the blobs
+    sizes = rng.poisson(1.5, n_blobs)
+
+    # Add blobs to the segmentation
+    xx, yy, zz = np.meshgrid(
+        np.arange(segmentation.shape[0]),
+        np.arange(segmentation.shape[1]),
+        np.arange(segmentation.shape[2]),
+        indexing="ij",
+    )
+    for co_ord, size in zip(co_ords, sizes):
+        distance = np.sqrt(
+            (xx - co_ord[0]) ** 2 + (yy - co_ord[1]) ** 2 + (zz - co_ord[2]) ** 2
+        )
+        segmentation[distance <= size] = 1
+
+    return segmentation
+
+
 def _make_plots(
     args: argparse.Namespace,
     net: torch.nn.Module,
@@ -117,6 +150,8 @@ def _make_plots(
     # Append _speckle if we're removing voxels
     if args.speckle:
         out_dir += "_speckle"
+    if args.splotch:
+        out_dir += "_splotch"
 
     out_dir = files.script_out_dir() / "inference" / out_dir
     if not out_dir.exists():
@@ -138,6 +173,9 @@ def _make_plots(
         prediction[1::2, 1::2, ::2] = 0
         prediction[::2, 1::2, 1::2] = 0
         prediction[1::2, ::2, 1::2] = 0
+
+    if args.splotch:
+        prediction = _add_random_blobs(args.rng, prediction)
 
     # Convert the image to a 3d numpy array - for plotting
     image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
@@ -213,6 +251,10 @@ def main(args):
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
 
+    # If we're doing the splotch thing, we need to have an rng
+    if args.splotch:
+        args.rng = np.random.default_rng(seed=0)
+
     # Load the model and training-time config
     print("Loading model")
     model_state = model.load_model(args.model_name)
@@ -250,9 +292,16 @@ if __name__ == "__main__":
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--speckle",
         help="Make the segmentation worse by removing every second predicted voxel"
+        "(to illustrate the effect on our metrics)",
+        action="store_true",
+    )
+    group.add_argument(
+        "--splotch",
+        help="Make the segmentation worse by adding random blobs of noise to the prediction"
         "(to illustrate the effect on our metrics)",
         action="store_true",
     )
