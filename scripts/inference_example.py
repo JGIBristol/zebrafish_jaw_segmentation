@@ -53,7 +53,11 @@ def _save_mesh(
     plot_meshes.projections(axes, stl_mesh, plot_kw={"alpha": 0.4, "cmap": "cividis_r"})
 
     fig.tight_layout()
-    fig.savefig(f"{out_dir}/{subject_name}_mesh_{threshold:.3f}_projections.png")
+    fig.savefig(
+        f"{out_dir}/{subject_name}_mesh_{threshold:.3f}_projections.png",
+        bbox_inches="tight",
+        pad_inches=0,
+    )
     plt.close(fig)
 
 
@@ -95,7 +99,11 @@ def _save_test_meshes(
 
     axes[0].legend(loc="upper right")
 
-    fig.savefig(f"{out_dir}/test_mesh_overlaid_projections.png")
+    fig.savefig(
+        f"{out_dir}/test_mesh_overlaid_projections.png",
+        bbox_inches="tight",
+        pad_inches=0,
+    )
     plt.close(fig)
 
 
