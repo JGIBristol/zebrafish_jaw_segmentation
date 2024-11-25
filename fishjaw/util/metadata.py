@@ -19,7 +19,7 @@ def age(n: int) -> float:
     """
     age_ = transform.jaw_centres().loc[n, "age"]
 
-    if not isinstance(age, np.float64):
+    if not isinstance(age_, np.float64):
         raise ValueError(f"Got multiple ages for fish {n}:\n\t{age_}")
 
     return age_
