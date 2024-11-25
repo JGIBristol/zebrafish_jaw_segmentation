@@ -203,7 +203,7 @@ def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
     _check_arrays(truth, pred)
 
     intersection = np.sum(truth * pred)
-    union = np.sum(truth + pred)
+    union = np.sum(truth + pred) - intersection
 
     return intersection / union
 
@@ -396,14 +396,14 @@ def table(
     df = pd.DataFrame()
 
     df["Dice"] = [dice_score(t, p) for t, p in zip(truth, pred)]
-    df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
+    df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
 
     # I don't care about these
+    # df["Z_dist_score"] = [z_distance_score(t, p) for t, p in zip(truth, pred)]
     # df["1-FPR"] = [1 - fpr(t, p) for t, p in zip(truth, pred)]
     # df["TPR"] = [tpr(t, p) for t, p in zip(truth, pred)]
     # df["Precision"] = [precision(t, p) for t, p in zip(truth, pred)]
     # df["Recall"] = [recall(t, p) for t, p in zip(truth, pred)]
-    # df["Jaccard"] = [jaccard(t, p) for t, p in zip(truth, pred)]
     # df["ROC AUC"] = [roc_auc(t, p) for t, p in zip(truth, pred)]
     # df["G_Measure"] = [g_measure(t, p) for t, p in zip(truth, pred)]
 
