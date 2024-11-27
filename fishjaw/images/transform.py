@@ -16,7 +16,7 @@ class UnexpectedCropError(Exception):
     Raised when the crop size is larger than the image.
     """
 
-    def __init__(self, message="Unexpected crop size mismatch"):
+    def __init__(self, message="Unexpected crop size mismatch") -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -42,7 +42,7 @@ def jaw_centres() -> pd.DataFrame:
     return pd.read_csv(csv_path, skiprows=5).set_index("n")
 
 
-def centre(n: int) -> tuple[float, float, float]:
+def centre(n: int) -> tuple[int, int, int]:
     """
     Get the centre of the jaw for a given fish
 

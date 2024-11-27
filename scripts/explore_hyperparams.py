@@ -5,7 +5,6 @@ Train several models with different hyperparameters to compare the results
 
 import pathlib
 import argparse
-from typing import Union
 
 import yaml
 import torch
@@ -188,7 +187,7 @@ def step(
     config: dict,
     data_config: data.DataConfig,
     out_dir: pathlib.Path,
-    full_validation_subjects: Union[list[tio.Subject], None],
+    full_validation_subjects: list[tio.Subject],
 ):
     """
     Get the right data, train the model and create some outputs
@@ -263,7 +262,7 @@ def step(
     np.save(out_dir / "val_losses.npy", val_losses)
 
 
-def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str):
+def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str) -> None:
     """
     Set up the configuration and run the training
 

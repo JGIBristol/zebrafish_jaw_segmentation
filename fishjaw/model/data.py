@@ -4,6 +4,7 @@ Loading, pre-processing, etc. the data for the model
 """
 
 import pathlib
+from typing import Any
 
 import torch
 import torch.utils
@@ -15,7 +16,7 @@ from ..images import io, transform
 from ..util import files, util
 
 
-def get_patch_size(config: dict) -> tuple[int, int, int]:
+def get_patch_size(config: dict[str, Any]) -> tuple[int, int, int]:
     """
     Get the patch size from the configuration
 
