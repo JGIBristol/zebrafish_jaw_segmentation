@@ -247,7 +247,7 @@ def _check_arrays_binary(truth: NDArray[np.uint8], pred: NDArray[np.uint8]) -> N
 
 def hausdorff_points(
     truth: NDArray[np.uint8], pred: NDArray[np.uint8]
-) -> tuple[NDArray, NDArray]:
+) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
     """
     Find the points of the binary mask (truth) and a binary array (pred) that are
     separated by the two-directional Hausdorff distance.
