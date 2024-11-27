@@ -14,7 +14,9 @@ from fishjaw.visualisation import images_3d
 from fishjaw.images import transform, io
 
 
-def plot_dicom(dicom_path: pathlib.Path, window_size: tuple[int, int, int] = None):
+def plot_dicom(
+    dicom_path: pathlib.Path, window_size: tuple[int, int, int] | None = None
+):
     """
     Given a path to a DICOM file, plot it and save
 
@@ -44,7 +46,7 @@ def plot_dicom(dicom_path: pathlib.Path, window_size: tuple[int, int, int] = Non
     plt.close(fig)
 
 
-def main(*, crop: bool):
+def main(*, crop: bool) -> None:
     """
     Plot the DICOMs that we've cached
 
