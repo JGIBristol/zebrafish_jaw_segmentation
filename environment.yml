@@ -31,6 +31,7 @@ dependencies:
   - prettytable
   - tabulate
   - mypy
+  - types-PyYAML
   - pip:
       - pickle-mixin
       - torchio
