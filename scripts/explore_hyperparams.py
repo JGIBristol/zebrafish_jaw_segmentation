@@ -263,7 +263,7 @@ def step(
     np.save(out_dir / "val_losses.npy", val_losses)
 
 
-def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str):
+def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str) -> None:
     """
     Set up the configuration and run the training
 

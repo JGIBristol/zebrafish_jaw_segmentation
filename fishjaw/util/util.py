@@ -41,7 +41,7 @@ def rootdir() -> pathlib.Path:
 
 
 @call_once
-def userconf() -> dict:
+def userconf() -> dict[str, Any]:
     """
     Get the user configuration.
 

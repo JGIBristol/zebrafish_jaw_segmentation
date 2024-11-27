@@ -290,7 +290,7 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
 
 
 def hausdorff_profile(
-    truth: np.ndarray, pred: np.ndarray, thresholds: Iterable = None
+    truth: np.ndarray, pred: np.ndarray, thresholds: Iterable | None = None
 ) -> list[float]:
     """
     Calculate the hausdorff distance for a range of thresholds between a binary mask
