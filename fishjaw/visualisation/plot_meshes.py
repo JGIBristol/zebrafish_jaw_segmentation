@@ -31,6 +31,8 @@ def projections(
     if len(axes) != 3:
         raise ValueError(f"Expected 3 axes, got {len(axes)}")
 
+    plot_kw = plot_kw or {}
+
     # Check we haven't specified both a color and a cmap
     if "color" in plot_kw and "cmap" in plot_kw:
         raise ValueError(f"Cannot specify both a color and a cmap:\n{plot_kw}")
@@ -39,7 +41,6 @@ def projections(
     faces = np.arange(vertices.shape[0]).reshape(-1, 3)
 
     # Deal with default plot arguments
-    plot_kw = plot_kw or {}
     plot_kw["cmap"] = (
         plot_kw.get("cmap", "cividis_r") if "color" not in plot_kw else None
     )
