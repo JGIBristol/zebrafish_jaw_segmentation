@@ -7,6 +7,7 @@ import os
 import pickle
 from math import sqrt
 from dataclasses import dataclass
+from typing import Type, Any
 
 import torch
 import numpy as np
@@ -22,11 +23,11 @@ from ..util import util, files
 class ModelState:
     """The state of the model"""
 
-    model_state_dict: dict
-    optimizer_state_dict: dict
+    model_state_dict: dict[str, torch.Tensor]
+    optimizer_state_dict: dict[str, torch.Tensor]
 
     # The configuration used to train the model, as read from the userconf.yml file
-    config: dict
+    config: dict[str, Any]
 
     def load_model(self, *, set_eval=True) -> torch.nn.Module:
         """
@@ -110,10 +111,11 @@ def lossfn(config: dict) -> torch.nn.modules.Module:
     Get the loss function from the config file
 
     """
-    return util.load_class(config["loss"])(**config["loss_options"])
+    loss_class = Type[torch.nn.modules.Module] = util.load_class(config["loss"])
+    return loss_class(**config["loss_options"])
 
 
-def model_params(in_params: dict) -> dict:
+def model_params(in_params: dict[str, Any]) -> dict[str, Any]:
     """
     Find the parameters that we need to pass to the model constructor
 
@@ -152,7 +154,7 @@ def model_params(in_params: dict) -> dict:
     return out_params
 
 
-def model(config: dict) -> torch.nn.Module:
+def model(config: dict[str, Any]) -> torch.nn.Module:
     """
     U-Net model for segmentation
 
@@ -170,7 +172,9 @@ def model(config: dict) -> torch.nn.Module:
     return classname(**model_params(config))
 
 
-def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
+def _get_data(
+    data: dict[str, dict[str, torch.Tensor]]
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Get the image and labels from each entry in a batch
 
@@ -265,13 +269,13 @@ def validation_step(
     return net, losses
 
 
-def _save_checkpoint(
+def save_checkpoint(
     net: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     epoch: int,
-    config: dict,
+    config: dict[str, Any],
     checkpoint_dir: str = "checkpoints",
-):
+) -> None:
     """
     Save the model and optimizer state dictionaries to a checkpoint file.
 
@@ -282,8 +286,6 @@ def _save_checkpoint(
     :param config: the configuration used to train the model, as read from the userconf.yml file
 
     """
-    # At the moment this function isn't used
-    return NotImplemented
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 

@@ -4,11 +4,12 @@ Stuff for manipulating files
 """
 
 import pathlib
+from typing import Any
 
 from . import util
 
 
-def rdsf_dir(config: dict) -> pathlib.Path:
+def rdsf_dir(config: dict[str, Any]) -> pathlib.Path:
     """
     Get the directory where the RDSF is mounted
 
@@ -18,7 +19,7 @@ def rdsf_dir(config: dict) -> pathlib.Path:
     return pathlib.Path(config["rdsf_dir"])
 
 
-def mask_dirs(config: dict) -> list:
+def mask_dirs(config: dict[str, Any]) -> list:
     """
     Get the directories where the masks are stored
 
@@ -29,7 +30,7 @@ def mask_dirs(config: dict) -> list:
     return [rdsf_dir(config) / mask_dir for mask_dir in util.config()["label_dirs"]]
 
 
-def dicom_dirs(config: dict) -> list[pathlib.Path]:
+def dicom_dirs(config: dict[str, Any]) -> list[pathlib.Path]:
     """
     Get the directories where the DICOMs are stored
 
@@ -40,7 +41,7 @@ def dicom_dirs(config: dict) -> list[pathlib.Path]:
     return [pathlib.Path(dicom_dir) for dicom_dir in config["dicom_dirs"]]
 
 
-def dicom_paths(config: dict, mode: str) -> list[pathlib.Path]:
+def dicom_paths(config: dict[str, Any], mode: str) -> list[pathlib.Path]:
     """
     Get the paths to the DICOMs used for either training, validation or testing
 
@@ -120,7 +121,7 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     return mask_path.parents[3] / util.config()["wahabs_3d_tifs"] / file_name
 
 
-def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:
+def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
     """
     Get the directory where Wahab's 3D tifs are stored
 
@@ -131,7 +132,7 @@ def wahab_3d_tifs_dir(config: dict) -> pathlib.Path:
     return rdsf_dir(config) / util.config()["wahabs_3d_tifs"]
 
 
-def model_path(config: dict) -> pathlib.Path:
+def model_path(config: dict[str, Any]) -> pathlib.Path:
     """
     Get the path to the cached model, as created by scripts/train_model.py
 

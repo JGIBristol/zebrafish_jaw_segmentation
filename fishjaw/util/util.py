@@ -5,20 +5,24 @@ Very general utilities
 
 import pathlib
 import importlib
-from typing import Callable
+from typing import Callable, Any
 from functools import wraps
 
 import yaml
 
 
-def call_once(func: Callable) -> Callable:
+def call_once(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorator to ensure a function is only called once
+
+    :param func: function to be decorated
+    :returns: the decorated function - does the same thing as the input function
+    :raises RuntimeError: if the function has already been called in this process
 
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not wrapper.called:
             wrapper.called = True
             return func(*args, **kwargs)
@@ -37,7 +41,7 @@ def rootdir() -> pathlib.Path:
 
 
 @call_once
-def userconf() -> dict:
+def userconf() -> dict[str, Any]:
     """
     Get the user configuration.
 
@@ -56,7 +60,7 @@ def userconf() -> dict:
         return yaml.safe_load(f)
 
 
-def config() -> dict:
+def config() -> dict[str, Any]:
     """
     Get the global config
 
@@ -67,7 +71,7 @@ def config() -> dict:
         return yaml.safe_load(f)
 
 
-def load_class(name: str) -> type:
+def load_class(name: str) -> Any:
     """
     Load a class from a module given a string.
 

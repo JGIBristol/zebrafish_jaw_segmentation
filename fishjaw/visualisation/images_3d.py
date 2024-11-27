@@ -4,16 +4,18 @@ Plotting 3D things
 """
 
 import torch
+import matplotlib
 import numpy as np
 import torchio as tio
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from ..model import model
 
 
 def plot_slices(
-    arr: np.ndarray, mask: np.ndarray = None
-) -> tuple[plt.Figure, np.ndarray[plt.Axes]]:
+    arr: NDArray[np.float32], mask: NDArray[np.int8] | None = None
+) -> tuple[matplotlib.figure.Figure, NDArray[matplotlib.axes.Axes]]:
     """
     Plot slices of a 3d array
 
@@ -38,7 +40,9 @@ def plot_slices(
     return fig, axes
 
 
-def plot_subject(subject: tio.Subject) -> plt.Figure:
+def plot_subject(
+    subject: tio.Subject,
+) -> tuple[matplotlib.figure.Figure, NDArray[matplotlib.axes.Axes]]:
     """
     Plot the image and label of a subject
 
@@ -56,7 +60,7 @@ def plot_inference(
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
     activation: str = "softmax",
-) -> plt.Figure:
+) -> matplotlib.figure.Figure:
     """
     Plot the inference on an image
 

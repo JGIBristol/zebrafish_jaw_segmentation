@@ -26,7 +26,7 @@ from fishjaw.visualisation import plot_meshes
 from fishjaw.images import metrics
 
 
-def ablated_psi(module, input_, output):
+def ablated_psi(module, input_, output) -> torch.Tensor:
     """
     Identity function to replace the attention mechanism
 
