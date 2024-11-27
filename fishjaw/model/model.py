@@ -22,8 +22,8 @@ from ..util import util, files
 class ModelState:
     """The state of the model"""
 
-    model_state_dict: dict
-    optimizer_state_dict: dict
+    model_state_dict: dict[str, torch.Tensor]
+    optimizer_state_dict: dict[str, torch.Tensor]
 
     # The configuration used to train the model, as read from the userconf.yml file
     config: dict

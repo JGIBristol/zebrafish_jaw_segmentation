@@ -13,7 +13,7 @@ from sklearn import metrics as skm
 from skimage import metrics as skimage_m
 
 
-def _check_arrays(truth: np.ndarray, pred: np.ndarray) -> None:
+def _check_arrays(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> None:
     """
     Check the arrays are the right shape and formats
 
@@ -30,7 +30,7 @@ def _check_arrays(truth: np.ndarray, pred: np.ndarray) -> None:
         )
 
 
-def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
+def dice_score(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the Dice score between a binary mask (truth) and a float array (pred).
 
@@ -57,7 +57,7 @@ def dice_score(truth: np.ndarray, pred: np.ndarray) -> float:
     return 2.0 * intersection / (volume1 + volume2)
 
 
-def float_dice(arr1: np.ndarray, arr2: np.ndarray) -> float:
+def float_dice(arr1: np.ndarray[np.float32], arr2: np.ndarray[np.float32]) -> float:
     """
     Calculate the Dice score between two float arrays.
 
@@ -83,7 +83,7 @@ def float_dice(arr1: np.ndarray, arr2: np.ndarray) -> float:
     return 2.0 * intersection / (volume1 + volume2)
 
 
-def fpr(truth: np.ndarray, pred: np.ndarray) -> float:
+def fpr(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the false positive rate between a binary mask (truth) and a float array (pred).
 
@@ -110,7 +110,7 @@ def fpr(truth: np.ndarray, pred: np.ndarray) -> float:
     return weighted_false_positives / negatives
 
 
-def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
+def tpr(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the true positive rate between a binary mask (truth) and a float array (pred).
 
@@ -135,7 +135,7 @@ def tpr(truth: np.ndarray, pred: np.ndarray) -> float:
     return weighted_positives / positives
 
 
-def precision(truth: np.ndarray, pred: np.ndarray) -> float:
+def precision(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the precision, averaged over thresholds,
     between a binary mask (truth) and a float array (pred).
@@ -154,7 +154,7 @@ def precision(truth: np.ndarray, pred: np.ndarray) -> float:
     return np.sum(truth * pred) / np.sum(pred)
 
 
-def recall(truth: np.ndarray, pred: np.ndarray) -> float:
+def recall(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the recall score between a binary mask (truth) and a float array (pred).
 
@@ -173,7 +173,7 @@ def recall(truth: np.ndarray, pred: np.ndarray) -> float:
     return np.sum(truth * pred) / np.sum(truth)
 
 
-def g_measure(truth: np.ndarray, pred: np.ndarray) -> float:
+def g_measure(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the geometric mean of the precision and recall
 
@@ -187,7 +187,7 @@ def g_measure(truth: np.ndarray, pred: np.ndarray) -> float:
     return np.sqrt(precision(truth, pred) * recall(truth, pred))
 
 
-def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
+def jaccard(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the Jaccard score between a binary mask (truth) and a float array (pred).
 
@@ -208,7 +208,7 @@ def jaccard(truth: np.ndarray, pred: np.ndarray) -> float:
     return intersection / union
 
 
-def roc_auc(truth: np.ndarray, pred: np.ndarray) -> float:
+def roc_auc(truth: np.ndarray[np.float32], pred: np.ndarray[np.float32]) -> float:
     """
     Calculate the ROC AUC score between a binary mask (truth) and a float array (pred).
 
@@ -290,7 +290,9 @@ def hausdorff_distance(truth: np.ndarray, pred: np.ndarray) -> float:
 
 
 def hausdorff_profile(
-    truth: np.ndarray, pred: np.ndarray, thresholds: Iterable | None = None
+    truth: np.ndarray[np.float32],
+    pred: np.ndarray[np.float32],
+    thresholds: Iterable[float] | None = None,
 ) -> list[float]:
     """
     Calculate the hausdorff distance for a range of thresholds between a binary mask
