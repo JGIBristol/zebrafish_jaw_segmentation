@@ -22,7 +22,7 @@ def call_once(func: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not wrapper.called:
             wrapper.called = True
             return func(*args, **kwargs)
