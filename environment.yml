@@ -30,6 +30,7 @@ dependencies:
   - numpy-stl
   - prettytable
   - tabulate
+  - mypy
   - pip:
       - pickle-mixin
       - torchio
