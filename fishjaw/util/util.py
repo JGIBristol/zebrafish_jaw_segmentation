@@ -5,15 +5,19 @@ Very general utilities
 
 import pathlib
 import importlib
-from typing import Callable
+from typing import Callable, Any
 from functools import wraps
 
 import yaml
 
 
-def call_once(func: Callable) -> Callable:
+def call_once(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorator to ensure a function is only called once
+
+    :param func: function to be decorated
+    :returns: the decorated function - does the same thing as the input function
+    :raises RuntimeError: if the function has already been called in this process
 
     """
 
