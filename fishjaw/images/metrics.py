@@ -268,7 +268,9 @@ def hausdorff_points(
     return skimage_m.hausdorff_pair(truth, pred)
 
 
-def hausdorff_distance(truth: NDArray[np.uint8], pred: NDArray[np.uint8]) -> float:
+def hausdorff_distance(
+    truth: NDArray[np.uint8 | np.bool_], pred: NDArray[np.uint8 | np.bool_]
+) -> float:
     """
     Calculate the Hausdorff distance between a binary mask (truth) and a binary array (pred),
     scaled by the image dimensions.

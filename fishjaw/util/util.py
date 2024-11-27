@@ -60,7 +60,7 @@ def userconf() -> dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def config() -> dict:
+def config() -> dict[str, Any]:
     """
     Get the global config
 
@@ -71,7 +71,7 @@ def config() -> dict:
         return yaml.safe_load(f)
 
 
-def load_class(name: str) -> type:
+def load_class(name: str) -> Any:
     """
     Load a class from a module given a string.
 
