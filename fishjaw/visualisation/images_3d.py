@@ -4,10 +4,10 @@ Plotting 3D things
 """
 
 import torch
-import matplotlib
 import numpy as np
-import torchio as tio
 from numpy.typing import NDArray
+import torchio as tio
+import matplotlib
 import matplotlib.pyplot as plt
 
 from ..model import model
