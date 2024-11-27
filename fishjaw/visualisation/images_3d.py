@@ -7,14 +7,15 @@ import torch
 import matplotlib
 import numpy as np
 import torchio as tio
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from ..model import model
 
 
 def plot_slices(
-    arr: np.ndarray, mask: np.ndarray = None
-) -> tuple[matplotlib.figure.Figure, np.ndarray[plt.Axes]]:
+    arr: NDArray[np.float32], mask: NDArray[np.int8] | None = None
+) -> tuple[matplotlib.figure.Figure, NDArray[matplotlib.axes.Axes]]:
     """
     Plot slices of a 3d array
 
@@ -41,7 +42,7 @@ def plot_slices(
 
 def plot_subject(
     subject: tio.Subject,
-) -> tuple[matplotlib.figure.Figure, np.ndarray[plt.Axes]]:
+) -> tuple[matplotlib.figure.Figure, NDArray[matplotlib.axes.Axes]]:
     """
     Plot the image and label of a subject
 
