@@ -111,7 +111,7 @@ def lossfn(config: dict) -> torch.nn.modules.Module:
     Get the loss function from the config file
 
     """
-    loss_class = Type[torch.nn.modules.Module] = util.load_class(config["loss"])
+    loss_class: Type[torch.nn.modules.Module] = util.load_class(config["loss"])
     return loss_class(**config["loss_options"])
 
 

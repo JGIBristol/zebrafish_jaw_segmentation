@@ -2,12 +2,12 @@
 Visualise meshes
 
 """
+
 from typing import Any
 
 import stl
 import matplotlib
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def projections(
