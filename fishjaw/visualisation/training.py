@@ -3,13 +3,14 @@ Visualisation of things happening in the training process
 
 """
 
+import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def plot_losses(
     train_losses: list[list[float]], val_losses: list[list[float]]
-) -> plt.Figure:
+) -> matplotlib.figure.Figure:
     """
     Plot the training and validation losses against epoch
 

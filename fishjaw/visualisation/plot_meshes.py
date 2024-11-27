@@ -2,17 +2,23 @@
 Visualise meshes
 
 """
+from typing import Any
 
 import stl
+import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def projections(
-    axes: tuple[plt.Axes, plt.Axes, plt.Axes],
+    axes: tuple[
+        matplotlib.axes.Axes,
+        matplotlib.axes.Axes,
+        matplotlib.axes.Axes,
+    ],
     mesh: stl.Mesh,
     *,
-    plot_kw: dict | None = None,
+    plot_kw: dict[str, Any] | None = None,
 ) -> None:
     """
     Plot projections of the mesh from three different angles

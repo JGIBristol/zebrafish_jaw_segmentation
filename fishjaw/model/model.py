@@ -7,6 +7,7 @@ import os
 import pickle
 from math import sqrt
 from dataclasses import dataclass
+from typing import Type
 
 import torch
 import numpy as np
@@ -110,7 +111,8 @@ def lossfn(config: dict) -> torch.nn.modules.Module:
     Get the loss function from the config file
 
     """
-    return util.load_class(config["loss"])(**config["loss_options"])
+    loss_class = Type[torch.nn.modules.Module] = util.load_class(config["loss"])
+    return loss_class(**config["loss_options"])
 
 
 def model_params(in_params: dict) -> dict:
@@ -170,7 +172,9 @@ def model(config: dict) -> torch.nn.Module:
     return classname(**model_params(config))
 
 
-def _get_data(data: dict) -> tuple[torch.Tensor, torch.Tensor]:
+def _get_data(
+    data: dict[str, dict[str, torch.Tensor]]
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Get the image and labels from each entry in a batch
 
