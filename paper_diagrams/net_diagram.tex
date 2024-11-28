@@ -12,15 +12,28 @@
 
     % Contracting path
     \node (input) [block] {Input};
-    \node (head) [block, right of=input, xshift=3cm] {Head};
-    \node (enc1) [block, below of=head] {Encoder Block 1};
-    \node (enc2) [block, below of=enc1] {Encoder Block 2};
-    \node (enc3) [block, below of=enc2] {Encoder Block 3};
-    \node (enc4) [block, below of=enc3] {Encoder Block 4};
-    \node (enc5) [block, below of=enc4] {Encoder Block 5};
-    \node (input_size) [block, below of=input, yshift=4em]{160x160x160};
+    \node (input_size) [block, below of=input, yshift=1cm]{1x160x160x160};
 
-    \node (bottom) [block, below right of=enc5, xshift=1cm, yshift=-0.5cm] {Bottom Layer};
+    \node (head) [block, right of=input, xshift=3cm] {Head};
+    \node (head_size) [block, below of=head, yshift=1cm]{1x160x160x160};
+
+    \node (enc1) [block, below of=head_size] {Encoder Block 1};
+    \node (enc1_size) [block, below of=enc1, yshift=1cm]{1x160x160x160};
+
+    \node (enc2) [block, below of=enc1_size] {Encoder Block 2};
+    \node (enc2_size) [block, below of=enc2, yshift=1cm]{1x160x160x160};
+
+    \node (enc3) [block, below of=enc2_size] {Encoder Block 3};
+    \node (enc3_size) [block, below of=enc3, yshift=1cm]{1x160x160x160};
+
+    \node (enc4) [block, below of=enc3_size] {Encoder Block 4};
+    \node (enc4_size) [block, below of=enc4, yshift=1cm]{1x160x160x160};
+
+    \node (enc5) [block, below of=enc4_size] {Encoder Block 5};
+    \node (enc5_size) [block, below of=enc5, yshift=1cm]{1x160x160x160};
+
+    \node (bottom) [block, below right of=enc5_size, xshift=2cm, yshift=-0.5cm] {Bottom Layer};
+    \node (bottom_size) [block, below of=bottom, yshift=1cm]{1x160x160x160};
 
     % Attention Mechanisms
     \node (att5) [attention, right of=enc5, xshift=2cm] {Att};
@@ -31,22 +44,35 @@
 
     % Expanding Path
     \node (dec5) [block, right of=att5, xshift=1cm] {Decoder Block 5};
+    \node (dec5_size) [block, below of=dec5, yshift=1cm]{1x160x160x160};
+
     \node (dec4) [block, right of=att4, xshift=1cm] {Decoder Block 4};
+    \node (dec5_size) [block, below of=dec4, yshift=1cm]{1x160x160x160};
+
     \node (dec3) [block, right of=att3, xshift=1cm] {Decoder Block 3};
+    \node (dec5_size) [block, below of=dec3, yshift=1cm]{1x160x160x160};
+
     \node (dec2) [block, right of=att2, xshift=1cm] {Decoder Block 2};
+    \node (dec5_size) [block, below of=dec2, yshift=1cm]{1x160x160x160};
+
     \node (dec1) [block, right of=att1, xshift=1cm] {Decoder Block 1};
+    \node (dec5_size) [block, below of=dec1, yshift=1cm]{1x160x160x160};
+
     \node (reduce) [block, right of=head, xshift=5cm] {Reduce Channels};
+    \node (dec5_size) [block, below of=reduce, yshift=1cm]{1x160x160x160};
+
     \node (output) [block, right of=reduce, xshift=3cm] {Output};
+    \node (dec5_size) [block, below of=output, yshift=1cm]{1x160x160x160};
 
     % ==== Arrows
     % Contracting
     \draw [arrow] (input) -- (head);
-    \draw [arrow] (head) -- (enc1);
-    \draw [arrow] (enc1) -- (enc2);
-    \draw [arrow] (enc2) -- (enc3);
-    \draw [arrow] (enc3) -- (enc4);
-    \draw [arrow] (enc4) -- (enc5);
-    \draw [arrow] (enc5) -- (bottom);
+    \draw [arrow] (head_size) -- (enc1_size);
+    \draw [arrow] (enc1_size) -- (enc2_size);
+    \draw [arrow] (enc2_size) -- (enc3_size);
+    \draw [arrow] (enc3_size) -- (enc4_size);
+    \draw [arrow] (enc4_size) -- (enc5_size);
+    \draw [arrow] (enc5_size) -- (bottom);
 
     % Expanding
     \draw [arrow] (bottom) -- (dec5);
