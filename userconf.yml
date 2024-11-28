@@ -84,7 +84,7 @@ model_params:
   # At the moment, I can't have more than 6 layers in the model because the receptive field
   # gets halved and ends up being an odd number, and then when we upsample we get a size mismatch
   n_layers: 6
-  n_initial_filters: 14
+  n_initial_channels: 8
   kernel_size: 3
   stride: 2
   dropout: 0.01
