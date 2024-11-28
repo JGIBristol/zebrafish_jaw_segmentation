@@ -21,59 +21,39 @@
 \begin{document}
 \begin{tikzpicture}[node distance=2cm]
 
+    % Input
+    \node (input_label) [block, rotate=90] {Input};
+    \node (input) [block, right of=input_label, xshift=-1cm, rotate=90]{1x160x160x160};
+
     % Contracting path
-    \node (input) [block] {Input};
-    \node (input_size) [block, below of=input, yshift=1cm]{1x160x160x160};
+    \node (enc1) [block, below right of=input, yshift=-0.5cm, rotate=90]{1x160x160x160};
+    \node (enc2) [block, below right of=enc1, yshift=-0.5cm, rotate=90]{1x160x160x160};
+    \node (enc3) [block, below right of=enc2, yshift=-0.5cm, rotate=90]{1x160x160x160};
+    \node (enc4) [block, below right of=enc3, yshift=-0.5cm, rotate=90]{1x160x160x160};
+    \node (enc5) [block, below right of=enc4, yshift=-0.5cm, rotate=90]{1x160x160x160};
 
-    \node (head) [block, right of=input, xshift=3cm] {Head};
-    \node (head_size) [block, below of=head, yshift=1cm]{1x160x160x160};
-
-    \node (enc1) [block, below right of=head_size] {Encoder Block 1};
-    \node (enc1_size) [block, below of=enc1, yshift=1cm]{1x160x160x160};
-
-    \node (enc2) [block, below right of=enc1_size] {Encoder Block 2};
-    \node (enc2_size) [block, below of=enc2, yshift=1cm]{1x160x160x160};
-
-    \node (enc3) [block, below right of=enc2_size] {Encoder Block 3};
-    \node (enc3_size) [block, below of=enc3, yshift=1cm]{1x160x160x160};
-
-    \node (enc4) [block, below right of=enc3_size] {Encoder Block 4};
-    \node (enc4_size) [block, below of=enc4, yshift=1cm]{1x160x160x160};
-
-    \node (enc5) [block, below right of=enc4_size] {Encoder Block 5};
-    \node (enc5_size) [block, below of=enc5, yshift=1cm]{1x160x160x160};
-
-    \node (bottom) [block, below right of=enc5_size, xshift=2cm, yshift=-0.5cm] {Bottom Block};
-    \node (bottom_size) [block, below of=bottom, yshift=1cm]{1x160x160x160};
+    % Bottom blocks
+    \node (enc6) [block, below right of=enc5, yshift=-0.5, rotate=90] {Bottom Block};
+    \node (dec6) [block, right of=enc6, xshift=0.5cm, rotate=90] {Bottom Block};
 
     % Expanding Path
-    \node (dec5) [block, above right of=bottom, yshift=1.5cm, xshift=2cm] {Decoder Block 5};
-    \node (dec5_size) [block, below of=dec5, yshift=1cm]{1x160x160x160};
-
-    \node (dec4) [block, above right of=dec5, yshift=1cm] {Decoder Block 4};
-    \node (dec5_size) [block, below of=dec4, yshift=1cm]{1x160x160x160};
-
-    \node (dec3) [block, above right of=dec4, yshift=1cm] {Decoder Block 3};
-    \node (dec5_size) [block, below of=dec3, yshift=1cm]{1x160x160x160};
-
-    \node (dec2) [block, above right of=dec3, yshift=1cm] {Decoder Block 2};
-    \node (dec5_size) [block, below of=dec2, yshift=1cm]{1x160x160x160};
-
-    \node (dec1) [block, above right of=dec2, yshift=1cm] {Decoder Block 1};
-    \node (dec5_size) [block, below of=dec1, yshift=1cm]{1x160x160x160};
-
-    \node (reduce) [block, above right of=dec1, yshift=1cm] {Reduce Channels};
-    \node (dec5_size) [block, below of=reduce, yshift=1cm]{1x160x160x160};
-
-    \node (output) [block, right of=reduce, xshift=3cm] {Output};
-    \node (dec5_size) [block, below of=output, yshift=1cm]{1x160x160x160};
+    \node (dec5) [block, above right of=dec6, yshift=0.5cm, rotate=90]{1x160x160x160};
+    \node (dec4) [block, above right of=dec5, yshift=0.5cm, rotate=90]{1x160x160x160};
+    \node (dec3) [block, above right of=dec4, yshift=0.5cm, rotate=90]{1x160x160x160};
+    \node (dec2) [block, above right of=dec3, yshift=0.5cm, rotate=90]{1x160x160x160};
+    \node (dec1) [block, above right of=dec2, yshift=0.5cm, rotate=90]{1x160x160x160};
 
     % Attention Mechanisms
-    \node (att5) [attention, left of=dec5, xshift=-1cm, yshift=-0.5cm] {Att};
-    \node (att4) [attention, left of=dec4, xshift=-1cm, yshift=-0.5cm] {Att};
-    \node (att3) [attention, left of=dec3, xshift=-1cm, yshift=-0.5cm] {Att};
-    \node (att2) [attention, left of=dec2, xshift=-1cm, yshift=-0.5cm] {Att};
-    \node (att1) [attention, left of=dec1, xshift=-1cm, yshift=-0.5cm] {Att};
+    \node (att5) [attention, above right of=dec6, xshift=-1.5cm, yshift=1cm] {Att};
+    \node (att4) [attention, above right of=dec5, xshift=-1.5cm, yshift=1cm] {Att};
+    \node (att3) [attention, above right of=dec4, xshift=-1.5cm, yshift=1cm] {Att};
+    \node (att2) [attention, above right of=dec3, xshift=-1.5cm, yshift=1cm] {Att};
+    \node (att1) [attention, above right of=dec2, xshift=-1.5cm, yshift=1cm] {Att};
+
+    % Output
+    \node (output) [block, rotate=90, right of=input, yshift=-19.5cm, xshift=-2cm] {1x160x160x160};
+    \node (output_label) [block, right of=output, xshift=-1cm, rotate=90]{Output};
+
 
     % ==== Arrows
     % Contracting
