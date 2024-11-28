@@ -23,43 +23,45 @@
 
     % Input
     \node (input_label) [block] {Input};
-    \node (input) [block, below of=input_label, yshift=1cm]{1x160x160x160};
+    \node (input) [block, below of=input_label, yshift=1cm]{$1\times160\times160\times160$};
 
     % Contracting path
-    \node (head) [block, below of=input, yshift=0.5cm] {8x160x160x160};
+    \node (head) [block, below of=input, yshift=0.5cm] {$8\times160\times160\times160$};
 
-    \node (enc1) [block, below left of=head, yshift=-0.5cm, xshift=-1cm]{1x160x160x160};
-    \node (conv1) [block, below of=enc1, yshift=0.5cm]{1x160x160x160};
+    \node (enc1) [block, below left of=head, yshift=-0.5cm, xshift=-1cm]{$8\times80\times80\times80$};
+    \node (conv1) [block, below of=enc1, yshift=0.5cm]{$16\times80\times80\times80$};
 
-    \node (enc2) [block, below left of=conv1, yshift=-0.5cm, xshift=-1cm]{1x160x160x160};
-    \node (conv2) [block, below of=enc2, yshift=0.5cm]{1x160x160x160};
+    \node (enc2) [block, below left of=conv1, yshift=-0.5cm, xshift=-1cm]{$16\times40\times40\times40$};
+    \node (conv2) [block, below of=enc2, yshift=0.5cm]{$32\times40\times40\times40$};
 
-    \node (enc3) [block, below left of=conv2, yshift=-0.5cm, xshift=-1cm]{1x160x160x160};
-    \node (conv3) [block, below of=enc3, yshift=0.5cm]{1x160x160x160};
+    \node (enc3) [block, below left of=conv2, yshift=-0.5cm, xshift=-1cm]{$32\times20\times20\times20$};
+    \node (conv3) [block, below of=enc3, yshift=0.5cm]{$64\times20\times20\times20$};
 
-    \node (enc4) [block, below left of=conv3, yshift=-0.5cm, xshift=-1cm]{1x160x160x160};
-    \node (conv4) [block, below of=enc4, yshift=0.5cm]{1x160x160x160};
+    \node (enc4) [block, below left of=conv3, yshift=-0.5cm, xshift=-1cm]{$64\times10\times10\times10$};
+    \node (conv4) [block, below of=enc4, yshift=0.5cm]{$128\times10\times10\times10$};
 
-    \node (enc5) [block, below left of=conv4, yshift=-0.5cm, xshift=-1cm]{1x160x160x160};
-    \node (conv5) [block, below of=enc5, yshift=0.5cm]{1x160x160x160};
+    \node (enc5) [block, below left of=conv4, yshift=-0.5cm, xshift=-1cm]{$128\times5\times5\times5$};
+    \node (conv5) [block, below of=enc5, yshift=0.5cm]{$256\times5\times5\times5$};
+
+    % Bottom layer
 
     % Expanding Path
-    \node (dec5) [block, below right of=conv5, yshift=-0.5cm, xshift=1cm]{1x160x160x160};
-    \node (conv6) [block, below of=dec5, yshift=0.5cm] {1x};
+    \node (dec5) [block, below right of=conv5, yshift=-0.5cm, xshift=1cm]{$256\times10\times10\times10$};
+    \node (conv6) [block, below of=dec5, yshift=0.5cm] {$128\times10\times10\times10$};
 
-    \node (dec4) [block, below right of=conv6, yshift=-0.5cm, xshift=1cm]{1x160x160x160};
-    \node (conv7) [block, below of=dec4, yshift=0.5cm] {1x};
+    \node (dec4) [block, below right of=conv6, yshift=-0.5cm, xshift=1cm]{$128\times20\times20\times20$};
+    \node (conv7) [block, below of=dec4, yshift=0.5cm] {$64\times20\times20\times20$};
 
-    \node (dec3) [block, below right of=conv7, yshift=-0.5cm, xshift=1cm]{1x160x160x160};
-    \node (conv8) [block, below of=dec3, yshift=0.5cm] {1x};
+    \node (dec3) [block, below right of=conv7, yshift=-0.5cm, xshift=1cm]{$64\times40\times40\times40$};
+    \node (conv8) [block, below of=dec3, yshift=0.5cm] {$32\times40\times40\times40$};
 
-    \node (dec2) [block, below right of=conv8, yshift=-0.5cm, xshift=1cm]{1x160x160x160};
-    \node (conv9) [block, below of=dec2, yshift=0.5cm] {1x};
+    \node (dec2) [block, below right of=conv8, yshift=-0.5cm, xshift=1cm]{$32\times80\times80\times80$};
+    \node (conv9) [block, below of=dec2, yshift=0.5cm] {$16\times80\times80\times80$};
 
-    \node (dec1) [block, below right of=conv9, yshift=-0.5cm, xshift=1cm]{1x160x160x160};
+    \node (dec1) [block, below right of=conv9, yshift=-0.5cm, xshift=1cm]{$16\times160\times160\times160$};
 
     % Output
-    \node (output) [block, below of=dec1, yshift=0.5cm] {1x160x160x160};
+    \node (output) [block, below of=dec1, yshift=0.5cm] {};
     \node (output_label) [block, below of=output, yshift=1cm]{Output};
 
     % % Attention Mechanisms
