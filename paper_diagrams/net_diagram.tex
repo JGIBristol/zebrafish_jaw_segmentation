@@ -10,22 +10,16 @@
 \begin{document}
 \begin{tikzpicture}[node distance=2cm]
 
-    % Nodes
+    % Contracting path
     \node (input) [block] {Input};
-    \node (head) [block, below of=input] {Head};
+    \node (head) [block, right of=input] {Head};
     \node (enc1) [block, below of=head] {Encoder Block 1};
     \node (enc2) [block, below of=enc1] {Encoder Block 2};
     \node (enc3) [block, below of=enc2] {Encoder Block 3};
     \node (enc4) [block, below of=enc3] {Encoder Block 4};
     \node (enc5) [block, below of=enc4] {Encoder Block 5};
-    \node (bottom) [block, below of=enc5] {Bottom Layer};
-    \node (dec5) [block, right of=enc5, xshift=4cm] {Decoder Block 5};
-    \node (dec4) [block, right of=enc4, xshift=4cm] {Decoder Block 4};
-    \node (dec3) [block, right of=enc3, xshift=4cm] {Decoder Block 3};
-    \node (dec2) [block, right of=enc2, xshift=4cm] {Decoder Block 2};
-    \node (dec1) [block, right of=enc1, xshift=4cm] {Decoder Block 1};
-    \node (reduce) [block, right of=head, xshift=4cm] {Reduce Channels};
-    \node (output) [block, right of=input, xshift=4cm] {Output};
+
+    \node (bottom) [block, below right of=enc5, xshift=1cm, yshift=-0.5cm] {Bottom Layer};
 
     % Attention Mechanisms
     \node (att5) [attention, right of=enc5, xshift=2cm] {Att};
@@ -34,7 +28,17 @@
     \node (att2) [attention, right of=enc2, xshift=2cm] {Att};
     \node (att1) [attention, right of=enc1, xshift=2cm] {Att};
 
-    % Arrows
+    % Expanding Path
+    \node (dec5) [block, right of=enc5, xshift=4cm] {Decoder Block 5};
+    \node (dec4) [block, right of=enc4, xshift=4cm] {Decoder Block 4};
+    \node (dec3) [block, right of=enc3, xshift=4cm] {Decoder Block 3};
+    \node (dec2) [block, right of=enc2, xshift=4cm] {Decoder Block 2};
+    \node (dec1) [block, right of=enc1, xshift=4cm] {Decoder Block 1};
+    \node (reduce) [block, right of=head, xshift=4cm] {Reduce Channels};
+    \node (output) [block, right of=reduce, xshift=1cm] {Output};
+
+    % ==== Arrows
+    % Contracting
     \draw [arrow] (input) -- (head);
     \draw [arrow] (head) -- (enc1);
     \draw [arrow] (enc1) -- (enc2);
@@ -42,6 +46,8 @@
     \draw [arrow] (enc3) -- (enc4);
     \draw [arrow] (enc4) -- (enc5);
     \draw [arrow] (enc5) -- (bottom);
+
+    % Expanding
     \draw [arrow] (bottom) -- (dec5);
     \draw [arrow] (dec5) -- (dec4);
     \draw [arrow] (dec4) -- (dec3);
@@ -49,6 +55,13 @@
     \draw [arrow] (dec2) -- (dec1);
     \draw [arrow] (dec1) -- (reduce);
     \draw [arrow] (reduce) -- (output);
+
+    % Attention
+    \draw [arrow] (bottom) -- (att5);
+    \draw [arrow] (dec5) -- (att4);
+    \draw [arrow] (dec4) -- (att3);
+    \draw [arrow] (dec3) -- (att2);
+    \draw [arrow] (dec2) -- (att1);
 
     % Skip Connections
     \draw [skip] (enc5) -- (att5);
