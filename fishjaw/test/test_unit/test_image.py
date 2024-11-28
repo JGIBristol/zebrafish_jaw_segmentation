@@ -2,7 +2,6 @@
 Tests for stuff in the images.py directory
 
 """
-
 import pytest
 import numpy as np
 
