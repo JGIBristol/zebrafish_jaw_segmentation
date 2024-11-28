@@ -59,17 +59,18 @@ class TrainingConfig:
     early_stopping: bool = False
 
 
-def channels(n_layers: int, n_initial_filters: int) -> list[int]:
+def channels(n_layers: int, initial_channels) -> list[int]:
     """
-    Find the number of channels in each layer of the network
+    Get the number of channels in each layer of the network -
+    starting at inital_channels and doubling every time
 
+    :param initial_channels: the number of channels after the first convolutions
     :param n_layers: the number of layers in the network
-    :param n_initial_filters: the number of filters in the first layer
-    :returns: the number of filters in each layer
+
+    :returns: the number of filters in each layer of the model
 
     """
-    start = int(sqrt(n_initial_filters))
-    return [2**n for n in range(start, start + n_layers)]
+    return [initial_channels * 2**i for i in range(n_layers)]
 
 
 def optimiser(config: dict, net: torch.nn.Module) -> torch.optim.Optimizer:
@@ -141,7 +142,7 @@ def model_params(in_params: dict[str, Any]) -> dict[str, Any]:
     # Get the number of channels for each layer by finding the number channels in the first layer
     # and then doing some maths
     out_params["channels"] = channels(
-        in_params["n_layers"], in_params["n_initial_filters"]
+        in_params["n_layers"], in_params["n_initial_channels"]
     )
 
     # Convolution stride is always the same, apart from in the first layer where it's implicitly 1
