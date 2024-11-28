@@ -6,16 +6,6 @@ Integration tests for the model
 from ...model import model
 
 
-# How is this not a unit test
-def test_channels() -> None:
-    """
-    Check we get the right sequence of channels from a given number
-    of layers and number of filters per layer
-
-    """
-    assert model.channels(5, 25) == [32, 64, 128, 256, 512]
-
-
 def test_model_params() -> None:
     """
     Check that the parameters for the model can be constructed correctly
