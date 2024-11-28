@@ -2,22 +2,23 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning}
 
-\tikzstyle{block} = [rectangle, draw, text centered, minimum height=2em, minimum width=4em]
+\tikzstyle{block} = [rectangle, draw, text centered, minimum height=1cm, minimum width=4em, text width=3cm]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 \tikzstyle{skip} = [thick, dashed,->,>=stealth]
-\tikzstyle{attention} = [circle, draw, text centered, minimum height=2em, minimum width=2em]
+\tikzstyle{attention} = [circle, draw, text centered, minimum height=1cm, minimum width=2em]
 
 \begin{document}
 \begin{tikzpicture}[node distance=2cm]
 
     % Contracting path
     \node (input) [block] {Input};
-    \node (head) [block, right of=input] {Head};
+    \node (head) [block, right of=input, xshift=3cm] {Head};
     \node (enc1) [block, below of=head] {Encoder Block 1};
     \node (enc2) [block, below of=enc1] {Encoder Block 2};
     \node (enc3) [block, below of=enc2] {Encoder Block 3};
     \node (enc4) [block, below of=enc3] {Encoder Block 4};
     \node (enc5) [block, below of=enc4] {Encoder Block 5};
+    \node (input_size) [block, below of=input, yshift=4em]{160x160x160};
 
     \node (bottom) [block, below right of=enc5, xshift=1cm, yshift=-0.5cm] {Bottom Layer};
 
@@ -29,13 +30,13 @@
     \node (att1) [attention, right of=enc1, xshift=2cm] {Att};
 
     % Expanding Path
-    \node (dec5) [block, right of=enc5, xshift=4cm] {Decoder Block 5};
-    \node (dec4) [block, right of=enc4, xshift=4cm] {Decoder Block 4};
-    \node (dec3) [block, right of=enc3, xshift=4cm] {Decoder Block 3};
-    \node (dec2) [block, right of=enc2, xshift=4cm] {Decoder Block 2};
-    \node (dec1) [block, right of=enc1, xshift=4cm] {Decoder Block 1};
-    \node (reduce) [block, right of=head, xshift=4cm] {Reduce Channels};
-    \node (output) [block, right of=reduce, xshift=1cm] {Output};
+    \node (dec5) [block, right of=att5, xshift=1cm] {Decoder Block 5};
+    \node (dec4) [block, right of=att4, xshift=1cm] {Decoder Block 4};
+    \node (dec3) [block, right of=att3, xshift=1cm] {Decoder Block 3};
+    \node (dec2) [block, right of=att2, xshift=1cm] {Decoder Block 2};
+    \node (dec1) [block, right of=att1, xshift=1cm] {Decoder Block 1};
+    \node (reduce) [block, right of=head, xshift=5cm] {Reduce Channels};
+    \node (output) [block, right of=reduce, xshift=3cm] {Output};
 
     % ==== Arrows
     % Contracting
@@ -57,11 +58,11 @@
     \draw [arrow] (reduce) -- (output);
 
     % Attention
-    \draw [arrow] (bottom) -- (att5);
-    \draw [arrow] (dec5) -- (att4);
-    \draw [arrow] (dec4) -- (att3);
-    \draw [arrow] (dec3) -- (att2);
-    \draw [arrow] (dec2) -- (att1);
+    \draw [skip] (bottom) -- (att5);
+    \draw [skip] (dec5) -- (att4);
+    \draw [skip] (dec4) -- (att3);
+    \draw [skip] (dec3) -- (att2);
+    \draw [skip] (dec2) -- (att1);
 
     % Skip Connections
     \draw [skip] (enc5) -- (att5);
