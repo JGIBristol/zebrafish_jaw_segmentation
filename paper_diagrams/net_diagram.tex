@@ -60,12 +60,12 @@
     \node (output) [block, right of=reduce, xshift=\blockwidth] {$1\times160\times160\times160$};
     \node (output_label) [block, above of=output, yshift=-1cm]{Output};
 
-    % Attention Mechanisms
-    \node (att5) [attention, left of=reduce, xshift=-0.25\blockwidth] {Att};
-    \node (att4) [attention, left of=dec4, xshift=-0.25\blockwidth] {Att};
-    \node (att3) [attention, left of=dec3, xshift=-0.25\blockwidth] {Att};
-    \node (att2) [attention, left of=dec2, xshift=-0.25\blockwidth] {Att};
-    \node (att1) [attention, left of=dec1, xshift=-0.25\blockwidth] {Att};
+    % Attention Mechanisms, named from the top
+    \node (att1) [attention, left of=reduce, xshift=-0.25\blockwidth] {Att};
+    \node (att2) [attention, left of=dec1, xshift=-0.25\blockwidth] {Att};
+    \node (att3) [attention, left of=dec2, xshift=-0.25\blockwidth] {Att};
+    \node (att4) [attention, left of=dec3, xshift=-0.25\blockwidth] {Att};
+    \node (att5) [attention, left of=dec4, xshift=-0.25\blockwidth] {Att};
 
     % ==== Arrows
     % Contracting
@@ -84,24 +84,24 @@
     \draw [arrow] (dec1) -- (reduce);
     \draw [arrow] (reduce) -- (output);
 
-    % % Attention
-    % \draw [skip] (bottom) -- (att5);
-    % \draw [skip] (dec5) -- (att4);
-    % \draw [skip] (dec4) -- (att3);
-    % \draw [skip] (dec3) -- (att2);
-    % \draw [skip] (dec2) -- (att1);
+    % Attention
+    \draw [skip] (bottom) -- (att5);
+    \draw [skip] (dec4) -- (att4);
+    \draw [skip] (dec3) -- (att3);
+    \draw [skip] (dec2) -- (att2);
+    \draw [skip] (dec1) -- (att1);
 
-    % % Skip Connections
-    % \draw [skip] (enc5) -- (att5);
-    % \draw [skip] (att5) -- (dec5);
-    % \draw [skip] (enc4) -- (att4);
-    % \draw [skip] (att4) -- (dec4);
-    % \draw [skip] (enc3) -- (att3);
-    % \draw [skip] (att3) -- (dec3);
-    % \draw [skip] (enc2) -- (att2);
-    % \draw [skip] (att2) -- (dec2);
-    % \draw [skip] (enc1) -- (att1);
-    % \draw [skip] (att1) -- (dec1);
+    % Skip Connections
+    \draw [skip] (enc4) -- (att5);
+    \draw [skip] (att5) -- (dec4);
+    \draw [skip] (enc3) -- (att4);
+    \draw [skip] (att4) -- (dec3);
+    \draw [skip] (enc2) -- (att3);
+    \draw [skip] (att3) -- (dec2);
+    \draw [skip] (enc1) -- (att2);
+    \draw [skip] (att2) -- (dec1);
+    \draw [skip] (head) -- (att1);
+    \draw [skip] (att1) -- (reduce);
 
 \end{tikzpicture}
 \end{document}
