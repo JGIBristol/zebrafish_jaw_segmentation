@@ -9,9 +9,10 @@ import torch
 from prettytable import PrettyTable
 
 from fishjaw.model import model
+from monai.networks.nets import attentionunet
 
 
-def count_parameters(net: torch.nn.Module):
+def count_parameters(net: torch.nn.Module) -> None:
     """Count the number of trainable parameters in the model"""
     table = PrettyTable(["Modules", "Parameters"])
     total_params = 0
@@ -45,10 +46,8 @@ def replace_layers_with_tracker(net: torch.nn.Module):
         if isinstance(
             layer,
             (
-                torch.nn.Conv3d,
-                torch.nn.MaxPool3d,
-                torch.nn.AvgPool3d,
-                torch.nn.ConvTranspose3d,
+                attentionunet.ConvBlock,
+                attentionunet.UpConv,
             ),
         ):
             tracker = ReceptiveFieldTracker(layer)
@@ -72,7 +71,7 @@ def main(*, model_name: str):
     net.to("cuda")
 
     # Print the number of trainable parameters
-    print(count_parameters(net))
+    count_parameters(net)
 
     # Track the size of the receptive field throughout the model
     replace_layers_with_tracker(net)

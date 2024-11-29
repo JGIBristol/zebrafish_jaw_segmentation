@@ -18,7 +18,7 @@ def test_model_params() -> None:
         "in_channels": 1,
         "spatial_dims": 3,
         "kernel_size": 3,
-        "n_initial_filters": 14,
+        "n_initial_channels": 8,
         "stride": 3,
         "dropout": 0.2,
     }
