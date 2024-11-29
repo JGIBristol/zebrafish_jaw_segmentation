@@ -18,7 +18,12 @@
 \newlength{\blockwidth}
 \setlength{\blockwidth}{3cm}
 
-\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=0.333 * \blockwidth]
+\newlength{\yshift}
+\setlength{\yshift}{-0.5cm}
+\newlength{\xshift}
+\setlength{\xshift}{0.5cm}
+
+\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=0.333* \blockwidth]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 \tikzstyle{skip} = [thick, dashed,->,>=stealth]
 \tikzstyle{attention} = [circle, draw, text centered, minimum height=1cm, minimum width=2em]
@@ -31,27 +36,29 @@
     \node (input) [block, below of=input_label, yshift=1cm]{$1\times160\times160\times160$};
 
     % Contracting path
-    \node (head) [block, right of=input, xshift=4cm] {$8\times160\times160\times160$};
+    \node (head) [block, right of=input, xshift=\blockwidth] {$8\times160\times160\times160$};
 
-    \node (enc1) [block, below right of=head, yshift=-0.5cm, xshift=0.5cm]{$8\times80\times80\times80$};
-    \node (enc2) [block, below right of=enc1, yshift=-0.5cm, xshift=0.5cm]{$16\times40\times40\times40$};
-    \node (enc3) [block, below right of=enc2, yshift=-0.5cm, xshift=0.5cm]{$32\times20\times20\times20$};
-    \node (enc4) [block, below right of=enc3, yshift=-0.5cm, xshift=0.5cm]{$64\times10\times10\times10$};
-    \node (enc5) [block, below right of=enc4, yshift=-0.5cm, xshift=0.5cm]{$128\times5\times5\times5$};
+    \node (enc1) [block, below right of=head, yshift=\yshift, xshift=\xshift]{$8\times80\times80\times80$};
+    \node (enc2) [block, below right of=enc1, yshift=\yshift, xshift=\xshift]{$16\times40\times40\times40$};
+    \node (enc3) [block, below right of=enc2, yshift=\yshift, xshift=\xshift]{$32\times20\times20\times20$};
+    \node (enc4) [block, below right of=enc3, yshift=\yshift, xshift=\xshift]{$64\times10\times10\times10$};
+    \node (enc5) [block, below right of=enc4, yshift=\yshift, xshift=\xshift]{$128\times5\times5\times5$};
 
     % Bottom layer
-    \node (bottom) [block, below right of=enc5, yshift=-0.5cm, xshift=1cm]{$256\times5\times5\times5$};
+    \node (bottom) [block, below right of=enc5, yshift=\yshift, xshift=2\xshift]{$256\times5\times5\times5$};
 
     % Expanding Path
-    \node (dec5) [block, above right of=bottom, yshift=0.5cm, xshift=0.5cm]{$128\times10\times10\times10$};
-    \node (dec4) [block, above right of=dec5, yshift=0.5cm, xshift=0.5cm]{$64\times20\times20\times20$};
-    \node (dec3) [block, above right of=dec4, yshift=0.5cm, xshift=0.5cm]{$32\times40\times40\times40$};
-    \node (dec2) [block, above right of=dec3, yshift=0.5cm, xshift=0.5cm]{$16\times80\times80\times80$};
-    \node (dec1) [block, above right of=dec2, yshift=0.5cm, xshift=0.5cm]{$16\times80\times80\times80$};
+    \node (dec5) [block, above right of=bottom, yshift=-\yshift, xshift=2\xshift]{$128\times10\times10\times10$};
+    \node (dec4) [block, above right of=dec5, yshift=-\yshift, xshift=\xshift]{$64\times20\times20\times20$};
+    \node (dec3) [block, above right of=dec4, yshift=-\yshift, xshift=\xshift]{$32\times40\times40\times40$};
+    \node (dec2) [block, above right of=dec3, yshift=-\yshift, xshift=\xshift]{$16\times80\times80\times80$};
+    \node (dec1) [block, above right of=dec2, yshift=-\yshift, xshift=\xshift]{$16\times80\times80\times80$};
 
-    % % Output
-    % \node (output) [block, below of=dec1, yshift=0.5cm] {$1\times160\times160\times160$};
-    % \node (output_label) [block, below of=output, yshift=1cm]{Output};
+    \node (reduce) [block, above right of=dec1, yshift=-\yshift, xshift=\xshift]{$8\times160\times160\times160$};
+
+    % Output
+    \node (output) [block, right of=reduce, xshift=\blockwidth] {$1\times160\times160\times160$};
+    \node (output_label) [block, above of=output, yshift=-1cm]{Output};
 
     % % Attention Mechanisms
     % \node (att5) [attention, above right of=bottom, xshift=-1.5cm, yshift=1.5cm] {Att};
