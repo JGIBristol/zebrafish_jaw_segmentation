@@ -41,31 +41,36 @@
     \node (conv4) [block, below of=enc4, yshift=0.5cm]{$128\times10\times10\times10$};
 
     \node (enc5) [block, below left of=conv4, yshift=-0.5cm, xshift=-1cm]{$128\times5\times5\times5$};
-    \node (conv5) [block, below of=enc5, yshift=0.5cm]{$256\times5\times5\times5$};
 
     % Bottom layer
+    \node (bottom) [block, below left of=enc5, yshift=-0.5cm, xshift=-1cm]{$256\times5\times5\times5$};
 
     % Expanding Path
-    \node (dec5) [block, below right of=conv5, yshift=-0.5cm, xshift=1cm]{$256\times10\times10\times10$};
-    \node (conv6) [block, below of=dec5, yshift=0.5cm] {$128\times10\times10\times10$};
+    \node (conv6) [block, below right of=bottom, yshift=-0.5cm, xshift=1cm] {$128\times5\times5\times5$};
 
-    \node (dec4) [block, below right of=conv6, yshift=-0.5cm, xshift=1cm]{$128\times20\times20\times20$};
-    \node (conv7) [block, below of=dec4, yshift=0.5cm] {$64\times20\times20\times20$};
+    \node (dec4) [block, below right of=conv6, yshift=-0.5cm, xshift=1cm]{$128\times10\times10\times10$};
+    \node (conv7) [block, below of=dec4, yshift=0.5cm] {$64\times10\times10\times10$};
 
-    \node (dec3) [block, below right of=conv7, yshift=-0.5cm, xshift=1cm]{$64\times40\times40\times40$};
-    \node (conv8) [block, below of=dec3, yshift=0.5cm] {$32\times40\times40\times40$};
+    \node (dec3) [block, below right of=conv7, yshift=-0.5cm, xshift=1cm]{$64\times20\times20\times20$};
+    \node (conv8) [block, below of=dec3, yshift=0.5cm] {$32\times20\times20\times20$};
 
-    \node (dec2) [block, below right of=conv8, yshift=-0.5cm, xshift=1cm]{$32\times80\times80\times80$};
-    \node (conv9) [block, below of=dec2, yshift=0.5cm] {$16\times80\times80\times80$};
+    \node (dec2) [block, below right of=conv8, yshift=-0.5cm, xshift=1cm]{$32\times40\times40\times40$};
+    \node (conv9) [block, below of=dec2, yshift=0.5cm] {$16\times40\times40\times40$};
 
-    \node (dec1) [block, below right of=conv9, yshift=-0.5cm, xshift=1cm]{$16\times160\times160\times160$};
+    \node (dec1) [block, below right of=conv9, yshift=-0.5cm, xshift=1cm]{$16\times80\times80\times80$};
+    \node (conv10) [block, below of=dec1, yshift=0.5cm] {$8\times80\times80\times80$};
+
+    \node (dec1) [block, below right of=conv9, yshift=-0.5cm, xshift=1cm]{$16\times80\times80\times80$};
+    \node (conv10) [block, below of=dec1, yshift=0.5cm] {$8\times80\times80\times80$};
+
+    \node (dec0) [block, below right of=conv10, yshift=-0.5cm, xshift=1cm]{$8\times160\times160\times160$};
 
     % Output
-    \node (output) [block, below of=dec1, yshift=0.5cm] {};
+    \node (output) [block, below of=dec0, yshift=0.5cm] {$1\times160\times160\times160$};
     \node (output_label) [block, below of=output, yshift=1cm]{Output};
 
     % % Attention Mechanisms
-    \node (att5) [attention, above right of=conv5, xshift=-1.5cm, yshift=1.5cm] {Att};
+    \node (att5) [attention, above right of=bottom, xshift=-1.5cm, yshift=1.5cm] {Att};
     \node (att4) [attention, above right of=conv6, xshift=-1.5cm, yshift=1.5cm] {Att};
     \node (att3) [attention, above right of=conv7, xshift=-1.5cm, yshift=1.5cm] {Att};
     \node (att2) [attention, above right of=conv8, xshift=-1.5cm, yshift=1.5cm] {Att};
