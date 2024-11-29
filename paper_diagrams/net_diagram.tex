@@ -69,22 +69,20 @@
 
     % ==== Arrows
     % Contracting
-    % \draw [arrow] (input) -- (head);
-    % \draw [arrow] (head_size) -- (enc1_size);
-    % \draw [arrow] (enc1_size) -- (enc2_size);
-    % \draw [arrow] (enc2_size) -- (enc3_size);
-    % \draw [arrow] (enc3_size) -- (enc4_size);
-    % \draw [arrow] (enc4_size) -- (enc5_size);
-    % \draw [arrow] (enc5_size) -- (bottom);
+    \draw [arrow] (input) -- (head);
+    \draw [arrow] (head) -- (enc1);
+    \draw [arrow] (enc1) -- (enc2);
+    \draw [arrow] (enc2) -- (enc3);
+    \draw [arrow] (enc3) -- (enc4);
+    \draw [arrow] (enc4) -- (bottom);
 
-    % % Expanding
-    % \draw [arrow] (bottom) -- (dec5);
-    % \draw [arrow] (dec5) -- (dec4);
-    % \draw [arrow] (dec4) -- (dec3);
-    % \draw [arrow] (dec3) -- (dec2);
-    % \draw [arrow] (dec2) -- (dec1);
-    % \draw [arrow] (dec1) -- (reduce);
-    % \draw [arrow] (reduce) -- (output);
+    % Expanding
+    \draw [arrow] (bottom) -- (dec4);
+    \draw [arrow] (dec4) -- (dec3);
+    \draw [arrow] (dec3) -- (dec2);
+    \draw [arrow] (dec2) -- (dec1);
+    \draw [arrow] (dec1) -- (reduce);
+    \draw [arrow] (reduce) -- (output);
 
     % % Attention
     % \draw [skip] (bottom) -- (att5);
