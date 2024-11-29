@@ -39,20 +39,19 @@
     % Contracting path
     \node (head) [block, right of=input, xshift=\blockwidth] {$8\times160\times160\times160$};
 
-    \node (enc1) [block, below of=head, yshift=\yshift]{$8\times80\times80\times80$};
-    \node (enc2) [block, below of=enc1, yshift=\yshift]{$16\times40\times40\times40$};
-    \node (enc3) [block, below of=enc2, yshift=\yshift]{$32\times20\times20\times20$};
-    \node (enc4) [block, below of=enc3, yshift=\yshift]{$64\times10\times10\times10$};
-    \node (enc5) [block, below of=enc4, yshift=\yshift]{$128\times5\times5\times5$};
+    \node (enc1) [block, below of=head, yshift=\yshift]{$16\times80\times80\times80$};
+    \node (enc2) [block, below of=enc1, yshift=\yshift]{$32\times40\times40\times40$};
+    \node (enc3) [block, below of=enc2, yshift=\yshift]{$64\times20\times20\times20$};
+    \node (enc4) [block, below of=enc3, yshift=\yshift]{$128\times10\times10\times10$};
 
     % Bottom layer
-    \node (bottom) [block, below right of=enc5, yshift=\yshift, xshift=\blockwidth]{$256\times5\times5\times5$};
+    \node (bottom) [block, below right of=enc4, yshift=\yshift, xshift=\blockwidth]{$256\times5\times5\times5$};
 
     % Expanding Path
-    \node (dec5) [block, above of=bottom, yshift=\yshift + 0.4\blockheight, xshift=1.5\blockwidth]{$128\times10\times10\times10$};
-    \node (dec4) [block, above of=dec5,   yshift=\yshift + \blockheight]{$64\times20\times20\times20$};
-    \node (dec3) [block, above of=dec4,   yshift=\yshift + \blockheight]{$32\times40\times40\times40$};
-    \node (dec2) [block, above of=dec3,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
+    % No idea why the yshift is not working here
+    \node (dec4) [block, above of=bottom, yshift=\yshift + 0.4\blockheight, xshift=\blockwidth]{$128\times10\times10\times10$};
+    \node (dec3) [block, above of=dec4,   yshift=\yshift + \blockheight]{$64\times20\times20\times20$};
+    \node (dec2) [block, above of=dec3,   yshift=\yshift + \blockheight]{$32\times40\times40\times40$};
     \node (dec1) [block, above of=dec2,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
 
     \node (reduce) [block, above of=dec1, yshift=\yshift + \blockheight]{$8\times160\times160\times160$};
@@ -62,11 +61,11 @@
     \node (output_label) [block, above of=output, yshift=-1cm]{Output};
 
     % Attention Mechanisms
-    \node (att5) [attention, left of=dec5, xshift=-0.5\blockwidth] {Att};
-    \node (att4) [attention, left of=dec4, xshift=-0.5\blockwidth] {Att};
-    \node (att3) [attention, left of=dec3, xshift=-0.5\blockwidth] {Att};
-    \node (att2) [attention, left of=dec2, xshift=-0.5\blockwidth] {Att};
-    \node (att1) [attention, left of=dec1, xshift=-0.5\blockwidth] {Att};
+    \node (att5) [attention, left of=reduce, xshift=-0.25\blockwidth] {Att};
+    \node (att4) [attention, left of=dec4, xshift=-0.25\blockwidth] {Att};
+    \node (att3) [attention, left of=dec3, xshift=-0.25\blockwidth] {Att};
+    \node (att2) [attention, left of=dec2, xshift=-0.25\blockwidth] {Att};
+    \node (att1) [attention, left of=dec1, xshift=-0.25\blockwidth] {Att};
 
     % ==== Arrows
     % Contracting
