@@ -18,12 +18,13 @@
 \newlength{\blockwidth}
 \setlength{\blockwidth}{3cm}
 
+\newlength{\blockheight}
+\setlength{\blockheight}{1cm}
+
 \newlength{\yshift}
 \setlength{\yshift}{-0.5cm}
-\newlength{\xshift}
-\setlength{\xshift}{0.5cm}
 
-\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=0.333* \blockwidth]
+\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=\blockheight]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 \tikzstyle{skip} = [thick, dashed,->,>=stealth]
 \tikzstyle{attention} = [circle, draw, text centered, minimum height=1cm, minimum width=2em]
@@ -38,34 +39,34 @@
     % Contracting path
     \node (head) [block, right of=input, xshift=\blockwidth] {$8\times160\times160\times160$};
 
-    \node (enc1) [block, below right of=head, yshift=\yshift, xshift=\xshift]{$8\times80\times80\times80$};
-    \node (enc2) [block, below right of=enc1, yshift=\yshift, xshift=\xshift]{$16\times40\times40\times40$};
-    \node (enc3) [block, below right of=enc2, yshift=\yshift, xshift=\xshift]{$32\times20\times20\times20$};
-    \node (enc4) [block, below right of=enc3, yshift=\yshift, xshift=\xshift]{$64\times10\times10\times10$};
-    \node (enc5) [block, below right of=enc4, yshift=\yshift, xshift=\xshift]{$128\times5\times5\times5$};
+    \node (enc1) [block, below of=head, yshift=\yshift]{$8\times80\times80\times80$};
+    \node (enc2) [block, below of=enc1, yshift=\yshift]{$16\times40\times40\times40$};
+    \node (enc3) [block, below of=enc2, yshift=\yshift]{$32\times20\times20\times20$};
+    \node (enc4) [block, below of=enc3, yshift=\yshift]{$64\times10\times10\times10$};
+    \node (enc5) [block, below of=enc4, yshift=\yshift]{$128\times5\times5\times5$};
 
     % Bottom layer
-    \node (bottom) [block, below right of=enc5, yshift=\yshift, xshift=2\xshift]{$256\times5\times5\times5$};
+    \node (bottom) [block, below right of=enc5, yshift=\yshift, xshift=\blockwidth]{$256\times5\times5\times5$};
 
     % Expanding Path
-    \node (dec5) [block, above right of=bottom, yshift=-\yshift, xshift=2\xshift]{$128\times10\times10\times10$};
-    \node (dec4) [block, above right of=dec5, yshift=-\yshift, xshift=\xshift]{$64\times20\times20\times20$};
-    \node (dec3) [block, above right of=dec4, yshift=-\yshift, xshift=\xshift]{$32\times40\times40\times40$};
-    \node (dec2) [block, above right of=dec3, yshift=-\yshift, xshift=\xshift]{$16\times80\times80\times80$};
-    \node (dec1) [block, above right of=dec2, yshift=-\yshift, xshift=\xshift]{$16\times80\times80\times80$};
+    \node (dec5) [block, above of=bottom, yshift=\yshift + 0.4\blockheight, xshift=1.5\blockwidth]{$128\times10\times10\times10$};
+    \node (dec4) [block, above of=dec5,   yshift=\yshift + \blockheight]{$64\times20\times20\times20$};
+    \node (dec3) [block, above of=dec4,   yshift=\yshift + \blockheight]{$32\times40\times40\times40$};
+    \node (dec2) [block, above of=dec3,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
+    \node (dec1) [block, above of=dec2,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
 
-    \node (reduce) [block, above right of=dec1, yshift=-\yshift, xshift=\xshift]{$8\times160\times160\times160$};
+    \node (reduce) [block, above of=dec1, yshift=\yshift + \blockheight]{$8\times160\times160\times160$};
 
     % Output
     \node (output) [block, right of=reduce, xshift=\blockwidth] {$1\times160\times160\times160$};
     \node (output_label) [block, above of=output, yshift=-1cm]{Output};
 
-    % % Attention Mechanisms
-    % \node (att5) [attention, above right of=bottom, xshift=-1.5cm, yshift=1.5cm] {Att};
-    % \node (att4) [attention, above right of=dec5, xshift=-1.5cm, yshift=1.5cm] {Att};
-    % \node (att3) [attention, above right of=dec4, xshift=-1.5cm, yshift=1.5cm] {Att};
-    % \node (att2) [attention, above right of=dec3, xshift=-1.5cm, yshift=1.5cm] {Att};
-    % \node (att1) [attention, above right of=dec2, xshift=-1.5cm, yshift=1.5cm] {Att};
+    % Attention Mechanisms
+    \node (att5) [attention, left of=dec5, xshift=-0.5\blockwidth] {Att};
+    \node (att4) [attention, left of=dec4, xshift=-0.5\blockwidth] {Att};
+    \node (att3) [attention, left of=dec3, xshift=-0.5\blockwidth] {Att};
+    \node (att2) [attention, left of=dec2, xshift=-0.5\blockwidth] {Att};
+    \node (att1) [attention, left of=dec1, xshift=-0.5\blockwidth] {Att};
 
     % ==== Arrows
     % Contracting
