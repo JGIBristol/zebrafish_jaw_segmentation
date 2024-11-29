@@ -1,5 +1,5 @@
 """
-Summarise the architecture of the model
+Summarise the architecture of the model - only works for the attention unet
 
 """
 
@@ -8,7 +8,7 @@ import argparse
 import torch
 from prettytable import PrettyTable
 
-from fishjaw.model import model
+from fishjaw.model import model, data
 from monai.networks.nets import attentionunet
 
 
@@ -68,6 +68,8 @@ def main(*, model_name: str):
     model_state: model.ModelState = model.load_model(model_name)
 
     net = model_state.load_model(set_eval=True)
+    if not isinstance(net, attentionunet.AttentionUnet):
+        raise ValueError("This script only works for the attention unet sorry")
     net.to("cuda")
 
     # Print the number of trainable parameters
@@ -75,9 +77,8 @@ def main(*, model_name: str):
 
     # Track the size of the receptive field throughout the model
     replace_layers_with_tracker(net)
-    # This should really use the architecture to find the size of the input
-    # At the moment it's hard coded
-    dummy_input = torch.randn(1, 1, 160, 160, 160).to("cuda")
+
+    dummy_input = torch.randn(1, 1, *data.get_patch_size(model_state.config)).to("cuda")
     net(dummy_input)
 
 
