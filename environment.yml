@@ -32,6 +32,7 @@ dependencies:
   - tabulate
   - mypy
   - types-PyYAML
+  - pdflatex
   - pip:
       - pickle-mixin
       - torchio
