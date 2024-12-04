@@ -115,6 +115,11 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     # Take the name from mask_path
     file_name = mask_path.name.replace(".labels.tif", ".tif")
 
+    # Remove the "ak_" from the start
+    if not file_name.startswith("ak_"):
+        raise ValueError(f"File name {file_name} does not start with 'ak_'")
+    file_name = file_name[3:]
+
     # We've hard-coded the number of dirs to strip off which is bad - if we later move
     # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
     # but hopefully that won't happen

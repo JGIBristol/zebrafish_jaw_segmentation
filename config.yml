@@ -8,7 +8,7 @@ label_dirs:
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 3 (base of jaw)"
 
-wahabs_3d_tifs: "DATABASE/uCT/Wahab_clean_dataset/TIFS/"
+wahabs_3d_tifs: "1Felix and Rich make models/wahabs_scans"
 felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
 wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training set 1"
 
@@ -20,10 +20,13 @@ boring_script_output: "script_output/boring_stuff/"
 # These ones are in multiple training sets
 duplicate_ids:
  - 39
+
 # These ones are broken for various reasons
 broken_ids:
- - 92
- - 90
- - 69
- - 36
+ # Set 2
  - 166
+ # Set 3
+ - 36
+ - 69
+ - 90
+ - 92
