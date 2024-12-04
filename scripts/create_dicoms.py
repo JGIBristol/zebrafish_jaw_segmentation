@@ -30,6 +30,8 @@ other ones.
 
 import pathlib
 import datetime
+import argparse
+from typing import Any
 from dataclasses import dataclass
 
 import pydicom
@@ -133,12 +135,23 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     ds.save_as(out_path, write_like_original=False)
 
 
-def create_set_1(config: dict) -> None:
+def create_dicoms(
+    config: dict[str, Any],
+    dir_index: int,
+    desc: str,
+    dry_run: bool,
+    *,
+    ignore: set[int] | None = None,
+    binarise: bool = False,
+) -> None:
     """
-    Create DICOMs from Training set 1 - Wahab's segmented images
+    Create DICOMs from images and segmentation masks
 
     """
-    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][0])
+    # Get paths to the labels
+    label_dir = config["rdsf_dir"] / pathlib.Path(
+        util.config()["label_dirs"][dir_index]
+    )
     label_paths = sorted(
         list(label_dir.glob("*.tif")),
         key=lambda x: x.name,
@@ -146,66 +159,21 @@ def create_set_1(config: dict) -> None:
     if len(label_paths) == 0:
         raise ValueError(f"No images found in {label_dir}")
 
-    dicom_dir = files.dicom_dirs(config)[0]
+    # Get paths to the images
+    dicom_dir = files.dicom_dirs(config)[dir_index]
     if not dicom_dir.is_dir():
         dicom_dir.mkdir(parents=True)
-
-    # Find the corresponding CT scan images
     img_paths = [files.image_path(label_path) for label_path in label_paths]
+
     for label_path, img_path in tqdm(
         zip(label_paths, img_paths),
-        desc="Creating DICOMs from Wahab's segmentations",
+        desc=desc,
         total=len(label_paths),
     ):
         if not img_path.exists():
-            print(f"Image at {img_path} not found, but {label_path} was")
-            continue
+            raise RuntimeError(f"Image at {img_path} not found, but {label_path} was")
 
-        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
-
-        if dicom_path.exists():
-            print(f"Skipping {dicom_path}, already exists")
-            continue
-
-        try:
-            # These contain different labels for the different bones
-            dicom = Dicom(img_path, label_path, binarise=True)
-        except ValueError as e:
-            print(f"Skipping {img_path} and {label_path}: {e}")
-            continue
-
-        write_dicom(dicom, dicom_path)
-
-
-def create_set_2(config: dict, ignore: set) -> None:
-    """
-    Create DICOMs from training set 2 - the first set of images that Felix segmented
-
-    """
-    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][1])
-    label_paths = sorted(
-        list(label_dir.glob("*.tif")),
-        key=lambda x: x.name,
-    )
-    if len(label_paths) == 0:
-        raise ValueError(f"No images found in {label_dir}")
-
-    dicom_dir = files.dicom_dirs(config)[1]
-    if not dicom_dir.is_dir():
-        dicom_dir.mkdir(parents=True)
-
-    # Find the corresponding CT scan images
-    img_paths = [files.image_path(label_path) for label_path in label_paths]
-    for label_path, img_path in tqdm(
-        zip(label_paths, img_paths),
-        desc="Creating DICOMs from Felix's first segmentations",
-        total=len(label_paths),
-    ):
-        if not img_path.exists():
-            print(f"Image at {img_path} not found, but {label_path} was")
-            continue
-
-        if int(label_path.stem.split(".")[0][3:]) in ignore:
+        if ignore and int(label_path.stem.split(".")[0][3:]) in ignore:
             print(f"Skipping {label_path}, fish number in ignore set")
             continue
 
@@ -215,80 +183,44 @@ def create_set_2(config: dict, ignore: set) -> None:
             print(f"Skipping {dicom_path}, already exists")
             continue
 
-        try:
-            # These contain different labels for the different bones
-            dicom = Dicom(img_path, label_path, binarise=False)
-        except ValueError as e:
-            print(f"Skipping {img_path} and {label_path}: {e}")
-            continue
+        if not dry_run:
+            try:
+                # These contain different labels for the different bones
+                dicom = Dicom(img_path, label_path, binarise=binarise)
+            except ValueError as e:
+                print(f"Skipping {img_path} and {label_path}: {e}")
+                continue
 
-        write_dicom(dicom, dicom_path)
-
-
-def create_set_3(config: dict, ignore: set):
-    """
-    Create DICOMs from training set 3 - the rear jaw images that Felix segmented
-
-    :param ignore: set of fish numbers to ignore
-
-    """
-    label_dir = config["rdsf_dir"] / pathlib.Path(util.config()["label_dirs"][2])
-    label_paths = sorted(
-        list(label_dir.glob("*.tif")),
-        key=lambda x: x.name,
-    )
-    if len(label_paths) == 0:
-        raise ValueError(f"No images found in {label_dir}")
-
-    dicom_dir = files.dicom_dirs(config)[2]
-    if not dicom_dir.is_dir():
-        dicom_dir.mkdir(parents=True)
-
-    # Find the corresponding CT scan images
-    img_paths = [files.image_path(label_path) for label_path in label_paths]
-    for label_path, img_path in tqdm(
-        zip(label_paths, img_paths),
-        desc="Creating DICOMs from rear jaw segmentations",
-        total=len(label_paths),
-    ):
-        if int(label_path.stem.split(".")[0][3:]) in ignore:
-            print(f"Skipping {label_path}, fish number in ignore set")
-            continue
-
-        if not img_path.exists():
-            print(f"Image at {img_path} not found, but {label_path} was")
-            continue
-
-        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
-
-        if dicom_path.exists():
-            print(f"Skipping {dicom_path}, already exists")
-            continue
-
-        try:
-            # These contain different labels for the different bones
-            dicom = Dicom(img_path, label_path, binarise=False)
-        except ValueError as e:
-            print(f"Skipping {img_path} and {label_path}: {e}")
-            continue
-
-        write_dicom(dicom, dicom_path)
+            write_dicom(dicom, dicom_path)
 
 
-def main():
+def main(dry_run: bool):
     """
     Get the images and labels, create DICOM files and save them to disk
 
     """
     config = util.userconf()
 
-    create_set_1(config)
-    create_set_2(config, ignore=files.broken_dicoms())
+    # Training set 1 - Wahaab's segmented images
+    create_dicoms(config, 0, "Wahab's Jaws", dry_run, binarise=True)
+
+    # Training set 2 - Felix's segmented images
+    create_dicoms(config, 1, "Felix's Jaws", dry_run, ignore=files.broken_dicoms())
 
     # Some might be duplicated between the different sets; we only want
-    # the whole jaws in this case
-    create_set_3(config, ignore=files.broken_dicoms() | files.duplicate_dicoms())
+    # Training set 3 - Felix's segmented rear jaw only images
+    # Exclude the duplicates
+    create_dicoms(
+        config,
+        2,
+        "Felix's Rear Jaws",
+        dry_run,
+        ignore=files.broken_dicoms() | files.duplicate_dicoms(),
+    )
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Create DICOM files from TIFFs")
+
+    parser.add_argument("--dry-run", action="store_true", help="Don't write any files")
+    main(**vars(parser.parse_args()))
