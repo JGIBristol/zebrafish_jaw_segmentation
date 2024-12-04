@@ -5,7 +5,6 @@ Define the model
 
 import os
 import pickle
-from math import sqrt
 from dataclasses import dataclass
 from typing import Type, Any
 
