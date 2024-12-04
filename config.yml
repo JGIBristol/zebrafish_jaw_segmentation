@@ -18,9 +18,10 @@ boring_script_output: "script_output/boring_stuff/"
 
 # Bad Dicoms
 # These ones are in multiple training sets
-duplicates:
+duplicate_ids:
  - 39
 # These ones are broken for various reasons
+broken_ids:
  - 92
  - 90
  - 69
