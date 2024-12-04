@@ -160,10 +160,12 @@ def create_dicoms(
         raise ValueError(f"No images found in {label_dir}")
 
     # Get paths to the images
+    img_paths = [files.image_path(label_path) for label_path in label_paths]
+
+    # Create the directory to store the DICOMs
     dicom_dir = files.dicom_dirs(config)[dir_index]
     if not dicom_dir.is_dir():
         dicom_dir.mkdir(parents=True)
-    img_paths = [files.image_path(label_path) for label_path in label_paths]
 
     for label_path, img_path in tqdm(
         zip(label_paths, img_paths),
@@ -179,11 +181,11 @@ def create_dicoms(
 
         dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
-        if dicom_path.exists():
-            print(f"Skipping {dicom_path}, already exists")
-            continue
-
         if not dry_run:
+            if dicom_path.exists():
+                print(f"Skipping {dicom_path}, already exists")
+                continue
+
             try:
                 # These contain different labels for the different bones
                 dicom = Dicom(img_path, label_path, binarise=binarise)
