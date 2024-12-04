@@ -282,19 +282,12 @@ def main():
     """
     config = util.userconf()
 
+    create_set_1(config)
+    create_set_2(config, ignore=files.broken_dicoms())
+
     # Some might be duplicated between the different sets; we only want
     # the whole jaws in this case
-    duplicates = {39}
-
-    # I might know some are broken - this is usually because the label and
-    # Wahab's TIFF are different shapes. Maybe the 3D tiffs are broken?
-    broken = {92, 90, 69, 36, 166}
-
-    create_set_1(config)
-    create_set_2(config, ignore=broken)
-
-    # Ignore the duplicates here
-    create_set_3(config, ignore=duplicates | broken)
+    create_set_3(config, ignore=files.broken_dicoms() | files.duplicate_dicoms())
 
 
 if __name__ == "__main__":

@@ -178,3 +178,19 @@ def boring_script_out_dir() -> pathlib.Path:
     if not retval.is_dir():
         retval.mkdir()
     return retval
+
+
+def broken_dicoms() -> set[int]:
+    """
+    Get the IDs of the broken DICOMs
+
+    """
+    return set(util.config()["broken_ids"])
+
+
+def duplicate_dicoms() -> set[int]:
+    """
+    Get the IDs of the broken DICOMs
+
+    """
+    return set(util.config()["duplicate_ids"])

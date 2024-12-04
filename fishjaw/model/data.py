@@ -292,19 +292,3 @@ def read_dicoms_from_disk(
     (test_subject,) = test_subjects
 
     return train_subjects, val_subjects, test_subject
-
-
-def broken_dicoms() -> set[int]:
-    """
-    Get the IDs of the broken DICOMs
-
-    """
-    return set(util.config()["broken_ids"])
-
-
-def duplicate_dicoms() -> set[int]:
-    """
-    Get the IDs of the broken DICOMs
-
-    """
-    return set(util.config()["duplicate_ids"])
