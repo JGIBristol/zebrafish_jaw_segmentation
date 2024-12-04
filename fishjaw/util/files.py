@@ -117,7 +117,7 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
 
     # Remove the "ak_" from the start
     if not file_name.startswith("ak_"):
-        raise ValueError(f"File name {file_name} does not start with 'ak_'")
+        raise ValueError(f"Mask path {file_name} does not start with 'ak_'")
     file_name = file_name[3:]
 
     # We've hard-coded the number of dirs to strip off which is bad - if we later move
