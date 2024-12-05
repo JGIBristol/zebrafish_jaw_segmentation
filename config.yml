@@ -16,17 +16,6 @@ wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training s
 script_output: "script_output/"
 boring_script_output: "script_output/boring_stuff/"
 
-# Bad Dicoms
-# These ones are in multiple training sets
+# This fish is in two training sets, so we need to remove it from one of them
 duplicate_ids:
  - 39
-
-# These ones are broken for various reasons
-broken_ids:
- # Set 2
- - 166
- # Set 3
- - 36
- - 69
- - 90
- - 92
