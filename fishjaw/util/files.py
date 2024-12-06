@@ -185,14 +185,6 @@ def boring_script_out_dir() -> pathlib.Path:
     return retval
 
 
-def broken_dicoms() -> set[int]:
-    """
-    Get the IDs of the broken DICOMs
-
-    """
-    return set(util.config()["broken_ids"])
-
-
 def duplicate_dicoms() -> set[int]:
     """
     Get the IDs of the broken DICOMs
