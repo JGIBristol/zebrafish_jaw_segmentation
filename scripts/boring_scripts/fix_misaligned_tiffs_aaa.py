@@ -18,49 +18,37 @@ from fishjaw.util import files
 from fishjaw.images import transform
 
 
-def rotate_3d(array):
-    """
-    Generate all 48 unique orientations of a 3D array.
+def rotations24(polycube, flipped=False):
+    """List all 24 rotations of the given 3d array"""
 
-    :param array: 3D NumPy array to rotate.
-    :return: Generator yielding all 24 3D NumPy array orientations.
-    """
-    axis_permutations = list(permutations((0, 1, 2)))
+    prefix = "flipped" if flipped else ""
 
-    # Define all possible flips
-    flip_combinations = [
-        (False, False, False),
-        (True, False, False),
-        (False, True, False),
-        (False, False, True),
-        (True, True, False),
-        (True, False, True),
-        (False, True, True),
-        (True, True, True),
-    ]
+    def rotations4(polycube, axes):
+        """List the four rotations of the given 3d array in the plane spanned by the given axes."""
+        for i in range(4):
+            yield f"{prefix}{axes=}_{i=}", np.rot90(polycube, i, axes)
 
-    for axes in axis_permutations:
-        for flip in flip_combinations:
-            transformed = array.copy()
-            if flip[0]:
-                transformed = np.flip(transformed, axis=0)
-            if flip[1]:
-                transformed = np.flip(transformed, axis=1)
-            if flip[2]:
-                transformed = np.flip(transformed, axis=2)
-            transformed = np.transpose(transformed, axes=axes)
-            for k in range(4):  # 4 rotations (0, 90, 180, 270 degrees)
-                transformed = np.rot90(transformed, k=k, axes=(axes[1], axes[2]))
+    # 4 rotations about axis 0
+    yield from rotations4(polycube, (1, 2))
 
-                for transpose in (True, False):
-                    if not transformed.shape == array.shape:
-                        print("Shape mismatch")
-                    elif transpose:
-                        yield f"rot90_{k=}_{axes=}_{flip=}_transposed", np.transpose(
-                            transformed, (0, 2, 1)
-                        )
-                    else:
-                        yield f"rot90_{k=}_{axes=}_{flip=}", transformed
+    # rotate 180 about axis 1, now shape is pointing down in axis 0
+    # 4 rotations about axis 0
+    yield from rotations4(np.rot90(polycube, 2, axes=(0, 2)), (1, 2))
+
+    # rotate 90 or 270 about axis 1, now shape is pointing in axis 2
+    # 8 rotations about axis 2
+    yield from rotations4(np.rot90(polycube, axes=(0, 2)), (0, 1))
+    yield from rotations4(np.rot90(polycube, -1, axes=(0, 2)), (0, 1))
+
+    # rotate about axis 2, now shape is pointing in axis 1
+    # 8 rotations about axis 1
+    yield from rotations4(np.rot90(polycube, axes=(0, 1)), (0, 2))
+    yield from rotations4(np.rot90(polycube, -1, axes=(0, 1)), (0, 2))
+
+def rotations48(polycube):
+    yield from rotations24(polycube)
+    flipped = np.flip(polycube, axis=0)
+    yield from rotations24(flipped, flipped=True)
 
 
 def main():
@@ -88,7 +76,9 @@ def main():
     # Build up a dict of the overlap
     results = {}
 
-    for transform_str, array in tqdm.tqdm(rotate_3d(ct), total=192):
+    for transform_str, array in tqdm.tqdm(rotations48(ct), total=48):
+        if array.shape != ct.shape:
+            continue
         results[transform_str] = np.sum(array * mask > 0)
 
         # Plot the array and mask
