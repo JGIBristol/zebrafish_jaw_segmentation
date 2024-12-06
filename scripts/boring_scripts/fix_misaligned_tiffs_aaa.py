@@ -25,48 +25,38 @@ def rotate_3d(array):
     :param array: 3D NumPy array to rotate.
     :return: Generator yielding all 24 3D NumPy array orientations.
     """
-    # Start with the identity (no rotation)
-    yield "identity", array
+    axis_permutations = list(permutations((0, 1, 2)))
 
-    # Define all possible axis permutations
-    axis_permutations = list(permutations((0, 1, 2), 2))
+    # Define all possible flips
+    flip_combinations = [
+        (False, False, False),
+        (True, False, False),
+        (False, True, False),
+        (False, False, True),
+        (True, True, False),
+        (True, False, True),
+        (False, True, True),
+        (True, True, True),
+    ]
 
-    transposes = [True, False]
+    for axes in axis_permutations:
+        for flip in flip_combinations:
+            transformed = array.copy()
+            if flip[0]:
+                transformed = np.flip(transformed, axis=0)
+            if flip[1]:
+                transformed = np.flip(transformed, axis=1)
+            if flip[2]:
+                transformed = np.flip(transformed, axis=2)
+            transformed = np.transpose(transformed, axes=axes)
+            for k in range(4):  # 4 rotations (0, 90, 180, 270 degrees)
+                transformed = np.rot90(transformed, k=k, axes=(axes[1], axes[2]))
 
-    # For each axis pair, perform 90-degree rotations (4 times) and a possible transpose
-    for transpose in transposes:
-        for axes in axis_permutations:
-            for k in range(1, 4):  # k=1 to 3 rotates 90, 180, 270 degrees
-                transformed = np.rot90(array, k=k, axes=axes)
-                if transpose:
-                    transformed = np.transpose(transformed, axes=(0, 2, 1))
-
-                if transformed.shape != array.shape:
-                    continue
-
-                yield f"rot90_{k=}_{axes=}_{transpose=}", transformed
-
-    # Flip along each axis and apply the rotations again
-    for transpose in transposes:
-        for flip_axis in range(3):
-            transformed = np.flip(array, axis=flip_axis)
-            if transformed.shape != array.shape:
-                continue
-            
-            # Flipped with no rotation
-            if transpose:
-                transformed = np.transpose(transformed, axes=(0, 2, 1))
-            yield f"transformed{flip_axis=}_{transpose=}", transformed
-
-            # Flipped with rotations
-            for axes in axis_permutations:
-                for k in range(1, 4):
-                    transformed = np.rot90(transformed, k=k, axes=axes)
-                    if transformed.shape != array.shape:
-                        continue
+                for transpose in (True, False):
                     if transpose:
-                        transformed = np.transpose(transformed, axes=(0, 2, 1))
-                    yield f"flipped_{flip_axis=}_rot90{k=}_{axes=}_{transpose=}", transformed
+                        transformed = np.transpose(transformed, (0, 2, 1))
+                    if transformed.shape == array.shape:
+                        yield f"rot90_{k=}_{axes=}_{flip=}_{transpose=}", transformed
 
 
 def main():
