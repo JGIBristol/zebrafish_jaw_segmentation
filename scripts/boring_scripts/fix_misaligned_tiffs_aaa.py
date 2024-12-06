@@ -33,38 +33,40 @@ def rotate_3d(array):
 
     transposes = [True, False]
 
-    # For each axis pair, perform 90-degree rotations (4 times)
+    # For each axis pair, perform 90-degree rotations (4 times) and a possible transpose
     for transpose in transposes:
         for axes in axis_permutations:
             for k in range(1, 4):  # k=1 to 3 rotates 90, 180, 270 degrees
-                rotated = np.rot90(array, k=k, axes=axes)
+                transformed = np.rot90(array, k=k, axes=axes)
                 if transpose:
-                    rotated = np.transpose(rotated, axes=(0, 2, 1))
+                    transformed = np.transpose(transformed, axes=(0, 2, 1))
 
-                if rotated.shape != array.shape:
+                if transformed.shape != array.shape:
                     continue
 
-                yield f"rot90_{k=}_{axes=}_{transpose=}", rotated
+                yield f"rot90_{k=}_{axes=}_{transpose=}", transformed
 
-    # Additional rotations for full 3D coverage
     # Flip along each axis and apply the rotations again
     for transpose in transposes:
-        for flip_axis in range(3):  # 0, 1, 2 correspond to x, y, z axes
-            flipped_array = np.flip(array, axis=flip_axis)
-            if flipped_array.shape != array.shape:
+        for flip_axis in range(3):
+            transformed = np.flip(array, axis=flip_axis)
+            if transformed.shape != array.shape:
                 continue
+            
+            # Flipped with no rotation
             if transpose:
-                rotated = np.transpose(rotated, axes=(0, 2, 1))
-            yield f"flipped_{flip_axis=}_{transpose=}", flipped_array  # Include the flipped version itself
+                transformed = np.transpose(transformed, axes=(0, 2, 1))
+            yield f"transformed{flip_axis=}_{transpose=}", transformed
 
+            # Flipped with rotations
             for axes in axis_permutations:
                 for k in range(1, 4):
-                    rotated = np.rot90(flipped_array, k=k, axes=axes)
-                    if rotated.shape != array.shape:
+                    transformed = np.rot90(transformed, k=k, axes=axes)
+                    if transformed.shape != array.shape:
                         continue
                     if transpose:
-                        rotated = np.transpose(rotated, axes=(0, 2, 1))
-                    yield f"flipped_{flip_axis=}_rot90{k=}_{axes=}_{transpose=}", rotated
+                        transformed = np.transpose(transformed, axes=(0, 2, 1))
+                    yield f"flipped_{flip_axis=}_rot90{k=}_{axes=}_{transpose=}", transformed
 
 
 def main():
@@ -93,7 +95,7 @@ def main():
     results = {}
 
     for transform_str, array in tqdm.tqdm(rotate_3d(ct), total=96):
-        results[transform_str] = np.sum(array * mask)
+        results[transform_str] = np.sum(array * mask > 0)
 
         # Plot the array and mask
         cropped = transform.crop(array, crop_centre, crop_size, centred=True)
