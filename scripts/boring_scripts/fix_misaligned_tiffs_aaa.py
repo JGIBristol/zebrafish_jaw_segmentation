@@ -53,7 +53,7 @@ def rotate_3d(array):
                 rotated = np.rot90(flipped_array, k=k, axes=axes)
                 if rotated.shape != array.shape:
                     continue
-                yield f"flipped, rot90, {k=}, {axes=}", rotated
+                yield f"flipped {flip_axis=}, rot90, {k=}, {axes=}", rotated
                 pbar.update(1)
 
 
