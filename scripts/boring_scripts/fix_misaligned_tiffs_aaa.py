@@ -53,10 +53,14 @@ def rotate_3d(array):
                 transformed = np.rot90(transformed, k=k, axes=(axes[1], axes[2]))
 
                 for transpose in (True, False):
-                    if transpose:
-                        transformed = np.transpose(transformed, (0, 2, 1))
-                    if transformed.shape == array.shape:
-                        yield f"rot90_{k=}_{axes=}_{flip=}_{transpose=}", transformed
+                    if not transformed.shape == array.shape:
+                        print("Shape mismatch")
+                    elif transpose:
+                        yield f"rot90_{k=}_{axes=}_{flip=}_transposed", np.transpose(
+                            transformed, (0, 2, 1)
+                        )
+                    else:
+                        yield f"rot90_{k=}_{axes=}_{flip=}", transformed
 
 
 def main():
@@ -84,7 +88,7 @@ def main():
     # Build up a dict of the overlap
     results = {}
 
-    for transform_str, array in tqdm.tqdm(rotate_3d(ct), total=96):
+    for transform_str, array in tqdm.tqdm(rotate_3d(ct), total=192):
         results[transform_str] = np.sum(array * mask > 0)
 
         # Plot the array and mask
