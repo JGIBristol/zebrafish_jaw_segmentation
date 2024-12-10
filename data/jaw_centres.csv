@@ -51,7 +51,7 @@ n,z,x,y,crop_around_centre,age,genotype,strain
 93,1621,174,198,False,36.0,wt,wt
 68,1558,372,335,False,12.0,wt,wt
 53,1503,233,283,False,4.0,wt,wt
-186,1651,435,423,False,18.0,186,barx1
+186,1651,435,423,False,18.0,wt,barx1
 2,1712,325,302,False,24.0,wt,wt
 52,1693,429,209,False,4.0,wt,wt
 26,1566,465,169,False,18.0,het,barx1
