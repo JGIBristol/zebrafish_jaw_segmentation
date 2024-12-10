@@ -17,12 +17,12 @@ model_path: "test.pkl"
 # Which ones to use for testing and validation
 # all the others will be used for testing
 validation_dicoms:
- - "ak_39"  # 7 month wt, labelled by Wahab
- - "ak_86"  # 3 year wt, labelled by Felix
+ - "39"  # 7 month wt, labelled by Wahab
+ - "86"  # 3 year wt, labelled by Felix
 
 # At the moment this can only be 1-length
 test_dicoms:
- - "ak_131"  # 2.5yr het chst11 chst11 talen
+ - "131"  # 2.5yr het chst11 chst11 talen
 
 # Optimiser options
 optimiser: "Adam"  # Must be one of the torch.optim optimiser
