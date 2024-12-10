@@ -2,6 +2,7 @@
 Plot summary stats for the training, testing and validation data
 
 """
+
 import pathlib
 
 from fishjaw.util import files, util
@@ -25,9 +26,9 @@ def main():
     # Read config
     config = util.userconf()
 
-    val_files = files.dicom_paths(config, "val")
-    test_files = files.dicom_paths(config, "test")
-    train_files = files.dicom_paths(config, "train")
+    val_files, test_files, train_files = (
+        files.dicom_paths(config, mode) for mode in ["val", "test", "train"]
+    )
 
     # Get n from
     # files.dicom_paths(config: dict[str, Any], mode: str) -> list[pathlib.Path]:
