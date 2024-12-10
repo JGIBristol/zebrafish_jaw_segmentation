@@ -123,7 +123,7 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     # We've hard-coded the number of dirs to strip off which is bad - if we later move
     # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
     # but hopefully that won't happen
-    return mask_path.parents[3] / util.config()["wahabs_3d_tifs"] / file_name
+    return mask_path.parents[3] / util.config()["ct_scan_dir"] / file_name
 
 
 def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
@@ -134,7 +134,7 @@ def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
     :returns: Path to the directory
 
     """
-    return rdsf_dir(config) / util.config()["wahabs_3d_tifs"]
+    return rdsf_dir(config) / util.config()["ct_scan_dir"]
 
 
 def model_path(config: dict[str, Any]) -> pathlib.Path:

@@ -8,7 +8,7 @@ label_dirs:
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 3 (base of jaw)"
 
-wahabs_3d_tifs: "1Felix and Rich make models/wahabs_scans"
+ct_scan_dir: "1Felix and Rich make models/wahabs_scans"
 felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
 wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training set 1"
 
