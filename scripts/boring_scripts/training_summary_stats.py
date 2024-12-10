@@ -8,13 +8,15 @@ import pathlib
 from fishjaw.util import files, util
 
 
-def _n_from_paths(paths: list[pathlib.Path]) -> int:
+def _n_from_paths(paths: list[pathlib.Path]) -> list[int]:
     """
     Get the number of fish from the paths
 
     :param paths: list of paths
     :returns: number of fish
+
     """
+    return [path.stem for path in paths]
 
 
 def main():
@@ -30,8 +32,6 @@ def main():
         files.dicom_paths(config, mode) for mode in ["val", "test", "train"]
     )
 
-    # Get n from
-    # files.dicom_paths(config: dict[str, Any], mode: str) -> list[pathlib.Path]:
     # For val set, just print the rows
     # For test set, print the row
     # For train set, Find average and 95% CI for age
