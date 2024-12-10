@@ -18,10 +18,8 @@ from fishjaw.util import files
 from fishjaw.images import transform
 
 
-def rotations24(polycube, flipped=False):
+def rotations24(polycube, prefix):
     """List all 24 rotations of the given 3d array"""
-
-    prefix = "flipped" if flipped else ""
 
     def rotations4(polycube, axes):
         """List the four rotations of the given 3d array in the plane spanned by the given axes."""
@@ -45,10 +43,18 @@ def rotations24(polycube, flipped=False):
     yield from rotations4(np.rot90(polycube, axes=(0, 1)), (0, 2))
     yield from rotations4(np.rot90(polycube, -1, axes=(0, 1)), (0, 2))
 
-def rotations48(polycube):
-    yield from rotations24(polycube)
+
+def rotations48(polycube, prefix):
+    yield from rotations24(polycube, prefix)
     flipped = np.flip(polycube, axis=0)
-    yield from rotations24(flipped, flipped=True)
+    yield from rotations24(flipped, prefix + "flipped_")
+
+
+def transforms96(polycube):
+    yield from rotations48(polycube, "")
+
+    transposed = np.transpose(polycube, (0, 2, 1))
+    yield from rotations48(transposed, "transposed_")
 
 
 def main():
@@ -76,7 +82,7 @@ def main():
     # Build up a dict of the overlap
     results = {}
 
-    for transform_str, array in tqdm.tqdm(rotations48(ct), total=48):
+    for transform_str, array in tqdm.tqdm(transforms96(ct), total=96):
         if array.shape != ct.shape:
             continue
         results[transform_str] = np.sum(array * mask > 0)
