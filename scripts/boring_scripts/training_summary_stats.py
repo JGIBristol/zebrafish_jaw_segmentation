@@ -6,7 +6,6 @@ Plot summary stats for the training, testing and validation data
 import pathlib
 
 import pandas as pd
-import prettytable
 
 from fishjaw.util import files, util
 from fishjaw.images.transform import jaw_centres
@@ -43,7 +42,8 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
         # For train set, Find average and 95% CI for age
         print(f"N: {len(n)}")
         print(
-            f"Average age: {df_slice['age'].mean():.2f} mo [95% CI: {df_slice['age'].quantile([0.025, 0.975]).values}]"
+            f"Average age: {df_slice['age'].mean():.2f} mo [95% CI:"
+            "{df_slice['age'].quantile([0.025, 0.975]).values}]"
         )
         print(df_slice.groupby("age").size().sort_index(ascending=True).to_markdown())
         print(
@@ -57,8 +57,8 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
 
 def main():
     """
-    Get the ID numbers of the fish used for training, testing and validation; print the average age and
-    their mutations
+    Get the ID numbers of the fish used for training, testing and validation;
+    print the average age and their mutations
 
     """
     # Read config
