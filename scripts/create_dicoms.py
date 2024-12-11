@@ -209,7 +209,7 @@ def main(dry_run: bool):
     )
 
     # Training set 2 - Felix's segmented images
-    create_dicoms(config, 1, "Felix's Jaws", dry_run)
+    create_dicoms(config, 1, "Felix's Jaws", dry_run, ignore=files.broken_dicoms())
 
     # Some might be duplicated between the different sets; we only want
     # Training set 3 - Felix's segmented rear jaw only images
@@ -219,7 +219,7 @@ def main(dry_run: bool):
         2,
         "Felix's Rear Jaws",
         dry_run,
-        ignore=files.duplicate_dicoms(),
+        ignore=files.duplicate_dicoms() | files.broken_dicoms(),
     )
 
 
