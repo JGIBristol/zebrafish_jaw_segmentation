@@ -43,7 +43,7 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
         print(f"N: {len(n)}")
         print(
             f"Average age: {df_slice['age'].mean():.2f} mo [95% CI:"
-            "{df_slice['age'].quantile([0.025, 0.975]).values}]"
+            f"{df_slice['age'].quantile([0.025, 0.975]).values}]"
         )
         print(df_slice.groupby("age").size().sort_index(ascending=True).to_markdown())
         print(
