@@ -17,8 +17,6 @@ class DicomIgnoredWarning(UserWarning):
 
     """
 
-    pass
-
 
 def rdsf_dir(config: dict[str, Any]) -> pathlib.Path:
     """

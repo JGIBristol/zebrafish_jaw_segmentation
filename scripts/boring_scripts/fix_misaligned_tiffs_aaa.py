@@ -6,8 +6,6 @@ Lets just try flipping the dicom in every possible way to see if we can get it t
 
 """
 
-from itertools import permutations
-
 import tqdm
 import tifffile
 import numpy as np
@@ -45,12 +43,14 @@ def rotations24(polycube, prefix):
 
 
 def rotations48(polycube, prefix):
+    """48 rotns"""
     yield from rotations24(polycube, prefix)
     flipped = np.flip(polycube, axis=0)
     yield from rotations24(flipped, prefix + "flipped_")
 
 
 def transforms96(polycube):
+    """96 transforms"""
     yield from rotations48(polycube, "")
 
     transposed = np.transpose(polycube, (0, 2, 1))
@@ -67,7 +67,8 @@ def main():
         "/home/mh19137/zebrafish_rdsf/1Felix and Rich make models/wahabs_scans/351.tif"
     )
     mask = tifffile.imread(
-        "/home/mh19137/zebrafish_rdsf/1Felix and Rich make models/Training dataset Tiffs/Training set 1/ak_351.labels.tif"
+        "/home/mh19137/zebrafish_rdsf/1Felix and Rich make models/Training dataset Tiffs/"
+        "Training set 1/ak_351.labels.tif"
     )
 
     out_dir = files.boring_script_out_dir() / "align_tiffs"
