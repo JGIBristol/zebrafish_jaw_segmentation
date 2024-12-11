@@ -204,7 +204,9 @@ def main(dry_run: bool):
     config = util.userconf()
 
     # Training set 1 - Wahaab's segmented images
-    create_dicoms(config, 0, "Wahab's Jaws", dry_run, binarise=True)
+    create_dicoms(
+        config, 0, "Wahab's Jaws", dry_run, binarise=True, ignore=files.broken_dicoms()
+    )
 
     # Training set 2 - Felix's segmented images
     create_dicoms(config, 1, "Felix's Jaws", dry_run)

@@ -19,3 +19,6 @@ boring_script_output: "script_output/boring_stuff/"
 # This fish is in two training sets, so we need to remove it from one of them
 duplicate_ids:
  - 39
+
+# i'm having trouble with converting these from 2d stacks to 3d
+broken_ids: [351, 401, 420, 441]

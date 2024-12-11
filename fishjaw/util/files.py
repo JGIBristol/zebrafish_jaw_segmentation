@@ -3,10 +3,21 @@ Stuff for manipulating files
 
 """
 
+import warnings
+
 import pathlib
 from typing import Any
 
 from . import util
+
+
+class DicomIgnoredWarning(UserWarning):
+    """
+    We shouldn't really try to access these
+
+    """
+
+    pass
 
 
 def rdsf_dir(config: dict[str, Any]) -> pathlib.Path:
@@ -191,3 +202,16 @@ def duplicate_dicoms() -> set[int]:
 
     """
     return set(util.config()["duplicate_ids"])
+
+
+def broken_dicoms() -> set[int]:
+    """
+    Get the IDs of the broken DICOMs
+
+    """
+    warnings.warn(
+        "Some DICOMs ignored due to being broken - these should be fixed or removed",
+        category=DicomIgnoredWarning,
+    )
+
+    return set(util.config()["broken_ids"])
