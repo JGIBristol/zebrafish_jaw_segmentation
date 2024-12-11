@@ -3,10 +3,19 @@ Stuff for manipulating files
 
 """
 
+import warnings
+
 import pathlib
 from typing import Any
 
 from . import util
+
+
+class DicomIgnoredWarning(UserWarning):
+    """
+    We shouldn't really try to access these
+
+    """
 
 
 def rdsf_dir(config: dict[str, Any]) -> pathlib.Path:
@@ -115,10 +124,15 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     # Take the name from mask_path
     file_name = mask_path.name.replace(".labels.tif", ".tif")
 
+    # Remove the "ak_" from the start
+    if not file_name.startswith("ak_"):
+        raise ValueError(f"Mask path {file_name} does not start with 'ak_'")
+    file_name = file_name[3:]
+
     # We've hard-coded the number of dirs to strip off which is bad - if we later move
     # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
     # but hopefully that won't happen
-    return mask_path.parents[3] / util.config()["wahabs_3d_tifs"] / file_name
+    return mask_path.parents[3] / util.config()["ct_scan_dir"] / file_name
 
 
 def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
@@ -129,7 +143,7 @@ def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
     :returns: Path to the directory
 
     """
-    return rdsf_dir(config) / util.config()["wahabs_3d_tifs"]
+    return rdsf_dir(config) / util.config()["ct_scan_dir"]
 
 
 def model_path(config: dict[str, Any]) -> pathlib.Path:
@@ -180,17 +194,22 @@ def boring_script_out_dir() -> pathlib.Path:
     return retval
 
 
-def broken_dicoms() -> set[int]:
-    """
-    Get the IDs of the broken DICOMs
-
-    """
-    return set(util.config()["broken_ids"])
-
-
 def duplicate_dicoms() -> set[int]:
     """
     Get the IDs of the broken DICOMs
 
     """
     return set(util.config()["duplicate_ids"])
+
+
+def broken_dicoms() -> set[int]:
+    """
+    Get the IDs of the broken DICOMs
+
+    """
+    warnings.warn(
+        "Some DICOMs ignored due to being broken - these should be fixed or removed",
+        category=DicomIgnoredWarning,
+    )
+
+    return set(util.config()["broken_ids"])

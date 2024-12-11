@@ -8,7 +8,7 @@ label_dirs:
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 3 (base of jaw)"
 
-wahabs_3d_tifs: "DATABASE/uCT/Wahab_clean_dataset/TIFS/"
+ct_scan_dir: "1Felix and Rich make models/wahabs_scans"
 felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
 wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training set 1"
 
@@ -16,12 +16,17 @@ wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training s
 script_output: "script_output/"
 boring_script_output: "script_output/boring_stuff/"
 
-# Bad Dicoms
-# These ones are in multiple training sets
+# This fish is in two training sets, so we need to remove it from one of them
 duplicate_ids:
  - 39
-# These ones are broken for various reasons
+
 broken_ids:
+# i'm having trouble with converting these from 2d stacks to 3d
+ - 351
+ - 401
+ - 420
+ - 441
+# The masks look incomplete here
  - 92
  - 90
  - 69
