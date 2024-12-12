@@ -56,10 +56,9 @@ def _start_dir(mode: str, out_dir: pathlib.Path, continue_run: bool) -> int:
         if n_existing_dirs == 0:
             raise ValueError("No existing directories to continue from")
         return n_existing_dirs
-    else:
-        if n_existing_dirs > 0:
-            raise ValueError("Existing directories found")
-        return 0
+    if n_existing_dirs > 0:
+        raise ValueError("Existing directories found")
+    return 0
 
 
 def _lr(rng: np.random.Generator, mode: str) -> float:
