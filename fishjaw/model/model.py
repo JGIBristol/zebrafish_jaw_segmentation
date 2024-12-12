@@ -58,6 +58,18 @@ class TrainingConfig:
     early_stopping: bool = False
 
 
+@dataclass
+class IterationConfig:
+    """The stuff needed for one epoch of training"""
+
+    net: torch.nn.Module
+    optim: torch.optim.Optimizer
+    loss_fn: torch.nn.Module
+    train_data: tio.SubjectsLoader
+    scaler: GradScaler
+    device: torch.device
+
+
 def channels(n_layers: int, initial_channels) -> list[int]:
     """
     Get the number of channels in each layer of the network -
@@ -187,29 +199,25 @@ def _get_data(
     return x, y
 
 
-def train_step(
-    net: torch.nn.Module,
-    optim: torch.optim.Optimizer,
-    loss_fn: torch.nn.Module,
-    train_data: tio.SubjectsLoader,
-    scaler: GradScaler,
-    *,
-    device: torch.device,
+def _train_step(
+    iteration_config: IterationConfig,
 ) -> tuple[torch.nn.Module, list[float]]:
     """
     Train the model for one epoch, on the given batches of data provided as a dataloader
 
-    :param net: the model to train
-    :param optim: the optimiser to use
-    :param loss_fn: the loss function to use
-    :param train_data: the training data
-    :param scaler: the gradient scaler for mixed precision training
-    :param device: the device to run the model on
+    :param iteration_config: the stuff we need to train
 
     :returns: the trained model
     :returns: list of training batch losses
 
     """
+    net = iteration_config.net
+    optim = iteration_config.optim
+    loss_fn = iteration_config.loss_fn
+    train_data = iteration_config.train_data
+    scaler = iteration_config.scaler
+    device = iteration_config.device
+
     net.train()
 
     train_losses = []
@@ -234,7 +242,7 @@ def train_step(
     return net, train_losses
 
 
-def validation_step(
+def _validation_step(
     net: torch.nn.Module,
     loss_fn: torch.nn.Module,
     validation_data: tio.SubjectsLoader,
@@ -365,17 +373,19 @@ def train(
 
     progress_bar = trange(train_config.epochs, desc="Training")
     for _ in progress_bar:
-        net, train_batch_loss = train_step(
-            net,
-            optim,
-            loss_fn,
-            data_config.train_data,
-            scaler,
-            device=train_config.device,
+        net, train_batch_loss = _train_step(
+            IterationConfig(
+                net,
+                optim,
+                loss_fn,
+                data_config.train_data,
+                scaler,
+                train_config.device,
+            )
         )
         train_batch_losses.append(train_batch_loss)
 
-        net, val_batch_loss = validation_step(
+        net, val_batch_loss = _validation_step(
             net, loss_fn, data_config.val_data, device=train_config.device
         )
         val_batch_losses.append(val_batch_loss)
