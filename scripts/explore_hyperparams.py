@@ -40,15 +40,26 @@ def _output_dir(n: int, mode: str, out_dir: pathlib.Path) -> pathlib.Path:
     return out_dir
 
 
-def _n_existing_dirs(mode: str, out_dir: pathlib.Path) -> int:
+def _start_dir(mode: str, out_dir: pathlib.Path, continue_run: bool) -> int:
     """
-    How many runs we've done in this mode so far
+    Which directory we should start from, based on whether we have some already and
+    if we've been given the flag to continue
 
     Doesn't check the integrity of the directories, just counts them
 
     """
     # The directories are named by number, so we can just count them
-    return sum(1 for file_ in _output_parent(mode, out_dir).iterdir() if file_.is_dir())
+    n_existing_dirs = sum(
+        1 for file_ in _output_parent(mode, out_dir).iterdir() if file_.is_dir()
+    )
+    if continue_run:
+        if n_existing_dirs == 0:
+            raise ValueError("No existing directories to continue from")
+        return n_existing_dirs
+    else:
+        if n_existing_dirs > 0:
+            raise ValueError("Existing directories found")
+        return 0
 
 
 def _lr(rng: np.random.Generator, mode: str) -> float:
@@ -270,15 +281,7 @@ def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str) -> None:
     out_dir = pathlib.Path(out_dir)
 
     # Check if we have existing directories
-    n_existing_dirs = _n_existing_dirs(mode, out_dir)
-    if continue_run:
-        if n_existing_dirs == 0:
-            raise ValueError("No existing directories to continue from")
-        start = n_existing_dirs
-    else:
-        if n_existing_dirs > 0:
-            raise ValueError("Existing directories found")
-        start = 0
+    start = _start_dir(mode, out_dir, continue_run)
 
     rng = np.random.default_rng()
 
