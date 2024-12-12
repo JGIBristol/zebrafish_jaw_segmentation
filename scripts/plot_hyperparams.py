@@ -13,7 +13,6 @@ import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
 
 from fishjaw.util import files
 from fishjaw.images import metrics
@@ -72,33 +71,8 @@ def _write_metrics_file(results_dir: pathlib.Path) -> None:
         if not p.min() >= 0 and p.max() <= 1:
             raise ValueError("Prediction should be scaled to between 0 and 1")
 
-    # Plot ROC curves and thresholded at 0.5 with largest component
+    # Plot the result thresholded at 0.5 with largest component
     for i, (p, t) in enumerate(zip(pred, truth)):
-        roc_path = results_dir / f"roc_curve_{i}.png"
-        if not roc_path.exists():
-            fig, axis = plt.subplots()
-            try:
-                fpr, tpr, threshold = roc_curve(t.ravel(), p.ravel())
-            except ValueError as e:
-                print(e)
-                continue
-
-            axis.plot(fpr, tpr)
-            scatter = axis.scatter(fpr, tpr, c=threshold)
-
-            cbar = fig.colorbar(scatter)
-            cbar.set_label("Threshold")
-
-            axis.set_xlabel("FPR")
-            axis.set_ylabel("TPR")
-            axis.set_title(
-                f"ROC curve for validation image {i}: AUC = {auc(fpr, tpr):.3f}"
-            )
-
-            fig.tight_layout()
-            fig.savefig(roc_path)
-            plt.close(fig)
-
         # Make thresholded plots
         threshold_path = results_dir / f"thresholded_{i}.png"
         if not threshold_path.exists():
