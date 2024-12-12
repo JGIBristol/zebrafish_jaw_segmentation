@@ -8,7 +8,6 @@ import argparse
 
 import tifffile
 import numpy as np
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb2hex
 
@@ -29,8 +28,7 @@ def main(args: argparse.Namespace):
 
     # Define which colours to use
     cmap = plt.get_cmap("tab10")
-    colors = [cmap(i) for i in range(cmap.N)]
-    hex_colors = [rgb2hex(color) for color in colors]
+    hex_colors = [rgb2hex(cmap(i)) for i in range(cmap.N)]
 
     colours = np.empty(labels.shape, dtype=object)
     for label in unique_labels:
@@ -38,7 +36,6 @@ def main(args: argparse.Namespace):
 
     # Plot the voxels
     fig, axes = plt.subplots(1, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
-    pbar = tqdm(total=3 * (len(unique_labels) - 1))
     for axis, elev, azim in zip(axes, [0, 0, 90], [0, 90, 0]):
         for label in unique_labels:
             # Don't plot the background
@@ -56,8 +53,6 @@ def main(args: argparse.Namespace):
                 s=2,
                 label=label,
             )
-
-            pbar.update(1)
 
         axis.view_init(elev=elev, azim=azim)
 

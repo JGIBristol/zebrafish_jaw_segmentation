@@ -53,7 +53,8 @@ window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to h
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
 batch_size: 12
 epochs: 500
-lr_lambda: 0.99999 # Exponential decay factor (multiplicative with each epoch)
+lr_lambda: 0.99999  # Exponential decay factor (multiplicative with each epoch)
+num_workers: 6  # Number of workers for the dataloader
 
 # Options should be passed
 transforms:

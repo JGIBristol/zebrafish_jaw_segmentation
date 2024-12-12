@@ -9,7 +9,9 @@ Then makes some plots showing the results with and without the attention mechani
 
 """
 
+import pathlib
 import argparse
+from typing import Any
 
 import torch
 import numpy as np
@@ -24,6 +26,78 @@ from fishjaw.util import files
 from fishjaw.inference import read, mesh
 from fishjaw.visualisation import plot_meshes
 from fishjaw.images import metrics
+
+
+def plot_projections(
+    net: torch.nn.Module,
+    config: dict[str, Any],
+    inference_subject: tio.Subject,
+    args: argparse.Namespace,
+    out_dir: pathlib.Path,
+):
+    """
+    Create figures for showing the projections with and without attention
+
+    """
+    n_attention_blocks = sum(
+        1 for module in net.modules() if isinstance(module, AttentionBlock)
+    )
+    to_ablate = [(i,) for i in range(n_attention_blocks)] + [  # Single layers
+        # Pairs
+        (i, j)
+        for i in range(n_attention_blocks)
+        for j in range(n_attention_blocks)
+        if i != j
+    ]
+
+    # Perform inference with attention
+    with_attention = _predict(net, config, inference_subject)
+    projection_fig_ax = [
+        plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
+        for _ in to_ablate
+    ]
+
+    dice_matrix = np.zeros((n_attention_blocks, n_attention_blocks))
+
+    for indices, (fig, axes) in tqdm(
+        zip(to_ablate, projection_fig_ax), total=len(to_ablate)
+    ):
+        # Plot with attention
+        axes[0, 0].set_zlabel("With attention")
+        plot_meshes.projections(
+            axes[0], mesh.cubic_mesh(with_attention > args.threshold)
+        )
+
+        # Plot without attention
+        without_attention = _predict(net, config, inference_subject, indices=indices)
+        axes[1, 0].set_zlabel("Without attention")
+        plot_meshes.projections(
+            axes[1], mesh.cubic_mesh(without_attention > args.threshold)
+        )
+
+        # Find the Dice similarity between them
+        dice = metrics.float_dice(with_attention, without_attention)
+        if len(indices) == 1:
+            dice_matrix[indices[0], indices[0]] = dice
+        if len(indices) == 2:
+            dice_matrix[indices] = dice
+            dice_matrix[indices[::-1]] = dice
+
+        fig.suptitle(
+            f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
+            f"\nDice similarity: {dice:.4f}"
+            f"\nRemoved attention blocks: {indices}"
+            f"\nThresholded at {args.threshold}",
+        )
+
+        fig.tight_layout()
+        fig.savefig(
+            out_dir / f"ablation_{'test' if args.subject is None else args.subject}"
+            f"_{'_'.join(str(index) for index in indices)}.png"
+        )
+        plt.close(fig)
+
+        return dice_matrix
 
 
 def ablated_psi(module, input_, output) -> torch.Tensor:
@@ -120,65 +194,7 @@ def main(args: argparse.Namespace):
     )
 
     # Choose which layers(and combinations of indices) to ablate
-    n_attention_blocks = sum(
-        1 for module in net.modules() if isinstance(module, AttentionBlock)
-    )
-    to_ablate = [(i,) for i in range(n_attention_blocks)] + [  # Single layers
-        # Pairs
-        (i, j)
-        for i in range(n_attention_blocks)
-        for j in range(n_attention_blocks)
-        if i != j
-    ]
-
-    # Perform inference with attention
-    with_attention = _predict(net, config, inference_subject)
-
-    # Create figures for showing the projections with and without attention
-    projection_fig_ax = [
-        plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
-        for _ in to_ablate
-    ]
-
-    dice_matrix = np.zeros((n_attention_blocks, n_attention_blocks))
-
-    for indices, (fig, axes) in tqdm(
-        zip(to_ablate, projection_fig_ax), total=len(to_ablate)
-    ):
-        # Plot with attention
-        axes[0, 0].set_zlabel("With attention")
-        plot_meshes.projections(
-            axes[0], mesh.cubic_mesh(with_attention > args.threshold)
-        )
-
-        # Plot without attention
-        without_attention = _predict(net, config, inference_subject, indices=indices)
-        axes[1, 0].set_zlabel("Without attention")
-        plot_meshes.projections(
-            axes[1], mesh.cubic_mesh(without_attention > args.threshold)
-        )
-
-        # Find the Dice similarity between them
-        dice = metrics.float_dice(with_attention, without_attention)
-        if len(indices) == 1:
-            dice_matrix[indices[0], indices[0]] = dice
-        if len(indices) == 2:
-            dice_matrix[indices] = dice
-            dice_matrix[indices[::-1]] = dice
-
-        fig.suptitle(
-            f"Ablation study - {'test fish' if args.subject is None else f'subject {args.subject}'}"
-            f"\nDice similarity: {dice:.4f}"
-            f"\nRemoved attention blocks: {indices}"
-            f"\nThresholded at {args.threshold}",
-        )
-
-        fig.tight_layout()
-        fig.savefig(
-            out_dir / f"ablation_{'test' if args.subject is None else args.subject}"
-            f"_{'_'.join(str(index) for index in indices)}.png"
-        )
-        plt.close(fig)
+    dice_matrix = plot_projections(net, config, inference_subject, args, out_dir)
 
     # Heatmap of Dice similarities
     fig, axis = plt.subplots()

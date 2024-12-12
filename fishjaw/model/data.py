@@ -58,25 +58,17 @@ class DataConfig:
         cares about, which doesn't include the testing subject
 
         """
-        # Get some info from the config
-        patch_size = get_patch_size(config)
-        batch_size = config["batch_size"]
 
         # Assign class variables
-        self._train_data = self._train_val_loader(
-            train_subjects, train=True, patch_size=patch_size, batch_size=batch_size
-        )
-        self._val_data = self._train_val_loader(
-            val_subjects, train=False, patch_size=patch_size, batch_size=batch_size
-        )
+        self._train_data = self._train_val_loader(train_subjects, config, train=True)
+        self._val_data = self._train_val_loader(val_subjects, config, train=False)
 
     def _train_val_loader(
         self,
         subjects: tio.SubjectsDataset,
+        config: dict[str, Any],
         *,
         train: bool,
-        patch_size: tuple[int, int, int] = None,
-        batch_size: int,
     ) -> tio.SubjectsLoader:
         """
         Create a dataloader from a SubjectsDataset
@@ -91,6 +83,11 @@ class DataConfig:
         :returns: The loader
 
         """
+        # Get some info from the config
+        patch_size = get_patch_size(config)
+        batch_size = config["batch_size"]
+        num_workers = config["num_workers"]
+
         shuffle = train is True
         drop_last = train is True
 
@@ -101,7 +98,7 @@ class DataConfig:
             max_length=10000,  # Not sure if this matters
             samples_per_volume=1,
             sampler=patch_sampler,
-            num_workers=6,  # TODO make this a config option
+            num_workers=num_workers,
             shuffle_patches=True,
             shuffle_subjects=True,
         )

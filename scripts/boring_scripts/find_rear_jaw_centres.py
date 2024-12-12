@@ -125,6 +125,124 @@ def _find_excluded_pixels(
     return white_pxl_coords[~(in_z_bounds & in_y_bounds & in_x_bounds)]
 
 
+def _plot(
+    mask: np.ndarray,
+    out_path: pathlib.Path,
+    co_ords: tuple[int, int, int],
+    old_coords: tuple[int, int, int] | None = None,
+):
+    """
+    Plot the image and mask with co-ords indicated
+
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    z, x, y = co_ords
+    for axis, img in zip(axes, mask[z - 2 : z + 1]):
+        axis.imshow(img)
+        axis.plot(y, x, "ro", label="Crop Centre")
+
+    if old_coords is not None:
+        for axis, img in zip(axes, mask[z - 2 : z + 1]):
+            axis.plot(old_coords[2], old_coords[1], "yx", label="Original")
+        axis.legend()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
+def _find_centre(
+    path: pathlib.Path, crop_size: tuple[int, int, int], plot_dir: pathlib.Path
+) -> dict[str, str]:
+    """
+    Find the jaw centre for the mask at a specified path
+
+    Returns a dict of warnings and results
+
+    """
+    window_shifted = False
+
+    # Only need to open the mask to find crop location
+    _, mask = io.read_dicom(path)
+
+    # Find the last Z slice for which there are at least some nonzero values
+    idx = _find_z_loc(mask)
+
+    # Find the xy centre of that slice
+    x, y = _find_xy(mask)
+
+    # If our crop window would overlap with the edge of the image in Z, error
+    # We don't want to fiddle with the Z location since this might
+    # accidentally make the window contain unlabelled jaw
+    _check_z_overlap(mask, idx, crop_size, path)
+
+    retval = {"warnings": [], "results": []}
+
+    # Check if this overlaps with the edge of the image
+    old_coords = [idx, x, y]
+    if _lateral_overlap(mask.shape[1], x, crop_size[1]):
+        window_shifted = True
+        old_coords[1] = x
+
+        x = _shift_coords(x, crop_size[1], mask.shape[1])
+        retval["warnings"].append(
+            f"""X crop out of bounds for {path}:
+                image size {mask.shape}, {old_coords[1]=}, {crop_size[1]=}
+                Gives bounds {transform.start_and_end(x, crop_size[1], start_from_loc=False)}
+
+                X shifted to {x}
+             """
+        )
+
+    if _lateral_overlap(mask.shape[2], y, crop_size[2]):
+        window_shifted = True
+        old_coords[2] = y
+
+        y = _shift_coords(y, crop_size[2], mask.shape[2])
+        retval["warnings"].append(
+            f"""Y crop out of bounds for {path}:
+                image size {mask.shape}, {old_coords[2]=}, {crop_size[2]=}
+                Gives bounds {transform.start_and_end(y, crop_size[2], start_from_loc=False)}
+
+                Y shifted to {y}
+             """
+        )
+
+    # Find n from the path
+    n = int(path.stem.split("_", maxsplit=1)[-1])
+
+    # Plot them
+    crop_coords = idx, round(x), round(y)
+    _plot(
+        mask,
+        plot_dir / f"{n}.png",
+        crop_coords,
+        old_coords if window_shifted else None,
+    )
+
+    # Output n,z
+    # This is what we'll copy and paste into the csv
+    retval["results"].append(f"{n},{','.join((str(x) for x in crop_coords))},FALSE")
+
+    # If some mask has been cropped out, find the locations of it
+    cropped = transform.crop(mask, crop_coords, crop_size, centred=False)
+    if cropped.sum() != mask.sum():
+        bounds = [
+            transform.start_and_end(a, b, start_from_loc=c)
+            for (a, b, c) in zip(crop_coords, crop_size, [True, False, False])
+        ]
+        # Probably just find the co-ordinates for the crop, then
+        # find which white pixels lie outside this
+        oob_pixels = _find_excluded_pixels(mask, bounds)
+        retval["warnings"].append(
+            f"""Some mask has been cropped out for {path}:
+                {oob_pixels.shape[0]} pixels cropped out:
+                {' '.join(repr(list(x)) for x in oob_pixels)}
+                From bounds {bounds}
+             """
+        )
+
+    return retval
+
+
 def main():
     """
     Read the DICOMs, find the last slice that contains labels,
@@ -154,92 +272,10 @@ def main():
         desc="Finding jaw centres",
         total=len(list(folder.glob("*.dcm"))),
     ):
-        # Track whether we've had to shift the crop window
-        window_shifted = False
-
-        # Open each DICOM in the training set 3 folder
-        _, mask = io.read_dicom(path)
-
-        # Find the last Z slice for which there are at least some nonzero values
-        idx = _find_z_loc(mask)
-
-        # Find the xy centre of that slice
-        x, y = _find_xy(mask)
-
-        # If our crop window would overlap with the edge of the image in Z, error
-        # We don't want to fiddle with the Z location since this might
-        # accidentally make the window contain unlabelled jaw
-        _check_z_overlap(mask, idx, crop_size, path)
-
-        # Check if this overlaps with the edge of the image
-        # This doesn't actually shift things if it's out of bounds, since this doesn't
-        # happen often
-        old_coords = [idx, x, y]
-        if _lateral_overlap(mask.shape[1], x, crop_size[1]):
-            window_shifted = True
-            old_coords[1] = x
-
-            x = _shift_coords(x, crop_size[1], mask.shape[1])
-            warning_buffer.append(
-                f"""X crop out of bounds for {path}:
-                    image size {mask.shape}, {old_coords[1]=}, {crop_size[1]=}
-                    Gives bounds {transform.start_and_end(x, crop_size[1], start_from_loc=False)}
-
-                    X shifted to {x}
-                 """
-            )
-
-        if _lateral_overlap(mask.shape[2], y, crop_size[2]):
-            window_shifted = True
-            old_coords[2] = y
-
-            y = _shift_coords(y, crop_size[2], mask.shape[2])
-            warning_buffer.append(
-                f"""Y crop out of bounds for {path}:
-                    image size {mask.shape}, {old_coords[2]=}, {crop_size[2]=}
-                    Gives bounds {transform.start_and_end(y, crop_size[2], start_from_loc=False)}
-
-                    Y shifted to {y}
-                 """
-            )
-
-        # Find n from the path
-        n = int(path.stem.split("_", maxsplit=1)[-1])
-
-        # Plot them
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-        for axis, img in zip(axes, mask[idx - 2 : idx + 1]):
-            axis.imshow(img)
-            axis.plot(y, x, "ro", label="Crop Centre")
-        if window_shifted:
-            for axis, img in zip(axes, mask[idx - 2 : idx + 1]):
-                axis.plot(old_coords[2], old_coords[1], "yx", label="Original")
-            axis.legend()
-        fig.savefig(plot_dir / f"{n}.png")
-        plt.close(fig)
-
-        # Output n,z
-        # This is what we'll copy and paste into the csv
-        crop_coords = idx, round(x), round(y)
-        results_buffer.append(f"{n},{','.join((str(x) for x in crop_coords))},FALSE")
-
-        # If some mask has been cropped out, find the locations of it
-        cropped = transform.crop(mask, crop_coords, crop_size, centred=False)
-        if cropped.sum() != mask.sum():
-            bounds = [
-                transform.start_and_end(a, b, start_from_loc=c)
-                for (a, b, c) in zip(crop_coords, crop_size, [True, False, False])
-            ]
-            # Probably just find the co-ordinates for the crop, then
-            # find which white pixels lie outside this
-            oob_pixels = _find_excluded_pixels(mask, bounds)
-            warning_buffer.append(
-                f"""Some mask has been cropped out for {path}:
-                    {oob_pixels.shape[0]} pixels cropped out:
-                    {' '.join(repr(list(x)) for x in oob_pixels)}
-                    From bounds {bounds}
-                 """
-            )
+        results = _find_centre(path, crop_size, plot_dir)
+        if results["warnings"]:
+            warning_buffer.extend(results["warnings"])
+        results_buffer.extend(results["results"])
 
     # Print the results
     print("\n".join(results_buffer))

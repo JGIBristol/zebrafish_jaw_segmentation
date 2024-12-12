@@ -138,7 +138,6 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
 def create_dicoms(
     config: dict[str, Any],
     dir_index: int,
-    desc: str,
     dry_run: bool,
     *,
     ignore: set[int] | None = None,
@@ -168,9 +167,7 @@ def create_dicoms(
         dicom_dir.mkdir(parents=True)
 
     for label_path, img_path in tqdm(
-        zip(label_paths, img_paths),
-        desc=desc,
-        total=len(label_paths),
+        zip(label_paths, img_paths), total=len(label_paths)
     ):
         if not img_path.exists():
             raise RuntimeError(f"Image at {img_path} not found, but {label_path} was")
@@ -204,22 +201,16 @@ def main(dry_run: bool):
     config = util.userconf()
 
     # Training set 1 - Wahaab's segmented images
-    create_dicoms(
-        config, 0, "Wahab's Jaws", dry_run, binarise=True, ignore=files.broken_dicoms()
-    )
+    create_dicoms(config, 0, dry_run, binarise=True, ignore=files.broken_dicoms())
 
     # Training set 2 - Felix's segmented images
-    create_dicoms(config, 1, "Felix's Jaws", dry_run, ignore=files.broken_dicoms())
+    create_dicoms(config, 1, dry_run, ignore=files.broken_dicoms())
 
     # Some might be duplicated between the different sets; we only want
     # Training set 3 - Felix's segmented rear jaw only images
     # Exclude the duplicates
     create_dicoms(
-        config,
-        2,
-        "Felix's Rear Jaws",
-        dry_run,
-        ignore=files.duplicate_dicoms() | files.broken_dicoms(),
+        config, 2, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
 
 
