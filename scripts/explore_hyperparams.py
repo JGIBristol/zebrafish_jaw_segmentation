@@ -312,15 +312,18 @@ def main(*, mode: str, n_steps: int, continue_run: bool, out_dir: str) -> None:
         run_dir = _output_dir(i, mode, out_dir)
         config = _config(rng, mode)
 
-        # Since the dataloader picks random patches, the training data is slightly different
-        # between runs. Hopefully this doesn't matter though
-        data_config = data.DataConfig(config, train_subjects, val_subjects)
-
         with open(run_dir / "config.yaml", "w", encoding="utf-8") as cfg_file:
             yaml.dump(config, cfg_file)
 
         try:
-            step(config, data_config, run_dir, full_validation_subjects)
+            # Since the dataloader picks random patches, the training data is slightly different
+            # between runs. Hopefully this doesn't matter though
+            step(
+                config,
+                data.DataConfig(config, train_subjects, val_subjects),
+                run_dir,
+                full_validation_subjects,
+            )
         except torch.cuda.OutOfMemoryError as e:
             print(config)
             print(e)
