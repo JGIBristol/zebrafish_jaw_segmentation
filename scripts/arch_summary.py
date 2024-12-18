@@ -7,9 +7,9 @@ import argparse
 
 import torch
 from prettytable import PrettyTable
+from monai.networks.nets import attentionunet
 
 from fishjaw.model import model, data
-from monai.networks.nets import attentionunet
 
 
 def count_parameters(net: torch.nn.Module) -> None:

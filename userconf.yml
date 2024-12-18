@@ -17,12 +17,12 @@ model_path: "test.pkl"
 # Which ones to use for testing and validation
 # all the others will be used for testing
 validation_dicoms:
- - "ak_39"  # 7 month wt, labelled by Wahab
- - "ak_86"  # 3 year wt, labelled by Felix
+ - "39"  # 7 month wt, labelled by Wahab
+ - "86"  # 3 year wt, labelled by Felix
 
 # At the moment this can only be 1-length
 test_dicoms:
- - "ak_131"  # 2.5yr het chst11 chst11 talen
+ - "131"  # 2.5yr het chst11 chst11 talen
 
 # Optimiser options
 optimiser: "Adam"  # Must be one of the torch.optim optimiser
@@ -53,7 +53,8 @@ window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to h
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
 batch_size: 12
 epochs: 500
-lr_lambda: 0.99999 # Exponential decay factor (multiplicative with each epoch)
+lr_lambda: 0.99999  # Exponential decay factor (multiplicative with each epoch)
+num_workers: 6  # Number of workers for the dataloader
 
 # Options should be passed
 transforms:
