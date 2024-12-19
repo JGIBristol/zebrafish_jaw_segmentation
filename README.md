@@ -20,7 +20,108 @@ It's heavily based on the work performed by Wahab Kawafi in his PhD thesis[^1].
 
 The segmentation model is implemented in `pytorch`, using the `monai` `AttentionUnet` architecture.
 
+
+## Setup
+
+If only testing code, you can develop locally. If running this code and training models, we recommend connecting to a workstation/server/HPC with a GPU.
+
+### Mounting files
+
+You will need some files to work with. We are using files stored on the university of [Bristol's RDSF](https://www.bristol.ac.uk/acrc/research-data-storage-facility/accessing-the-rdsf/):
+
+You can mount the file system using the command:
+```
+gio mount smb://rdsfcifs.acrc.bris.ac.uk/Zebrafish_Osteoarthritis
+```
+
+This will mount the drive to a location which appears as follows:
+
+```
+/run/user/123456/gvfs/smb-share\:server\=rdsfcifs.acrc.bris.ac.uk\,share\=zebrafish_osteoarthritis/
+```
+Where the number `123456` could be different on any system. For ease, you can create a symlink to this file in your home directory.
+
+```
+ln -s /run/user/123456/gvfs/smb-share\:server\=rdsfcifs.acrc.bris.ac.uk\,share\=zebrafish_osteoarthritis/ ~/zebrafish_osteoarthritis
+```
+
+The file `userconf.yml` then needs to be changed to set the symlink of the RDSF:
+
+```
+rdsf_dir: "/home/USERNAME/zebrafish_osteoarthritis"
+
+dicom_dirs:
+  - "/home/USERNAME/zebrafish_jaw_segmentation/dicoms/Training set 1/"
+  - "/home/USERNAME/zebrafish_jaw_segmentation/dicoms/Training set 2/"
+  - "/home/USERNAME/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
+
+```
+
+
+### Environment
+The code here is written in Python.
+
+`conda` is used to manage environments in this project.
+
+```
+conda env create -f environment.yml
+```
+
+This will create an environment called "zebrafish_jaw_segmentation", which can be activated:
+
+```
+conda activate zebrafish_jaw_segmentation
+```
+
+You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA.
+You might need to change the versions of CUDA etc. that this environment file looks for - see [here](https://pytorch.org/get-started/locally/)
+for a guide on which versions to use. If you don't have cuda installed at all, you'll need to do that first-- on linux, this will be something like
+`sudo apt install nvidia-cuda-toolkit`. To check if you have this installed, you can check by entering the command `nvidia-smi`.
+
+Old versions of conda are painfully, unusably slow, but modern `conda` versions are fast at solving
+the environment so are useful for rapidly getting stuff done.
+If it is taking you a long time to create an environment or install things in your `conda` environment,
+try updating or creating a fresh install of `conda` (consider using miniconda).
+
+### Setting up the data
+The first thing to do is convert the labelled data to DICOM files.
+This data lives on the Zebrafish Osteoarthritis group's RDSF drive, so you'll need access to this first.
+
+You can convert the data to DICOMs by running the `scripts/create_dicoms.py` script:
+```
+PYTHONPATH=$(pwd) python scripts/create_dicoms.py
+```
+This requires you to have specified the location of your RDSF mount in `userconf.yml`--
+see [below](#configuration-and-options).
+
+
+### Plot Stuff
+
+```
+PYTHONPATH=$(pwd) python scripts/plot_model.py
+```
+
+
+
+#### More background on the data setup
+This is a file format for medical imaging that keeps lots of related things together--
+in our case, it's mostly useful because it lets us store our image and label
+together in one file which will guarantee we won't do anything silly like accidentally
+match up the wrong label to an image.
+
+The labels live in the `1Felix and Rich make models/Training dataset Tiffs` directory here.
+The original images live elsewhere - 3D TIFFs are in `DATABASE/uCT/Wahab_clean_dataset/TIFS/`.
+
+There are also some 2D TIFFs in the `DATABASE/uCT/Wahab_clean_dataset/` directory somewhere, but
+I would recommend dealing with DICOMs wherever possible.
+If you have to deal with TIFF files try to read/write 3D TIFFs where possible instead of dealing
+with lots of 2d TIFFs, because it's much faster to read one big file than many small ones.
+
+
+
 ## Usage
+
+### Style
 In the below examples, shell commands are in `bash` on Linux.
 If you're not using linux, things might not work but also they might be fine.
 
@@ -39,51 +140,6 @@ This isn't a perfect solution, but it's passable. Long-term, we might want to pu
 but we're not quite there yet.
 
 If you're on Windows and need to type something else, probably google it idk
-
-
-### Environment
-The code here is written in Python.
-
-I use `conda` to manage my python environment.
-
-```
-conda env create -f environment.yml
-```
-
-You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA.
-You might need to change the versions of CUDA etc. that this environment file looks for - see [here](https://pytorch.org/get-started/locally/)
-for a guide on which versions to use. If you don't have cuda installed at all, you'll need to do that first-- on linux, this will be something like
-`sudo apt install nvidia-cuda-toolkit`.
-
-Old versions of conda are painfully, unusably slow, but modern `conda` versions are fast at solving
-the environment so are useful for rapidly getting stuff done.
-If it is taking you a long time to create an environment or install things in your `conda` environment,
-try updating or creating a fresh install of `conda` (consider using miniconda).
-
-### Setting up the data
-The first thing to do is convert the labelled data to DICOM files.
-This data lives on the Zebrafish Osteoarthritis group's RDSF drive, so you'll need access to this first.
-
-You can convert the data to DICOMs by running the `scripts/create_dicoms.py` script:
-```
-PYTHONPATH=$(pwd) python scripts/create_dicoms.py
-```
-This requires you to have specified the location of your RDSF mount in `userconf.yml`--
-see [below](#configuration-and-options).
-
-#### More background on the data setup
-This is a file format for medical imaging that keeps lots of related things together--
-in our case, it's mostly useful because it lets us store our image and label
-together in one file which will guarantee we won't do anything silly like accidentally
-match up the wrong label to an image.
-
-The labels live in the `1Felix and Rich make models/Training dataset Tiffs` directory here.
-The original images live elsewhere - 3D TIFFs are in `DATABASE/uCT/Wahab_clean_dataset/TIFS/`.
-
-There are also some 2D TIFFs in the `DATABASE/uCT/Wahab_clean_dataset/` directory somewhere, but
-I would recommend dealing with DICOMs wherever possible.
-If you have to deal with TIFF files try to read/write 3D TIFFs where possible instead of dealing
-with lots of 2d TIFFs, because it's much faster to read one big file than many small ones.
 
 ### Training the model
 Train the model by running the `scripts/train_model.py` script.
