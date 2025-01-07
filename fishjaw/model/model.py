@@ -436,14 +436,13 @@ def _predict_patches(
 
     predictions = []
     for i in range(0, len(tensors), batch_size):
-        batch = tensors[i:i + batch_size].to(device)
+        batch = tensors[i : i + batch_size].to(device)
         with torch.no_grad():
             prediction = net(batch).to("cpu").detach()
         predictions.append(prediction)
         torch.cuda.empty_cache()  # Clear CUDA cache to free up memory
 
     predictions = torch.cat(predictions, dim=0)
-
 
     return predictions, locations
 
