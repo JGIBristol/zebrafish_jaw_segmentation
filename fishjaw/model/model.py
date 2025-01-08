@@ -452,7 +452,7 @@ def predict(
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
     activation: str,
-    batch_size: int,
+    batch_size: int=1,
 ) -> np.ndarray:
     """
     Make a prediction on a subject using the provided model
