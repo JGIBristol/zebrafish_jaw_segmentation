@@ -454,7 +454,7 @@ def predict(
     batch_size: int = 1,
 ) -> np.ndarray:
     """
-    Make a prediction on a subject using the provided mosdel
+    Make a prediction on a subject using the provided model
 
     :param net: the model to use
     :param subject: the subject to predict on
