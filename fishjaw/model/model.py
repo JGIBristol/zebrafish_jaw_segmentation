@@ -438,8 +438,7 @@ def _predict_patches(
         with torch.no_grad():
             prediction = net(batch).to("cpu").detach()
         predictions.append(prediction)
-        torch.cuda.empty_cache()  # Clear CUDA cache to free up memory
-
+        
     predictions = torch.cat(predictions, dim=0)
 
     return predictions, locations
