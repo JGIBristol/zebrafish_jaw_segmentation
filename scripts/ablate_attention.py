@@ -134,6 +134,7 @@ def _predict(
     config: dict,
     inference_subject: tio.Subject,
     indices: tuple[int] | None = None,
+    batch_size: int = 1,
 ) -> np.ndarray:
     """
     Possibly disable some attention mechanism(s), Run inference
@@ -151,6 +152,7 @@ def _predict(
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=model.activation_name(config),
+        batch_size=batch_size,
     )
 
     # Put the attention mechanism back

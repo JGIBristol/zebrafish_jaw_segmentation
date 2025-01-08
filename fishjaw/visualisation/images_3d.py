@@ -60,7 +60,7 @@ def plot_inference(
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
     activation: str = "softmax",
-    batch_size: int,
+    batch_size: int = 1,
 ) -> matplotlib.figure.Figure:
     """
     Plot the inference on an image

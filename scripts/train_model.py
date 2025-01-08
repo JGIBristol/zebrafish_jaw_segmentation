@@ -104,8 +104,6 @@ def main():
         config, data_config, output_dir
     )
 
-    torch.cuda.empty_cache()
-
     # Save the model
     with open(str(model_path), "wb") as f:
         pickle.dump(
@@ -125,7 +123,7 @@ def main():
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
-        batch_size=config["batch_size"]
+        batch_size=config["batch_size"],
     )
     fig.savefig(str(output_dir / "test_pred.png"))
     plt.close(fig)

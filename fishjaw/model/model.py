@@ -413,7 +413,7 @@ def train(
 def _predict_patches(
     net: torch.nn.Module,
     patches: tio.data.sampler.PatchSampler,
-    batch_size: int,
+    batch_size: int = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Make a prediction some patches
@@ -432,18 +432,15 @@ def _predict_patches(
     tensors = torch.cat(tensors, dim=0).to(device)
     locations = torch.stack(locations)
 
-    print(tensors.shape)
-
     predictions = []
     for i in range(0, len(tensors), batch_size):
-        batch = tensors[i:i + batch_size].to(device)
+        batch = tensors[i : i + batch_size].to(device)
         with torch.no_grad():
             prediction = net(batch).to("cpu").detach()
         predictions.append(prediction)
         torch.cuda.empty_cache()  # Clear CUDA cache to free up memory
 
     predictions = torch.cat(predictions, dim=0)
-
 
     return predictions, locations
 
@@ -465,7 +462,7 @@ def predict(
     :param patch_size: the size of the patches to use
     :param patch_overlap: the overlap between patches. Uses a hann window
     :param activation: the activation function to use
-    :param batch_size: the batch size to use
+    :param batch_size: the maximum number of patches that will be simultaneously sent to the model
 
     returns: the prediction, as a 3d numpy array
 
