@@ -146,6 +146,7 @@ def _make_plots(
     subject: tio.Subject,
     config: dict,
     activation: str,
+    batch_size: int = 1,
 ) -> None:
     """
     Make the inference plots using a model and subject
@@ -173,6 +174,7 @@ def _make_plots(
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=activation,
+        batch_size=batch_size,
     )
 
     # Remove every second voxel to make the segmentation worse
