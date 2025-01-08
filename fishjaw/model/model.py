@@ -452,10 +452,10 @@ def predict(
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
     activation: str,
-    batch_size: int=1,
+    batch_size: int = 1,
 ) -> np.ndarray:
     """
-    Make a prediction on a subject using the provided model
+    Make a prediction on a subject using the provided mosdel
 
     :param net: the model to use
     :param subject: the subject to predict on
