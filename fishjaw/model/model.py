@@ -438,7 +438,7 @@ def _predict_patches(
         with torch.no_grad():
             prediction = net(batch).to("cpu").detach()
         predictions.append(prediction)
-        
+
     predictions = torch.cat(predictions, dim=0)
 
     return predictions, locations
