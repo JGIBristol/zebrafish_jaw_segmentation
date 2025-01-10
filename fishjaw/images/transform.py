@@ -157,11 +157,6 @@ def crop(
         if crop_out_of_bounds(start, end, length):
             raise CropOutOfBoundsError(x, start, end, img.shape)
 
-    # This is a hack
-    # The order for the centred ones is ZYX in the spreadsheet but it should be ZXY
-    if centred:
-        bounds = [bounds[0], bounds[2], bounds[1]]
-
     retval = img[
         bounds[0][0] : bounds[0][1],
         bounds[1][0] : bounds[1][1],
