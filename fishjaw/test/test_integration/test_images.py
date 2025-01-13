@@ -18,8 +18,8 @@ def test_read_jaw_centres():
 
     # Just check one row
     assert table.loc[30, "z"] == 1435
-    assert table.loc[30, "x"] == 161
-    assert table.loc[30, "y"] == 390
+    assert table.loc[30, "x"] == 390
+    assert table.loc[30, "y"] == 161
     assert table.loc[30, "crop_around_centre"]
 
 
@@ -39,7 +39,7 @@ def test_find_coords():
     Check that we can properly read the co-ords from the csv
 
     """
-    assert transform.centre(30) == (1435, 161, 390)
+    assert transform.centre(30) == (1435, 390, 161)
 
 
 @pytest.fixture(name="test_img")
