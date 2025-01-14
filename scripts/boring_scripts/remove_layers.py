@@ -5,12 +5,37 @@ Investigate the effect of removing layers and/or skip connections on the segment
 
 import argparse
 
+from fishjaw.util import files
+from fishjaw.model import model
+from fishjaw.inference import read
+
 
 def main(*, subject: int, model_name: str, threshold: float):
     """
     Load in a model and the data, then evaluate with and without each layer/skip connection
 
     """
+    if not model_name.endswith(".pkl"):
+        raise ValueError("Model name must end with '.pkl'")
+
+    out_dir = files.script_out_dir() / "remove_layers" / model_name[:-4]
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
+    # Load the model and training-time config
+    model_state = model.load_model(model_name)
+    config = model_state.config
+
+    # Load in the subject
+    inference_subject = (
+        read.inference_subject(config, subject)
+        if subject
+        else read.test_subject(config["model_path"])
+    )
+
+    # Sucessively remove layers and skip connections
+    # TODO
+    ...
 
 
 if __name__ == "__main__":
