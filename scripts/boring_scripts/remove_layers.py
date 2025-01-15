@@ -8,10 +8,12 @@ import argparse
 import torch
 import numpy as np
 import torchio as tio
+import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
-from fishjaw.inference import read
+from fishjaw.inference import read, mesh
+from fishjaw.visualisation import plot_meshes
 from monai.networks.nets.attentionunet import AttentionLayer
 
 
@@ -36,7 +38,6 @@ def _predict(
     net: torch.nn.Module,
     config: dict,
     inference_subject: tio.Subject,
-    batch_size: int = 1,
 ) -> np.ndarray:
     """
     Find the model's prediction on the inference subject
@@ -48,7 +49,7 @@ def _predict(
         patch_size=data.get_patch_size(config),
         patch_overlap=(4, 4, 4),
         activation=model.activation_name(config),
-        batch_size=batch_size,
+        batch_size=1,
     )
 
 
@@ -79,6 +80,12 @@ def main(*, subject: int, model_name: str, threshold: float):
     )
 
     # Perform inference with the full model
+    prediction = _predict(net, config, inference_subject) > threshold
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={"projection": "3d"})
+    plot_meshes.projections(axes, mesh.cubic_mesh(prediction))
+    fig.tight_layout()
+    fig.savefig(out_dir / "full_model.png")
+    plt.close(fig)
 
     # Sucessively remove layers and skip connections
     ...
