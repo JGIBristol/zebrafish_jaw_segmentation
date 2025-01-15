@@ -26,6 +26,9 @@ def main(*, subject: int, model_name: str, threshold: float):
     model_state = model.load_model(model_name)
     config = model_state.config
 
+    net = model_state.load_model(set_eval=True)
+    net.to("cuda")
+
     # Load in the subject
     inference_subject = (
         read.inference_subject(config, subject)
@@ -34,7 +37,6 @@ def main(*, subject: int, model_name: str, threshold: float):
     )
 
     # Sucessively remove layers and skip connections
-    # TODO
     ...
 
 
