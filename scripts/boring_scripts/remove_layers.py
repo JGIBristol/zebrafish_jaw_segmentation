@@ -5,9 +5,28 @@ Investigate the effect of removing layers and/or skip connections on the segment
 
 import argparse
 
+import torch
+
 from fishjaw.util import files
 from fishjaw.model import model
 from fishjaw.inference import read
+
+
+def zero_block(
+    module: torch.nn.Module, input_: torch.tensor, output: torch.tensor
+) -> torch.tensor:
+    """
+    Zero the output of a block
+
+    :param module: The block being hooked, to zero out
+    :param input_: The input to the block
+    :param output: The output of the block
+
+    :returns: The output, zeroed; same shape as the original output
+
+    """
+    # pylint: disable=unused-argument
+    return torch.zeros_like(output)
 
 
 def main(*, subject: int, model_name: str, threshold: float):
