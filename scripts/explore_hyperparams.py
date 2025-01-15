@@ -198,6 +198,7 @@ def step(
     data_config: data.DataConfig,
     out_dir: pathlib.Path,
     full_validation_subjects: list[tio.Subject],
+    batch_size: int = 1,
 ):
     """
     Get the right data, train the model and create some outputs
@@ -240,6 +241,7 @@ def step(
                 patch_size=data.get_patch_size(config),
                 patch_overlap=(4, 4, 4),
                 activation=activation,
+                batch_size=batch_size,
             )
             fig.savefig(str(out_dir / f"val_pred_{i}.png"))
             plt.close(fig)
@@ -263,6 +265,7 @@ def step(
                 patch_size=data.get_patch_size(config),
                 patch_overlap=(4, 4, 4),
                 activation=activation,
+                batch_size=batch_size,
             )
             np.save(out_dir / f"val_pred_{i}.npy", prediction)
             predictions.append(prediction)

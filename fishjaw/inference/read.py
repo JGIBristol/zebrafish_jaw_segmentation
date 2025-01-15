@@ -43,7 +43,7 @@ def inference_subject(config: dict, img_n: int) -> tio.Subject:
     :returns: the image as a torchio Subject
 
     """
-    img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"ak_{img_n}.tif")
+    img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"{img_n}.tif")
 
     img = transform.crop(
         img, crop_lookup()[img_n], transform.window_size(config), centred=True

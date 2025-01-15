@@ -413,6 +413,7 @@ def train(
 def _predict_patches(
     net: torch.nn.Module,
     patches: tio.data.sampler.PatchSampler,
+    batch_size: int = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Make a prediction some patches
@@ -431,7 +432,16 @@ def _predict_patches(
     tensors = torch.cat(tensors, dim=0).to(device)
     locations = torch.stack(locations)
 
-    return net(tensors).to("cpu").detach(), locations
+    predictions = []
+    for i in range(0, len(tensors), batch_size):
+        batch = tensors[i : i + batch_size].to(device)
+        with torch.no_grad():
+            prediction = net(batch).to("cpu").detach()
+        predictions.append(prediction)
+
+    predictions = torch.cat(predictions, dim=0)
+
+    return predictions, locations
 
 
 def predict(
@@ -441,6 +451,7 @@ def predict(
     patch_size: tuple[int, int, int],
     patch_overlap: tuple[int, int, int],
     activation: str,
+    batch_size: int = 1,
 ) -> np.ndarray:
     """
     Make a prediction on a subject using the provided model
@@ -450,6 +461,7 @@ def predict(
     :param patch_size: the size of the patches to use
     :param patch_overlap: the overlap between patches. Uses a hann window
     :param activation: the activation function to use
+    :param batch_size: the maximum number of patches that will be simultaneously sent to the model
 
     returns: the prediction, as a 3d numpy array
 
@@ -458,7 +470,7 @@ def predict(
 
     # Make predictions on the patches
     sampler = tio.GridSampler(subject, patch_size, patch_overlap=patch_overlap)
-    prediction, locations = _predict_patches(net, sampler)
+    prediction, locations = _predict_patches(net, sampler, batch_size)
 
     # Apply the activation function
     if activation == "softmax":
