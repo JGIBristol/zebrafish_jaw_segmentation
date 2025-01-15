@@ -6,9 +6,11 @@ Investigate the effect of removing layers and/or skip connections on the segment
 import argparse
 
 import torch
+import numpy as np
+import torchio as tio
 
 from fishjaw.util import files
-from fishjaw.model import model
+from fishjaw.model import model, data
 from fishjaw.inference import read
 from monai.networks.nets.attentionunet import AttentionLayer
 
@@ -28,6 +30,26 @@ def zero_block(
     """
     # pylint: disable=unused-argument
     return torch.zeros_like(output)
+
+
+def _predict(
+    net: torch.nn.Module,
+    config: dict,
+    inference_subject: tio.Subject,
+    batch_size: int = 1,
+) -> np.ndarray:
+    """
+    Find the model's prediction on the inference subject
+
+    """
+    return model.predict(
+        net,
+        inference_subject,
+        patch_size=data.get_patch_size(config),
+        patch_overlap=(4, 4, 4),
+        activation=model.activation_name(config),
+        batch_size=batch_size,
+    )
 
 
 def main(*, subject: int, model_name: str, threshold: float):
