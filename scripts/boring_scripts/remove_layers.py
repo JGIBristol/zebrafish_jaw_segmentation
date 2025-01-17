@@ -7,8 +7,10 @@ import argparse
 
 import torch
 import numpy as np
+import torch.utils
 import torchio as tio
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from fishjaw.util import files
 from fishjaw.model import model, data
@@ -31,7 +33,7 @@ def zero_block(
 
     """
     # pylint: disable=unused-argument
-    return torch.zeros_like(output)
+    return output
 
 
 def _predict(
@@ -51,6 +53,25 @@ def _predict(
         activation=model.activation_name(config),
         batch_size=1,
     )
+
+
+def _remove_layer(
+    net: torch.nn.Module, config: dict, layer_index: int
+) -> tuple[torch.nn.Module, torch.utils.hooks.RemovableHandle]:
+    """
+    Turn off the layer at the given index and return the network and hook
+
+    """
+    index = 0
+    for module in net.modules():
+        if isinstance(module, AttentionLayer):
+            if index == layer_index:
+                hook = net.register_forward_hook(zero_block)
+                break
+            index += 1
+    else:
+        raise ValueError(f"Layer {layer_index} not found")
+    return net, hook
 
 
 def main(*, subject: int, model_name: str, threshold: float):
@@ -88,7 +109,20 @@ def main(*, subject: int, model_name: str, threshold: float):
     plt.close(fig)
 
     # Sucessively remove layers and skip connections
-    ...
+    for layer_index in tqdm(range(5)):
+        net, hook = _remove_layer(net, config, layer_index)
+        prediction = _predict(net, config, inference_subject) > threshold
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={"projection": "3d"})
+        try:
+            plot_meshes.projections(axes, mesh.cubic_mesh(prediction))
+        except ValueError as e:
+            print(
+                f"Layer {layer_index} broke, probably because {dict(zip(*np.unique(prediction, return_counts=True)))};\n{e}"
+            )
+        fig.tight_layout()
+        fig.savefig(out_dir / f"removed_{layer_index}.png")
+        plt.close(fig)
+        hook.remove()
 
 
 if __name__ == "__main__":
