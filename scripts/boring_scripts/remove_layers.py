@@ -33,7 +33,7 @@ def zero_block(
 
     """
     # pylint: disable=unused-argument
-    return output
+    return output * 0.001 + input_[0].expand_as(output) * 0.999
 
 
 def _predict(
@@ -109,12 +109,18 @@ def main(*, subject: int, model_name: str, threshold: float):
     plt.close(fig)
 
     # Sucessively remove layers and skip connections
-    for layer_index in tqdm(range(5)):
+    for layer_index in tqdm(range(4, -1, -1)):
         net, hook = _remove_layer(net, config, layer_index)
         prediction = _predict(net, config, inference_subject) > threshold
+        print(dict(zip(*np.unique(prediction, return_counts=True))))
         fig, axes = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={"projection": "3d"})
         try:
-            plot_meshes.projections(axes, mesh.cubic_mesh(prediction))
+            co_ords = np.argwhere(prediction)
+            for axis, elev, azim in zip(axes, [0, 0, 90], [0, 90, 0]):
+                axis.scatter(
+                    co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], s=2, alpha=0.2
+                )
+                axis.view_init(elev=elev, azim=azim)
         except ValueError as e:
             print(
                 f"Layer {layer_index} broke, probably because {dict(zip(*np.unique(prediction, return_counts=True)))};\n{e}"
