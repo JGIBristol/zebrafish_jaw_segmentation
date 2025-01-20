@@ -97,7 +97,7 @@ def plot_projections(
         )
         plt.close(fig)
 
-        return dice_matrix
+    return dice_matrix
 
 
 def ablated_psi(module, input_, output) -> torch.Tensor:
