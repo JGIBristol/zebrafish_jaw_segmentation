@@ -22,7 +22,7 @@ validation_dicoms:
 
 # At the moment this can only be 1-length
 test_dicoms:
- - "131"  # 2.5yr het chst11 chst11 talen
+ - "84"  # 2.5yr het chst11 chst11 talen
 
 # Optimiser options
 optimiser: "Adam"  # Must be one of the torch.optim optimiser
