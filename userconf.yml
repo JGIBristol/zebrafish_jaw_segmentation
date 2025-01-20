@@ -6,18 +6,18 @@ rdsf_dir: "/home/mh19137/zebrafish_rdsf/"
 
 # Where the DICOMs are stored - this is where the training data lives
 dicom_dirs:
-  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
+  # - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
   - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/"
   - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
-model_path: "test.pkl"
+model_path: "no_wahab.pkl"
 
 # Which ones to use for testing and validation
 # all the others will be used for testing
 validation_dicoms:
- - "39"  # 7 month wt, labelled by Wahab
+ # - "39"  # 7 month wt, labelled by Wahab
  - "86"  # 3 year wt, labelled by Felix
 
 # At the moment this can only be 1-length
@@ -52,7 +52,7 @@ device: "cuda"
 window_size: "192,192,192"  # Comma-separated ZYX. Needs to be large enough to hold the whole jaw
 patch_size: "160,160,160"  # Bigger holds more context, smaller is faster and allows for bigger batches
 batch_size: 12
-epochs: 500
+epochs: 350
 lr_lambda: 0.99999  # Exponential decay factor (multiplicative with each epoch)
 num_workers: 6  # Number of workers for the dataloader
 
