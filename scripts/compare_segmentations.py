@@ -87,7 +87,6 @@ def _inference(model_name: str) -> NDArray:
             patch_size=data.get_patch_size(config),
             patch_overlap=(4, 4, 4),
             activation=model.activation_name(config),
-            batch_size=4,
         )
         > 0.5
     ).astype(np.uint8)
@@ -123,6 +122,15 @@ def main(*, model_name: str):
     harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
     tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
 
+    # Crop them to the same size as the model's output
+    print("Cropping")
+    felix, harry, tahlia = (
+        transform.crop(
+            x, read.crop_lookup()[97], transform.window_size(config), centred=True
+        )
+        for x in (felix, harry, tahlia)
+    )
+
     # Save the inference as a tiff
     print("Saving the inference")
     tifffile.imwrite(out_dir / "inference.tif", inference)
@@ -136,13 +144,14 @@ def main(*, model_name: str):
 
     # Compare the segmentations to a baseline, print a table of metrics
     print("Comparing segmentations")
-    print(
-        metrics.table(
-            [felix] * 5,
-            [felix, harry, tahlia, inference, speckled, splotched],
-            thresholded_metrics=True,
-        )
+    table = metrics.table(
+        [felix] * 6,
+        [felix, harry, tahlia, inference, speckled, splotched],
+        thresholded_metrics=True,
     )
+    table["label"] = ["felix", "harry", "tahlia", "inference", "speckled", "splotched"]
+    table.set_index("label", inplace=True)
+    print(table.to_markdown())
 
 
 if __name__ == "__main__":
