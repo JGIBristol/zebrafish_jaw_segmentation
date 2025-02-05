@@ -14,11 +14,12 @@ import matplotlib.pyplot as plt
 from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import metrics, transform
+from fishjaw.visualisation import plot_meshes as mesh_lib
 from fishjaw.inference import read, mesh
 from fishjaw.util import util
 
 
-def meshes(
+def plot_meshes(
     thresholded_pred: np.ndarray,
     baseline: np.ndarray,
     out_dir: pathlib.Path,
@@ -39,12 +40,12 @@ def meshes(
     hausdorff_points = metrics.hausdorff_points(baseline, thresholded_pred)
 
     # Make projections of the meshes
-    meshes.projections(
+    mesh_lib.projections(
         axes,
         prediction_mesh,
         plot_kw={"alpha": 0.2, "color": "blue", "label": label},
     )
-    meshes.projections(
+    mesh_lib.projections(
         axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Felix"}
     )
 
@@ -132,6 +133,10 @@ def main(*, model_name: str):
     print("Saving the inference")
     tifffile.imwrite(out_dir / "inference.tif", inference)
 
+    # Save it as a mesh
+    print("Saving the inference as a mesh")
+    mesh.cubic_mesh(inference).save(out_dir / "inference.stl")
+
     # Modify the model segmentation to make it worse
     print("Modifying the model segmentation")
     speckled = transform.speckle(inference)
@@ -150,7 +155,7 @@ def main(*, model_name: str):
     print(table.to_markdown())
 
     for label, segmentation in zip(table.index, segmentations):
-        meshes(segmentation, felix, out_dir, label)
+        plot_meshes(segmentation, felix, out_dir, label)
 
 
 if __name__ == "__main__":
