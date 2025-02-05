@@ -29,6 +29,7 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
         274: (1413, 240, 174),  # 9month hom sp7 sp7 mut
         120: (1595, 398, 251),  # 10month wt giantin giantin sib
         37: (1746, 405, 431),  # 7month wt wt col2:mcherry
+        97: (1435, 174, 269),  # 36 month wt wt wnt:gfp col2a1:mch
     }
 
 
