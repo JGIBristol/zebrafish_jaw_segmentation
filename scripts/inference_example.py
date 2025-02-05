@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
-from fishjaw.images import metrics
+from fishjaw.images import metrics, transform
 from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
 
@@ -107,39 +107,6 @@ def _save_test_meshes(
     plt.close(fig)
 
 
-def _add_random_blobs(rng: np.random.Generator, segmentation: np.ndarray) -> np.ndarray:
-    """
-    Add random blobs to the segmentation
-
-    """
-    # Randomly choose the number of blobs
-    n_blobs = rng.integers(1, 30)
-
-    # Randomly choose their location
-    z = rng.integers(0, segmentation.shape[0], size=n_blobs)
-    x = rng.integers(0, segmentation.shape[1], size=n_blobs)
-    y = rng.integers(0, segmentation.shape[2], size=n_blobs)
-    co_ords = np.stack((z, x, y), axis=1)
-
-    # Randomly choose the size of the blobs
-    sizes = rng.poisson(1.5, n_blobs)
-
-    # Add blobs to the segmentation
-    xx, yy, zz = np.meshgrid(
-        np.arange(segmentation.shape[0]),
-        np.arange(segmentation.shape[1]),
-        np.arange(segmentation.shape[2]),
-        indexing="ij",
-    )
-    for co_ord, size in zip(co_ords, sizes):
-        distance = np.sqrt(
-            (xx - co_ord[0]) ** 2 + (yy - co_ord[1]) ** 2 + (zz - co_ord[2]) ** 2
-        )
-        segmentation[distance <= size] = 1
-
-    return segmentation
-
-
 def _make_plots(
     args: argparse.Namespace,
     net: torch.nn.Module,
@@ -179,13 +146,10 @@ def _make_plots(
 
     # Remove every second voxel to make the segmentation worse
     if args.speckle:
-        prediction[::2, ::2, ::2] = 0
-        prediction[1::2, 1::2, ::2] = 0
-        prediction[::2, 1::2, 1::2] = 0
-        prediction[1::2, ::2, 1::2] = 0
+        prediction = transform.speckle(prediction)
 
     if args.splotch:
-        prediction = _add_random_blobs(args.rng, prediction)
+        prediction = transform.add_random_blobs(args.rng, prediction)
 
     # Convert the image to a 3d numpy array - for plotting
     image = subject[tio.IMAGE][tio.DATA].squeeze().numpy()
