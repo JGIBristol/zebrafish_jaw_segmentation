@@ -169,3 +169,51 @@ def crop(
         )
 
     return retval
+
+
+def speckle(img: np.ndarray) -> np.ndarray:
+    """
+    Zero out every second voxel from the image
+
+    :param img: The input image
+    :returns: The speckled image as a numpy array
+
+    """
+    copy = img.copy()
+
+    copy[::2, ::2, ::2] = 0
+    copy[1::2, 1::2, ::2] = 0
+    copy[::2, 1::2, 1::2] = 0
+    copy[1::2, ::2, 1::2] = 0
+
+    return copy
+
+
+def add_random_blobs(rng: np.random.Generator, img: np.ndarray) -> np.ndarray:
+    """ """
+    # Randomly choose the number of blobs
+    n_blobs = rng.integers(1, 30)
+
+    # Randomly choose their location
+    z = rng.integers(0, img.shape[0], size=n_blobs)
+    x = rng.integers(0, img.shape[1], size=n_blobs)
+    y = rng.integers(0, img.shape[2], size=n_blobs)
+    co_ords = np.stack((z, x, y), axis=1)
+
+    # Randomly choose the size of the blobs
+    sizes = rng.poisson(1.5, n_blobs)
+
+    # Add blobs to the segmentation
+    xx, yy, zz = np.meshgrid(
+        np.arange(img.shape[0]),
+        np.arange(img.shape[1]),
+        np.arange(img.shape[2]),
+        indexing="ij",
+    )
+    for co_ord, size in zip(co_ords, sizes):
+        distance = np.sqrt(
+            (xx - co_ord[0]) ** 2 + (yy - co_ord[1]) ** 2 + (zz - co_ord[2]) ** 2
+        )
+        img[distance <= size] = 1
+
+    return img
