@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
-from fishjaw.images import metrics
+from fishjaw.images import metrics, transform
 from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
 
@@ -92,39 +92,6 @@ def _save_test_meshes(
         pad_inches=0,
     )
     plt.close(fig)
-
-
-def _add_random_blobs(rng: np.random.Generator, segmentation: np.ndarray) -> np.ndarray:
-    """
-    Add random blobs to the segmentation
-
-    """
-    # Randomly choose the number of blobs
-    n_blobs = rng.integers(1, 30)
-
-    # Randomly choose their location
-    z = rng.integers(0, segmentation.shape[0], size=n_blobs)
-    x = rng.integers(0, segmentation.shape[1], size=n_blobs)
-    y = rng.integers(0, segmentation.shape[2], size=n_blobs)
-    co_ords = np.stack((z, x, y), axis=1)
-
-    # Randomly choose the size of the blobs
-    sizes = rng.poisson(1.5, n_blobs)
-
-    # Add blobs to the segmentation
-    xx, yy, zz = np.meshgrid(
-        np.arange(segmentation.shape[0]),
-        np.arange(segmentation.shape[1]),
-        np.arange(segmentation.shape[2]),
-        indexing="ij",
-    )
-    for co_ord, size in zip(co_ords, sizes):
-        distance = np.sqrt(
-            (xx - co_ord[0]) ** 2 + (yy - co_ord[1]) ** 2 + (zz - co_ord[2]) ** 2
-        )
-        segmentation[distance <= size] = 1
-
-    return segmentation
 
 
 def _make_plots(
@@ -254,12 +221,14 @@ def main(*, model_name: str):
     # Perform inference with the model
     inference = _inference(model_name)
 
+    # Load the human segmentations
+
     # Save the inference as a tiff
     tifffile.imwrite(out_dir / "inference.tif", inference)
 
-    # Load the human segmentations
-
     # Modify the model segmentation to make it worse
+    speckled = transform.speckle(inference, rng)
+    splotched = transform.add_random_blobs(rng, speckled)
 
     # Compare the segmentations to a baseline, print a table of metrics
 
