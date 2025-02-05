@@ -6,50 +6,46 @@ Compare some human segmentations to each other and to a model's segmentation
 import pathlib
 import argparse
 
-import torch
 import tifffile
 import numpy as np
 from numpy.typing import NDArray
-import torchio as tio
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
 from fishjaw.model import model, data
 from fishjaw.images import metrics, transform
-from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
 from fishjaw.util import util
 
 
-def _save_test_meshes(
+def meshes(
     thresholded_pred: np.ndarray,
-    truth: np.ndarray,
+    baseline: np.ndarray,
     out_dir: pathlib.Path,
+    label: str,
 ) -> None:
     """
     Turn a segmentation into a mesh and save it
 
     """
-    # Save the prediction and truth as STLs
+    # Create meshes for plotting
     prediction_mesh = mesh.cubic_mesh(thresholded_pred)
-    prediction_mesh.save(f"{out_dir}/test_mesh.stl")
-    truth_mesh = mesh.cubic_mesh(truth)
-    truth_mesh.save(f"{out_dir}/test_mesh_truth.stl")
+    truth_mesh = mesh.cubic_mesh(baseline)
 
     # Create the figure
     fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=(15, 5))
 
     # Find the Hausdorff points
-    hausdorff_points = metrics.hausdorff_points(truth, thresholded_pred)
+    hausdorff_points = metrics.hausdorff_points(baseline, thresholded_pred)
 
     # Make projections of the meshes
-    plot_meshes.projections(
+    meshes.projections(
         axes,
         prediction_mesh,
-        plot_kw={"alpha": 0.2, "color": "blue", "label": "Prediction"},
+        plot_kw={"alpha": 0.2, "color": "blue", "label": label},
     )
-    plot_meshes.projections(
-        axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Truth"}
+    meshes.projections(
+        axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Felix"}
     )
 
     # Indicate Hausdorff distance
@@ -60,7 +56,7 @@ def _save_test_meshes(
     axes[0].legend(loc="upper right")
 
     fig.savefig(
-        f"{out_dir}/test_mesh_overlaid_projections.png",
+        f"{out_dir}/overlay_{label}.png",
         bbox_inches="tight",
         pad_inches=0,
     )
@@ -79,17 +75,18 @@ def _inference(model_name: str) -> NDArray:
     net = model_state.load_model(set_eval=True)
     net.to("cuda")
 
+    prediction = model.predict(
+        net,
+        read.inference_subject(config, 97),
+        patch_size=data.get_patch_size(config),
+        patch_overlap=(4, 4, 4),
+        activation=model.activation_name(config),
+    )
+
     # Threshold the segmentation
-    return (
-        model.predict(
-            net,
-            read.inference_subject(config, 97),
-            patch_size=data.get_patch_size(config),
-            patch_overlap=(4, 4, 4),
-            activation=model.activation_name(config),
-        )
-        > 0.5
-    ).astype(np.uint8)
+    prediction = (prediction > 0.5).astype(np.uint8)
+
+    return metrics.largest_connected_component(prediction)
 
 
 def main(*, model_name: str):
@@ -139,19 +136,21 @@ def main(*, model_name: str):
     print("Modifying the model segmentation")
     speckled = transform.speckle(inference)
     splotched = transform.add_random_blobs(rng, inference)
-    tifffile.imwrite(out_dir / "speckled.tif", speckled)
-    tifffile.imwrite(out_dir / "splotched.tif", splotched)
 
     # Compare the segmentations to a baseline, print a table of metrics
     print("Comparing segmentations")
+    segmentations = [felix, harry, tahlia, inference, speckled, splotched]
     table = metrics.table(
         [felix] * 6,
-        [felix, harry, tahlia, inference, speckled, splotched],
+        segmentations,
         thresholded_metrics=True,
     )
     table["label"] = ["felix", "harry", "tahlia", "inference", "speckled", "splotched"]
     table.set_index("label", inplace=True)
     print(table.to_markdown())
+
+    for label, segmentation in zip(table.index, segmentations):
+        meshes(segmentation, felix, out_dir, label)
 
 
 if __name__ == "__main__":

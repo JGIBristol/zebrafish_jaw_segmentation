@@ -190,7 +190,11 @@ def speckle(img: np.ndarray) -> np.ndarray:
 
 
 def add_random_blobs(rng: np.random.Generator, img: np.ndarray) -> np.ndarray:
-    """ """
+    """
+    Add random blobs to the image - creates a copy
+    """
+    copy = img.copy()
+
     # Randomly choose the number of blobs
     n_blobs = rng.integers(1, 30)
 
@@ -214,6 +218,6 @@ def add_random_blobs(rng: np.random.Generator, img: np.ndarray) -> np.ndarray:
         distance = np.sqrt(
             (xx - co_ord[0]) ** 2 + (yy - co_ord[1]) ** 2 + (zz - co_ord[2]) ** 2
         )
-        img[distance <= size] = 1
+        copy[distance <= size] = 1
 
-    return img
+    return copy
