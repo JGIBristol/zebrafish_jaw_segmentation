@@ -133,7 +133,7 @@ def crop(
     Crop an image, either around the centre or from the given Z index
 
     :param img: The input image
-    :param jaw_centre: The centre coordinates (z, y, x)
+    :param jaw_centre: The centre coordinates (z, y, x). or maybe zxy
     :param crop_size: The size of the crop (d, w, h)
     :param centred: whether to crop around the co-ords (true), or from
                     the given Z-co-ord onwards (false)

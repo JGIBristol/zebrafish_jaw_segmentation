@@ -192,7 +192,7 @@ def model(config: dict[str, Any]) -> torch.nn.Module:
 
 
 def _get_data(
-    data: dict[str, dict[str, torch.Tensor]]
+    data: dict[str, dict[str, torch.Tensor]],
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Get the image and labels from each entry in a batch

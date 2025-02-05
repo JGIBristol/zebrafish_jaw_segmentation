@@ -22,13 +22,14 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
     :returns: the crop centres for each image
     """
     return {
-        218: (1700, 396, 296),  # 24month wt wt dvl:gfp contrast enhance
-        219: (1411, 344, 420),  # 24month wt wt dvl:gfp contrast enhance
+        218: (1700, 296, 396),  # 24month wt wt dvl:gfp contrast enhance
+        219: (1411, 420, 344),  # 24month wt wt dvl:gfp contrast enhance
         # 247: (1710, 431, 290),  # 14month het sp7 sp7+/-
-        273: (1685, 221, 286),  # 9month het sp7 sp7 het
-        274: (1413, 174, 240),  # 9month hom sp7 sp7 mut
-        120: (1595, 251, 398),  # 10month wt giantin giantin sib
-        37: (1746, 431, 405),  # 7month wt wt col2:mcherry
+        273: (1685, 286, 221),  # 9month het sp7 sp7 het
+        274: (1413, 240, 174),  # 9month hom sp7 sp7 mut
+        120: (1595, 398, 251),  # 10month wt giantin giantin sib
+        37: (1746, 405, 431),  # 7month wt wt col2:mcherry
+        97: (1435, 174, 269),  # 36 month wt wt wnt:gfp col2a1:mch
     }
 
 

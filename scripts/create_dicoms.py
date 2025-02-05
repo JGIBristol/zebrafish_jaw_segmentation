@@ -178,11 +178,13 @@ def create_dicoms(
 
         dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
 
-        if not dry_run:
-            if dicom_path.exists():
-                print(f"Skipping {dicom_path}, already exists")
-                continue
+        if dicom_path.exists():
+            print(f"Skipping {dicom_path}, already exists")
+            continue
 
+        if dry_run:
+            print(f"Would write {dicom_path}")
+        else:
             try:
                 # These contain different labels for the different bones
                 dicom = Dicom(img_path, label_path, binarise=binarise)

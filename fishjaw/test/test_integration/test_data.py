@@ -1,4 +1,4 @@
-""" Tests for data related utilities """
+"""Tests for data related utilities"""
 
 from ...model import data
 
