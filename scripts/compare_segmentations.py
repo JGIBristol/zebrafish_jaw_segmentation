@@ -104,10 +104,6 @@ def main(*, model_name: str):
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
-    # Perform inference with the model
-    print("Performing inference")
-    inference = _inference(model_name)
-
     # Load the human segmentations
     print("loading human segmentations")
     config = util.userconf()
@@ -116,9 +112,14 @@ def main(*, model_name: str):
         / "1Felix and Rich make models"
         / "Human validation STL and results"
     )
-    felix = tifffile.imread(seg_dir / "Felix" / "ak_97.tif.labels(2).tif")
+    felix = tifffile.imread(seg_dir / "felix take2" / "ak_97-fbowers.labels.tif")
+    print(np.sum(felix))
     harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
     tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
+
+    # Perform inference with the model
+    print("Performing inference")
+    inference = _inference(model_name)
 
     # Crop them to the same size as the model's output
     print("Cropping")
