@@ -112,7 +112,9 @@ def main(*, model_name: str):
         / "1Felix and Rich make models"
         / "Human validation STL and results"
     )
-    felix = tifffile.imread(seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif")
+    felix = tifffile.imread(
+        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+    )
     harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
     tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
 

@@ -207,7 +207,7 @@ def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> 
 
     # Either iterate over all subjects or just do the one
     if args.all:
-        for subject in read.crop_lookup().keys():
+        for subject in read.crop_lookup():
             print(f"Performing inference on subject {subject}")
             args.subject = subject
             _make_plots(args, net, _subject(config, args), config, activation)
