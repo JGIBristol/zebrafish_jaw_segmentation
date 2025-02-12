@@ -86,7 +86,7 @@ def main():
     activation = model.activation_name(config)
 
     # Read the data from disk (from the DICOMs created by create_dicoms.py)
-    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config)
+    train_subjects, val_subjects, test_subject = data.read_dicoms_from_disk(config, verbose=True)
     data_config = data.DataConfig(config, train_subjects, val_subjects)
 
     # Save the testing subject

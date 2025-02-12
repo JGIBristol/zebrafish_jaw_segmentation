@@ -252,6 +252,7 @@ def _transforms(transform_dict: dict) -> tio.transforms.Transform:
 
 def read_dicoms_from_disk(
     config: dict,
+    verbose: bool = False,
 ) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get all the data used in the training process - training, validation and testing
@@ -260,6 +261,8 @@ def read_dicoms_from_disk(
     Prints a progress bar.
 
     :param config: The configuration, e.g. from userconf.yml
+    :param verbose: whether to print extra stuff, in case we want to be sure about where
+                    we're reading from
 
     :returns: subjects for training
     :returns: subjects for validation
@@ -274,7 +277,7 @@ def read_dicoms_from_disk(
         [
             subject(path, window_size)
             for path in tqdm(
-                files.dicom_paths(config, mode), desc=f"Reading {mode} DICOMs"
+                files.dicom_paths(config, mode, verbose), desc=f"Reading {mode} DICOMs"
             )
         ]
         for mode in ("train", "test", "val")
