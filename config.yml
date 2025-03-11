@@ -4,9 +4,9 @@
 # Directories where the masks are read from on the RDSF
 # Relative to the RDSF mount point
 label_dirs:
- - "1Felix and Rich make models/Training dataset Tiffs/Training set 4 (Wahab resegmented by felix)"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 3 (base of jaw)"
+ - "1Felix and Rich make models/Training dataset Tiffs/Training set 4 (Wahab resegmented by felix)"
 
 ct_scan_dir: "1Felix and Rich make models/wahabs_scans"
 felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"

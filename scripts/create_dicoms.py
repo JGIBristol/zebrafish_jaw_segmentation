@@ -224,18 +224,18 @@ def main(dry_run: bool):
     """
     config = util.userconf()
 
-    # Felix's resegmentations from Wahab's images
-    create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
-
     # Training set 2 - Felix's segmented images
-    create_dicoms(config, 1, dry_run, ignore=files.broken_dicoms())
+    create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
 
     # Some might be duplicated between the different sets; we only want
     # "Training set 3 - Felix's segmented rear jaw only" images
     # So exclude the duplicates
     create_dicoms(
-        config, 2, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
+        config, 1, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
+
+    # Felix's resegmentations from Wahab's images
+    create_dicoms(config, 2, dry_run, ignore=files.broken_dicoms())
 
 
 if __name__ == "__main__":
