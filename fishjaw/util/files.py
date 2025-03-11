@@ -3,6 +3,7 @@ Stuff for manipulating files
 
 """
 
+import re
 import warnings
 
 import pathlib
@@ -140,6 +141,29 @@ def get_3d_tif(mask_path: pathlib.Path) -> pathlib.Path:
     # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
     # but hopefully that won't happen
     return mask_path.parents[3] / util.config()["ct_scan_dir"] / file_name
+
+
+def get_2d_tif_dir(config: dict[str, str], mask_path: pathlib.Path) -> pathlib.Path:
+    """
+    Get the path to the directory holding the corresponding images for a mask.
+    This is applicable for Wahab's training set that Felix resegmented
+
+    :param mask_path: Path to the mask
+    :returns: Path to the directory holding the images
+
+    """
+    match = re.match(r"\(FB\)(\d+)_0000.labels.tif", mask_path.name)
+    if not match:
+        raise ValueError(
+            f"Mask path {mask_path.name} does not match (FB)XXX_0000.labels.tif"
+        )
+
+    return (
+        rdsf_dir(config)
+        / util.config()["2d_scan_dir"]
+        / match.group(1)
+        / "reconstructed_tifs"
+    )
 
 
 def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:

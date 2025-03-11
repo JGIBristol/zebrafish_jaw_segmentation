@@ -4,13 +4,14 @@
 # Directories where the masks are read from on the RDSF
 # Relative to the RDSF mount point
 label_dirs:
- - "1Felix and Rich make models/Training dataset Tiffs/Training set 1"
+ - "1Felix and Rich make models/Training dataset Tiffs/Training set 4 (Wahab resegmented by felix)"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
  - "1Felix and Rich make models/Training dataset Tiffs/Training set 3 (base of jaw)"
 
 ct_scan_dir: "1Felix and Rich make models/wahabs_scans"
 felix_labels_dir_2: "1Felix and Rich make models/Training dataset Tiffs/Training set 2"
 wahab_labels_dir: "1Felix and Rich make models/Training dataset Tiffs/Training set 1"
+2d_scan_dir: "DATABASE/uCT/Wahab_clean_dataset/low_res_clean_v3/"
 
 # Where random stuff from the scripts should go, relative to the root of the repository
 script_output: "script_output/"
