@@ -148,6 +148,22 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     ds.save_as(out_path, write_like_original=False)
 
 
+def _get_n(label_path: pathlib.Path) -> int:
+    """
+    Get the fish number from the label path
+
+    """
+    parent = label_path.parent.name
+    stem = label_path.stem
+    if "Wahab resegmented by felix" in parent:
+        # For training set 4 (Wahab's one), read it from the filename and convert
+        # to the new_n scheme
+        old_n = int(stem[4:].split("_")[0])
+
+    # The first number in the filename for training sets 2 and 3
+    return int(stem.split(".")[0][3:])
+
+
 def create_dicoms(
     config: dict[str, Any],
     dir_index: int,
@@ -174,7 +190,7 @@ def create_dicoms(
     # This will be a list of directories for the 2D images and a list of files for the 3D images
     img_paths = (
         [files.get_2d_tif_dir(config, label_path) for label_path in label_paths]
-        if not dir_index
+        if dir_index == 2
         else [files.get_3d_tif(label_path) for label_path in label_paths]
     )
 
@@ -227,14 +243,14 @@ def main(dry_run: bool):
     # Training set 2 - Felix's segmented images
     create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
 
-    # Some might be duplicated between the different sets; we only want
-    # "Training set 3 - Felix's segmented rear jaw only" images
-    # So exclude the duplicates
+    # Training set 3 - Felix's segmented rear jaw only
+    # Some might be duplicated between the different sets
+    # So exclude the duplicates here
     create_dicoms(
         config, 1, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
 
-    # Felix's resegmentations from Wahab's images
+    # Felix's resegmentations from Wahab's images - should be no duplicates
     create_dicoms(config, 2, dry_run, ignore=files.broken_dicoms())
 
 
