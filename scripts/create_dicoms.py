@@ -214,7 +214,7 @@ def create_dicoms(
             print(f"Skipping {label_path}, fish number in ignore set")
             continue
 
-        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
+        dicom_path = dicom_dir / f"{n}_{img_path.name.replace('.tif', '.dcm')}"
 
         if dicom_path.exists():
             print(f"Skipping {dicom_path}, already exists")
