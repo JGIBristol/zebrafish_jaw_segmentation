@@ -51,17 +51,16 @@ class Dicom:
 
     image_path: pathlib.Path
     label_path: pathlib.Path
-    binarise: bool
 
     def __post_init__(self):
         self.label = tifffile.imread(self.label_path)
-        if self.binarise:
-            # These are the jaw labels that Wahab used
-            self.label[np.isin(self.label, [2, 3])] = 1
-            # These are the quadrate labels that Wahab used
-            self.label[np.isin(self.label, [4, 5])] = 0
 
-        self.image = tifffile.imread(self.image_path)
+        # If we've been passed a directory, stack the images inside it
+        self.image = (
+            tifffile.imread(self.image_path)
+            if self.image_path.is_file()
+            else self._stack_files()
+        )
 
         if self.image.shape != self.label.shape:
             raise ValueError(
@@ -72,6 +71,20 @@ class Dicom:
             raise ValueError(f"Label must be binary, got {np.unique(self.label)}")
 
         self.fish_label = self.image_path.name.split(".")[0]
+
+    def _stack_files(self) -> np.typing.NDArray:
+        """
+        Given a directory holding image files, return a stacked tiff
+
+        """
+        imgs = [
+            tifffile.imread(img)
+            for img in tqdm(
+                sorted(self.image_path.glob("*.tiff")),
+                desc=f"Reading from {self.image_path}",
+            )
+        ]
+        return np.stack(imgs, axis=0)
 
 
 def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
@@ -141,7 +154,6 @@ def create_dicoms(
     dry_run: bool,
     *,
     ignore: set[int] | None = None,
-    binarise: bool = False,
 ) -> None:
     """
     Create DICOMs from images and segmentation masks
@@ -187,7 +199,7 @@ def create_dicoms(
         else:
             try:
                 # These contain different labels for the different bones
-                dicom = Dicom(img_path, label_path, binarise=binarise)
+                dicom = Dicom(img_path, label_path)
             except ValueError as e:
                 print(f"Skipping {img_path} and {label_path}: {e}")
                 continue
@@ -203,17 +215,19 @@ def main(dry_run: bool):
     config = util.userconf()
 
     # Training set 1 - Wahaab's segmented images
-    create_dicoms(config, 0, dry_run, binarise=True, ignore=files.broken_dicoms())
+    create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
 
     # Training set 2 - Felix's segmented images
     create_dicoms(config, 1, dry_run, ignore=files.broken_dicoms())
 
     # Some might be duplicated between the different sets; we only want
-    # Training set 3 - Felix's segmented rear jaw only images
-    # Exclude the duplicates
+    # "Training set 3 - Felix's segmented rear jaw only" images
+    # So exclude the duplicates
     create_dicoms(
         config, 2, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
+
+    create_dicoms(config, 3, dry_run, ignore=files.broken_dicoms())
 
 
 if __name__ == "__main__":
