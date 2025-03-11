@@ -118,7 +118,7 @@ def dicom_paths(
     return retval
 
 
-def image_path(mask_path: pathlib.Path) -> pathlib.Path:
+def get_3d_tif(mask_path: pathlib.Path) -> pathlib.Path:
     """
     Get the path to the corresponding image for a mask.
     These both live on the RDSF, so we just need to replace some directories with

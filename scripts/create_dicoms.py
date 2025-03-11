@@ -171,7 +171,7 @@ def create_dicoms(
         raise ValueError(f"No images found in {label_dir}")
 
     # Get paths to the images
-    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    img_paths = [files.get_3d_tif(label_path) for label_path in label_paths]
 
     # Create the directory to store the DICOMs
     dicom_dir = files.dicom_dirs(config)[dir_index]
