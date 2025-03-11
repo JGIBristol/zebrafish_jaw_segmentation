@@ -171,7 +171,12 @@ def create_dicoms(
         raise ValueError(f"No images found in {label_dir}")
 
     # Get paths to the images
-    img_paths = [files.get_3d_tif(label_path) for label_path in label_paths]
+    # This will be a list of directories for the 2D images and a list of files for the 3D images
+    img_paths = (
+        [files.get_2d_tif_dir(config, label_path) for label_path in label_paths]
+        if not dir_index
+        else [files.get_3d_tif(label_path) for label_path in label_paths]
+    )
 
     # Create the directory to store the DICOMs
     dicom_dir = files.dicom_dirs(config)[dir_index]
@@ -211,10 +216,15 @@ def main(dry_run: bool):
     """
     Get the images and labels, create DICOM files and save them to disk
 
+    This is a pretty ugly function that passes an index around, instead of anything more
+    intuitive, but its ok as long as you can match up the index here (0, 1, 2) with the
+    name of the directories that we're reading from (in config.yml) and the ones we're
+    writing to (in userconf.yml).
+
     """
     config = util.userconf()
 
-    # Training set 1 - Wahaab's segmented images
+    # Felix's resegmentations from Wahab's images
     create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
 
     # Training set 2 - Felix's segmented images
@@ -226,8 +236,6 @@ def main(dry_run: bool):
     create_dicoms(
         config, 2, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
-
-    create_dicoms(config, 3, dry_run, ignore=files.broken_dicoms())
 
 
 if __name__ == "__main__":
