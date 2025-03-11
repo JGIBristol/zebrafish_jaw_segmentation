@@ -4,10 +4,12 @@ Stuff for manipulating files
 """
 
 import re
-import warnings
-
 import pathlib
+import warnings
 from typing import Any
+from functools import cache
+
+import pandas as pd
 
 from . import util
 
@@ -244,3 +246,22 @@ def broken_dicoms() -> set[int]:
     )
 
     return set(util.config()["broken_ids"])
+
+
+@cache
+def _mastersheet() -> pd.DataFrame:
+    """
+    Read the location of the jaw centres from file
+
+    """
+    csv_path = pathlib.Path(__file__).parents[2] / "data" / "uCT_mastersheet.csv"
+    return pd.read_csv(csv_path)
+
+
+def oldn2newn() -> dict[int, int]:
+    """
+    Get the mapping from old fish numbers to new fish numbers
+
+    """
+    df = _mastersheet()
+    return pd.Series(df["old_n"].values, index=df["n"]).to_dict()
