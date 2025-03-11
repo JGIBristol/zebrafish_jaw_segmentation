@@ -258,6 +258,7 @@ def _mastersheet() -> pd.DataFrame:
     return pd.read_csv(csv_path)
 
 
+@cache
 def oldn2newn() -> dict[int, int]:
     """
     Get the mapping from old fish numbers to new fish numbers

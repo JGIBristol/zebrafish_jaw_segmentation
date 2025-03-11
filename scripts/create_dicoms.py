@@ -159,6 +159,7 @@ def _get_n(label_path: pathlib.Path) -> int:
         # For training set 4 (Wahab's one), read it from the filename and convert
         # to the new_n scheme
         old_n = int(stem[4:].split("_")[0])
+        return files.oldn2newn()[old_n]
 
     # The first number in the filename for training sets 2 and 3
     return int(stem.split(".")[0][3:])
@@ -175,6 +176,9 @@ def create_dicoms(
     Create DICOMs from images and segmentation masks
 
     """
+    if ignore is None:
+        ignore = set()
+
     # Get paths to the labels
     label_dir = config["rdsf_dir"] / pathlib.Path(
         util.config()["label_dirs"][dir_index]
@@ -205,7 +209,8 @@ def create_dicoms(
         if not img_path.exists():
             raise RuntimeError(f"Image at {img_path} not found, but {label_path} was")
 
-        if ignore and int(label_path.stem.split(".")[0][3:]) in ignore:
+        n = _get_n(label_path)
+        if n in ignore:
             print(f"Skipping {label_path}, fish number in ignore set")
             continue
 
