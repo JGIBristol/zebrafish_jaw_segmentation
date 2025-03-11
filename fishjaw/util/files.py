@@ -50,7 +50,9 @@ def dicom_dirs(config: dict[str, Any]) -> list[pathlib.Path]:
     return [pathlib.Path(dicom_dir) for dicom_dir in config["dicom_dirs"]]
 
 
-def dicom_paths(config: dict[str, Any], mode: str) -> list[pathlib.Path]:
+def dicom_paths(
+    config: dict[str, Any], mode: str, verbose: bool = False
+) -> list[pathlib.Path]:
     """
     Get the paths to the DICOMs used for either training, validation or testing
 
@@ -65,6 +67,11 @@ def dicom_paths(config: dict[str, Any], mode: str) -> list[pathlib.Path]:
         raise ValueError(
             f"mode must be one of 'train', 'test', 'val' or 'all', not {mode}"
         )
+
+    if verbose:
+        print(f"Reading {mode} DICOMs from dirs:")
+        for dicom_dir in dicom_dirs(config):
+            print(f"-\t{dicom_dir}")
 
     all_dicoms = [
         dicom for directory in dicom_dirs(config) for dicom in directory.glob("*.dcm")

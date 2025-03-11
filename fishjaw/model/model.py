@@ -153,8 +153,8 @@ def model_params(in_params: dict[str, Any]) -> dict[str, Any]:
     # This might cause a lookup error, because I changed the config
     # at some point so if you try to load in an old model with this function it'll break
     try:
-        # Get the number of channels for each layer by finding the number channels in the first layer
-        # and then doing some maths
+        # Get the number of channels for each layer by finding the number channels in the
+        # first layer and then doing some maths
         out_params["channels"] = channels(
             in_params["n_layers"], in_params["n_initial_channels"]
         )
