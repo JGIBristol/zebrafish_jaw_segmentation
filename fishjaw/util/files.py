@@ -265,4 +265,4 @@ def oldn2newn() -> dict[int, int]:
 
     """
     df = _mastersheet()
-    return pd.Series(df["old_n"].values, index=df["n"]).to_dict()
+    return pd.Series(df["n"].values, index=df["old_n"]).to_dict()
