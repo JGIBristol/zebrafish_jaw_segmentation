@@ -22,15 +22,10 @@ duplicate_ids:
  - 39
 
 broken_ids:
-# i'm having trouble with converting these from 2d stacks to 3d
- - 351
- - 401
- - 420
- - 441
-# The masks look incomplete here
- - 92
- - 90
- - 69
- - 36
-# This one has a ton of noise and the file is corrupted
+# The label and image shape don't match up here (training set 2)
  - 166
+# The label tiffs here are broken (training set 3), so we need to remove them
+ - 36
+ - 69
+ - 90
+ - 92

@@ -251,12 +251,14 @@ def main(dry_run: bool):
     # Training set 3 - Felix's segmented rear jaw only
     # Some might be duplicated between the different sets
     # So exclude the duplicates here
+    # Also, some of the shapes don't match up with the labels, so exclude those too
     create_dicoms(
         config, 1, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
 
+    # Training set 4
     # Felix's resegmentations from Wahab's images - should be no duplicates
-    create_dicoms(config, 2, dry_run, ignore=files.broken_dicoms())
+    create_dicoms(config, 2, dry_run)
 
 
 if __name__ == "__main__":
