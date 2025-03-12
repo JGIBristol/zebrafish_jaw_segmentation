@@ -266,3 +266,11 @@ def oldn2newn() -> dict[int, int]:
     """
     df = _mastersheet()
     return pd.Series(df["n"].values, index=df["old_n"]).to_dict()
+
+
+def dicompath_n(dicom_path: pathlib.Path) -> int:
+    """
+    Get the fish number from a DICOM path
+
+    """
+    return int(dicom_path.stem.split("_", maxsplit=1)[-1])
