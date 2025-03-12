@@ -51,17 +51,16 @@ class Dicom:
 
     image_path: pathlib.Path
     label_path: pathlib.Path
-    binarise: bool
 
     def __post_init__(self):
         self.label = tifffile.imread(self.label_path)
-        if self.binarise:
-            # These are the jaw labels that Wahab used
-            self.label[np.isin(self.label, [2, 3])] = 1
-            # These are the quadrate labels that Wahab used
-            self.label[np.isin(self.label, [4, 5])] = 0
 
-        self.image = tifffile.imread(self.image_path)
+        # If we've been passed a directory, stack the images inside it
+        self.image = (
+            tifffile.imread(self.image_path)
+            if self.image_path.is_file()
+            else self._stack_files()
+        )
 
         if self.image.shape != self.label.shape:
             raise ValueError(
@@ -72,6 +71,20 @@ class Dicom:
             raise ValueError(f"Label must be binary, got {np.unique(self.label)}")
 
         self.fish_label = self.image_path.name.split(".")[0]
+
+    def _stack_files(self) -> np.typing.NDArray:
+        """
+        Given a directory holding image files, return a stacked tiff
+
+        """
+        imgs = [
+            tifffile.imread(img)
+            for img in tqdm(
+                sorted(self.image_path.glob("*.tiff")),
+                desc=f"Reading from {self.image_path}",
+            )
+        ]
+        return np.stack(imgs, axis=0)
 
 
 def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
@@ -135,18 +148,37 @@ def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
     ds.save_as(out_path, write_like_original=False)
 
 
+def _get_n(label_path: pathlib.Path) -> int:
+    """
+    Get the fish number from the label path
+
+    """
+    parent = label_path.parent.name
+    stem = label_path.stem
+    if "Wahab resegmented by felix" in parent:
+        # For training set 4 (Wahab's one), read it from the filename and convert
+        # to the new_n scheme
+        old_n = int(stem[4:].split("_")[0])
+        return files.oldn2newn()[old_n]
+
+    # The first number in the filename for training sets 2 and 3
+    return int(stem.split(".")[0][3:])
+
+
 def create_dicoms(
     config: dict[str, Any],
     dir_index: int,
     dry_run: bool,
     *,
     ignore: set[int] | None = None,
-    binarise: bool = False,
 ) -> None:
     """
     Create DICOMs from images and segmentation masks
 
     """
+    if ignore is None:
+        ignore = set()
+
     # Get paths to the labels
     label_dir = config["rdsf_dir"] / pathlib.Path(
         util.config()["label_dirs"][dir_index]
@@ -159,7 +191,12 @@ def create_dicoms(
         raise ValueError(f"No images found in {label_dir}")
 
     # Get paths to the images
-    img_paths = [files.image_path(label_path) for label_path in label_paths]
+    # This will be a list of directories for the 2D images and a list of files for the 3D images
+    img_paths = (
+        [files.get_2d_tif_dir(config, label_path) for label_path in label_paths]
+        if dir_index == 2
+        else [files.get_3d_tif(label_path) for label_path in label_paths]
+    )
 
     # Create the directory to store the DICOMs
     dicom_dir = files.dicom_dirs(config)[dir_index]
@@ -172,11 +209,12 @@ def create_dicoms(
         if not img_path.exists():
             raise RuntimeError(f"Image at {img_path} not found, but {label_path} was")
 
-        if ignore and int(label_path.stem.split(".")[0][3:]) in ignore:
+        n = _get_n(label_path)
+        if n in ignore:
             print(f"Skipping {label_path}, fish number in ignore set")
             continue
 
-        dicom_path = dicom_dir / img_path.name.replace(".tif", ".dcm")
+        dicom_path = dicom_dir / f"{n}.dcm"
 
         if dicom_path.exists():
             print(f"Skipping {dicom_path}, already exists")
@@ -187,7 +225,7 @@ def create_dicoms(
         else:
             try:
                 # These contain different labels for the different bones
-                dicom = Dicom(img_path, label_path, binarise=binarise)
+                dicom = Dicom(img_path, label_path)
             except ValueError as e:
                 print(f"Skipping {img_path} and {label_path}: {e}")
                 continue
@@ -199,21 +237,28 @@ def main(dry_run: bool):
     """
     Get the images and labels, create DICOM files and save them to disk
 
+    This is a pretty ugly function that passes an index around, instead of anything more
+    intuitive, but its ok as long as you can match up the index here (0, 1, 2) with the
+    name of the directories that we're reading from (in config.yml) and the ones we're
+    writing to (in userconf.yml).
+
     """
     config = util.userconf()
 
-    # Training set 1 - Wahaab's segmented images
-    create_dicoms(config, 0, dry_run, binarise=True, ignore=files.broken_dicoms())
-
     # Training set 2 - Felix's segmented images
-    create_dicoms(config, 1, dry_run, ignore=files.broken_dicoms())
+    create_dicoms(config, 0, dry_run, ignore=files.broken_dicoms())
 
-    # Some might be duplicated between the different sets; we only want
-    # Training set 3 - Felix's segmented rear jaw only images
-    # Exclude the duplicates
+    # Training set 3 - Felix's segmented rear jaw only
+    # Some might be duplicated between the different sets
+    # So exclude the duplicates here
+    # Also, some of the shapes don't match up with the labels, so exclude those too
     create_dicoms(
-        config, 2, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
+        config, 1, dry_run, ignore=files.duplicate_dicoms() | files.broken_dicoms()
     )
+
+    # Training set 4
+    # Felix's resegmentations from Wahab's images - should be no duplicates
+    create_dicoms(config, 2, dry_run)
 
 
 if __name__ == "__main__":

@@ -3,10 +3,13 @@ Stuff for manipulating files
 
 """
 
-import warnings
-
+import re
 import pathlib
+import warnings
 from typing import Any
+from functools import cache
+
+import pandas as pd
 
 from . import util
 
@@ -118,7 +121,7 @@ def dicom_paths(
     return retval
 
 
-def image_path(mask_path: pathlib.Path) -> pathlib.Path:
+def get_3d_tif(mask_path: pathlib.Path) -> pathlib.Path:
     """
     Get the path to the corresponding image for a mask.
     These both live on the RDSF, so we just need to replace some directories with
@@ -140,6 +143,29 @@ def image_path(mask_path: pathlib.Path) -> pathlib.Path:
     # the label_dirs to somewhere deeper/shallower on the RDSF, then it'll break,
     # but hopefully that won't happen
     return mask_path.parents[3] / util.config()["ct_scan_dir"] / file_name
+
+
+def get_2d_tif_dir(config: dict[str, str], mask_path: pathlib.Path) -> pathlib.Path:
+    """
+    Get the path to the directory holding the corresponding images for a mask.
+    This is applicable for Wahab's training set that Felix resegmented
+
+    :param mask_path: Path to the mask
+    :returns: Path to the directory holding the images
+
+    """
+    match = re.match(r"\(FB\)(\d+)_0000.labels.tif", mask_path.name)
+    if not match:
+        raise ValueError(
+            f"Mask path {mask_path.name} does not match (FB)XXX_0000.labels.tif"
+        )
+
+    return (
+        rdsf_dir(config)
+        / util.config()["2d_scan_dir"]
+        / match.group(1)
+        / "reconstructed_tifs"
+    )
 
 
 def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
@@ -220,3 +246,31 @@ def broken_dicoms() -> set[int]:
     )
 
     return set(util.config()["broken_ids"])
+
+
+@cache
+def _mastersheet() -> pd.DataFrame:
+    """
+    Read the location of the jaw centres from file
+
+    """
+    csv_path = pathlib.Path(__file__).parents[2] / "data" / "uCT_mastersheet.csv"
+    return pd.read_csv(csv_path)
+
+
+@cache
+def oldn2newn() -> dict[int, int]:
+    """
+    Get the mapping from old fish numbers to new fish numbers
+
+    """
+    df = _mastersheet()
+    return pd.Series(df["n"].values, index=df["old_n"]).to_dict()
+
+
+def dicompath_n(dicom_path: pathlib.Path) -> int:
+    """
+    Get the fish number from a DICOM path
+
+    """
+    return int(dicom_path.stem.split("_", maxsplit=1)[-1])

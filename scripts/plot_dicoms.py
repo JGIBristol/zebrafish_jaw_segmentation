@@ -27,8 +27,7 @@ def plot_dicom(
 
     # Optionally crop
     if window_size is not None:
-        # Extract N from the filename
-        n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+        n = files.dicompath_n(dicom_path)
 
         centre = transform.centre(n)
         around_centre = transform.around_centre(n)

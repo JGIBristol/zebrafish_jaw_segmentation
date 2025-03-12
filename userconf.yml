@@ -5,10 +5,13 @@
 rdsf_dir: "/home/mh19137/zebrafish_rdsf/"
 
 # Where the DICOMs are stored - this is where the training data lives
+# These should probably reflect the directories in the label_dirs section of config.yml
+# since these are the directories that the masks are read from
+# The create_dicoms.py script creates these
 dicom_dirs:
-  # - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 1/"
   - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 2/"
   - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 3 (base of jaw)/"
+  - "/home/mh19137/zebrafish_jaw_segmentation/dicoms/Training set 4 (Wahab resegmented by felix)/"
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
