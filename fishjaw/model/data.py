@@ -181,7 +181,7 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
     image, mask = io.read_dicom(dicom_path)
 
     # Find the co-ords and how to crop- either use this as the centre, or from the Z provided
-    n = int(dicom_path.stem.split("_", maxsplit=1)[-1])
+    n = files.dicompath_n(dicom_path)
     crop_coords = transform.centre(n)
     around_centre = transform.around_centre(n)
 
