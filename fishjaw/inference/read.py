@@ -30,15 +30,15 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
         120: (1595, 398, 251),  # 10month wt giantin giantin sib
         37: (1746, 405, 431),  # 7month wt wt col2:mcherry
         97: (1435, 174, 269),  # 36 month wt wt wnt:gfp col2a1:mch
-        344: (0, 0, 0),  # wt,wt
+        5: (1768, 281, 374),  # wt,wt
+        6: (1751, 476, 476),  # wt,wt
+        7: (1600, 415, 274),  # wt,wt
+        344: (1626, 357, 397),  # wt,wt
         345: (0, 0, 0),  # wt,wt
         346: (0, 0, 0),  # wt,wt
         317: (0, 0, 0),  # wt,tert
         318: (0, 0, 0),  # wt,tert
         319: (0, 0, 0),  # wt,tert
-        5: (0, 0, 0),  # wt,wt
-        6: (0, 0, 0),  # wt,wt
-        7: (0, 0, 0),  # wt,wt
         414: (0, 0, 0),  # wt,wt
         415: (0, 0, 0),  # wt,wt
         416: (0, 0, 0),  # wt,wt
