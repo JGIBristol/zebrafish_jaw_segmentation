@@ -15,7 +15,7 @@ dicom_dirs:
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
-model_path: "without_wahab.pkl"
+model_path: "new_jaws.pkl"
 
 # Which ones to use for testing and validation
 # all the others will be used for testing
