@@ -6,6 +6,7 @@ Plot summary stats for the training, testing and validation data
 import pathlib
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from fishjaw.util import files, util
 from fishjaw.images.transform import jaw_centres
@@ -53,6 +54,18 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
             .to_markdown()
         )
         print(end_str)
+
+        # Plot a histogram of ages in training set
+        fig, axes = plt.subplots(1, 1, figsize=(8, 8))
+        df_slice["age"].hist(ax=axes, bins=[0.5 + x for x in range(0, 37)])
+        axes.grid(False)
+        axes.set_title("Age distribution in training set")
+        axes.set_xlabel("Age (months)")
+        fig.tight_layout()
+        out_dir = files.boring_script_out_dir() / "train_data"
+        if not out_dir.exists():
+            out_dir.mkdir(parents=True)
+        fig.savefig(out_dir / f"age_distribution_{label}.png")
 
 
 def main():
