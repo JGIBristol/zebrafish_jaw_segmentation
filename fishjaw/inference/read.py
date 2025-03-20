@@ -7,7 +7,9 @@ import pickle
 import pathlib
 
 import torch
+import pydicom
 import tifffile
+import numpy as np
 import torchio as tio
 
 from fishjaw.util import files
@@ -45,6 +47,30 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
     }
 
 
+def _ct_scan_array(config: dict, img_n: int) -> np.NDArray:
+    """
+    Get the CT scan of choice as a greyscale numpy array.
+
+    This will be read from the 3D TIFS if possible, otherwise
+    will be read from the DICOMs.
+
+    :param config: configuration, as might be read from userconf.yml
+    :param img_n: the image number to read - reads from Wahab's 3D tiff files
+
+    :returns: the image
+
+    """
+    try:
+        img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"{img_n}.tif")
+    except FileNotFoundError:
+        dicom = pydicom.dcmread(files.wahab_dicoms_dir(config) / f"ak_{img_n}.dcm")
+        # Assume that this is the convention; its the default...
+        dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+        img = dicom.pixel_array
+
+    return img
+
+
 def inference_subject(config: dict, img_n: int) -> tio.Subject:
     """
     Read the image of choice and turn it into a Subject, cropping it according
@@ -56,7 +82,7 @@ def inference_subject(config: dict, img_n: int) -> tio.Subject:
     :returns: the image as a torchio Subject
 
     """
-    img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"{img_n}.tif")
+    img = _ct_scan_array(config, img_n)
 
     img = transform.crop(
         img, crop_lookup()[img_n], transform.window_size(config), centred=True
