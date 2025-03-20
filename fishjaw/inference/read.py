@@ -36,7 +36,7 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
         6: (1751, 476, 476),  # wt,wt
         7: (1600, 415, 274),  # wt,wt
         344: (1626, 357, 397),  # wt,wt
-        345: (0, 0, 0),  # wt,wt
+        345: (1820, 322, 344),  # wt,wt
         346: (0, 0, 0),  # wt,wt
         317: (0, 0, 0),  # wt,tert
         318: (0, 0, 0),  # wt,tert
@@ -47,7 +47,7 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
     }
 
 
-def _ct_scan_array(config: dict, img_n: int) -> np.NDArray:
+def _ct_scan_array(config: dict, img_n: int) -> np.ndarray:
     """
     Get the CT scan of choice as a greyscale numpy array.
 
