@@ -28,7 +28,7 @@ def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
     turn into a gif
 
     You can turn these into an mp4 with e.g.
-    ffmpeg -framerate 12 -pattern_type glob -i 'script_output/inference/new_jaws/rotating_mesh/317/*.png' -c:v libx264 317.mp4
+    for filename in script_output/inference/new_jaws_largest_component/rotating_mesh/*; do n=`basename $filename`; ffmpeg -framerate 12 -pattern_type glob -i "script_output/inference/new_jaws_largest_component/rotating_mesh/${n}/*.png" -c:v libx264 script_output/inference/new_jaws_largest_component/${n}.mp4; done
 
     """
     plt.switch_backend("agg")
@@ -181,11 +181,13 @@ def _make_plots(
     out_dir, _ = args.model_name.split(".pkl")
     assert not _, "Model name should end with .pkl"
 
-    # Append _speckle if we're removing voxels
+    # Append bits if we're messing with things
     if args.speckle:
         out_dir += "_speckle"
     if args.splotch:
         out_dir += "_splotch"
+    if args.largest_component:
+        out_dir += "_largest_component"
 
     out_dir = files.script_out_dir() / "inference" / out_dir
     if not out_dir.exists():
@@ -220,9 +222,6 @@ def _make_plots(
     # Save the output image and prediction as slices
     fig, _ = images_3d.plot_slices(image, prediction)
 
-    if args.plot_angles:
-        rotating_plots(prediction, out_dir, args.subject)
-
     # If we're using the test data, we have access to the ground truth so can
     # work out the Dice score and stick it in the plot too
     if args.test:
@@ -244,9 +243,13 @@ def _make_plots(
     fig.savefig(out_dir / f"{prefix}_slices.png")
     plt.close(fig)
 
+    # Remove any unattached blobs
+    threshold = 0.5
+    if args.largest_component:
+        prediction = metrics.largest_connected_component(prediction > threshold)
+
     # Save the mesh
     if args.mesh:
-        threshold = 0.5
         print("Saving predicted mesh")
         _save_mesh(prediction, prefix, threshold, out_dir)
 
@@ -256,6 +259,9 @@ def _make_plots(
             thresholded = prediction > threshold
             _save_test_meshes(thresholded, truth, out_dir)
 
+    if args.plot_angles:
+        rotating_plots(prediction, out_dir, args.subject)
+
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
     """
@@ -263,7 +269,7 @@ def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> 
 
     """
     # Find which activation function to use from the config file
-    # This assumes this was the same activation function used during training...
+    # This was the config file used at training time, so we know its the right one
     activation = model.activation_name(config)
 
     # Either iterate over all subjects or just do the one
@@ -284,6 +290,11 @@ def main(args):
     """
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
+
+    if args.largest_component and not (args.mesh or args.plot_angles):
+        raise ValueError(
+            "--largest_component has no effect without --mesh or --plot_angles"
+        )
 
     # If we're doing the splotch thing, we need to have an rng
     if args.splotch:
@@ -342,6 +353,11 @@ if __name__ == "__main__":
         "--splotch",
         help="Make the segmentation worse by adding random blobs of noise to the prediction"
         "(to illustrate the effect on our metrics)",
+        action="store_true",
+    )
+    group.add_argument(
+        "--largest_component",
+        help="Keep only the largest connected component for mesh and angle plots.",
         action="store_true",
     )
 
