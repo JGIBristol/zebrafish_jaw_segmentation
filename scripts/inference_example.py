@@ -5,11 +5,13 @@ Perform inference on an out-of-sample subject
 
 import pathlib
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import torch
 import tifffile
 import numpy as np
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
@@ -17,6 +19,53 @@ from fishjaw.model import model, data
 from fishjaw.images import metrics, transform
 from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
+
+
+def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
+    """
+    Save an lots of images of a rotating mesh, which we can then
+    turn into a gif
+
+    """
+    plot_dir = out_dir / "rotating_mesh" / f"{img_n}"
+    if not plot_dir.exists():
+        plot_dir.mkdir(parents=True)
+
+    def plot_proj(enum_angles):
+        """Helper fcn to change the rotation of a plot"""
+        i, angles = enum_angles
+        axis.view_init(*angles)
+        fig.savefig(f"{plot_dir}/mesh_{i:03}.png")
+        return i
+
+    # Make a scatter plot of the mask
+    fig = plt.figure()
+    axis = fig.add_subplot(projection="3d")
+    co_ords = np.argwhere(mask > 0.5)
+    axis.scatter(
+        co_ords[:, 0],
+        co_ords[:, 1],
+        co_ords[:, 2],
+        c=co_ords[:, 2],
+        cmap="copper",
+        alpha=0.5,
+    )
+    axis.axis("off")
+
+    # Plot the mesh at various angles
+    num_frames = 108
+    azimuths = np.linspace(-90, 270, num_frames, endpoint=False)
+    elevations = list(np.linspace(-90, 90, num_frames // 2)) + list(
+        np.linspace(90, -90, num_frames // 2)
+    )
+    rolls = np.linspace(0, 360, num_frames, endpoint=False)
+
+    angles = list(enumerate(zip(azimuths, elevations, rolls)))
+
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        futures = [executor.submit(plot_proj, angle) for angle in angles]
+        for _ in tqdm(as_completed(futures), total=len(angles)):
+            pass
 
 
 def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
@@ -162,6 +211,9 @@ def _make_plots(
     # Save the output image and prediction as slices
     fig, _ = images_3d.plot_slices(image, prediction)
 
+    if args.plot_angles:
+        rotating_plots(prediction, out_dir, args.subject)
+
     # If we're using the test data, we have access to the ground truth so can
     # work out the Dice score and stick it in the plot too
     if args.test:
@@ -261,6 +313,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--mesh", help="Save the mesh", action="store_true")
+    parser.add_argument(
+        "--plot_angles",
+        help="Plot lots of pngs of the segmentation at various angles",
+        action="store_true",
+    )
     parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
