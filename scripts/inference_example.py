@@ -5,6 +5,7 @@ Perform inference on an out-of-sample subject
 
 import pathlib
 import argparse
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import torch
@@ -26,7 +27,13 @@ def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
     Save an lots of images of a rotating mesh, which we can then
     turn into a gif
 
+    You can turn these into an mp4 with e.g.
+    ffmpeg -framerate 12 -pattern_type glob -i 'script_output/inference/new_jaws/rotating_mesh/317/*.png' -c:v libx264 317.mp4
+
     """
+    plt.switch_backend("agg")
+    plt_lock = threading.Lock()
+
     plot_dir = out_dir / "rotating_mesh" / f"{img_n}"
     if not plot_dir.exists():
         plot_dir.mkdir(parents=True)
@@ -35,7 +42,9 @@ def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
         """Helper fcn to change the rotation of a plot"""
         i, angles = enum_angles
         axis.view_init(*angles)
-        fig.savefig(f"{plot_dir}/mesh_{i:03}.png")
+        with plt_lock:
+            fig.savefig(f"{plot_dir}/mesh_{i:03}.png")
+            plt.close(fig)
         return i
 
     # Make a scatter plot of the mask
@@ -62,7 +71,7 @@ def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
 
     angles = list(enumerate(zip(azimuths, elevations, rolls)))
 
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(plot_proj, angle) for angle in angles]
         for _ in tqdm(as_completed(futures), total=len(angles)):
             pass
@@ -135,10 +144,10 @@ def _save_test_meshes(
     plot_meshes.projections(
         axes,
         prediction_mesh,
-        plot_kw={"alpha": 0.2, "color": "blue", "label": "Prediction"},
+        plot_kw={"alpha": 0.3, "color": "blue", "label": "Prediction"},
     )
     plot_meshes.projections(
-        axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Truth"}
+        axes, truth_mesh, plot_kw={"alpha": 0.2, "color": "red", "label": "Truth"}
     )
 
     # Indicate Hausdorff distance
