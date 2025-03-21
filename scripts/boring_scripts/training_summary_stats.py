@@ -70,7 +70,7 @@ def _print_info(
 
             # Get N from the name
             training_set_n = path.name.split("Training set ", maxsplit=1)[1]
-            training_set_n = training_set_n.split(" ", maxsplit=1)[0]
+            training_set_n = int(training_set_n.split(" ", maxsplit=1)[0])
 
             mapping[training_set_n] = _n_from_paths(list(path.glob("*.dcm")))
 
@@ -80,8 +80,11 @@ def _print_info(
                 if n in v:
                     return k
             return "Unknown"
-
         df_slice["training_set"] = df_slice.index.map(get_training_set)
+
+        # Mark whether they're whole jaws
+        df_slice["full_jaws"] = df_slice["training_set"] != 3
+        print(df_slice)
 
         # Plot a histogram of ages in training set
         fig, axes = plt.subplots(1, 1, figsize=(8, 8))
