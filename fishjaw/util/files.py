@@ -179,6 +179,16 @@ def wahab_3d_tifs_dir(config: dict[str, Any]) -> pathlib.Path:
     return rdsf_dir(config) / util.config()["ct_scan_dir"]
 
 
+def wahab_dicoms_dir(config: dict[str, Any]) -> pathlib.Path:
+    """
+    Get the directory where Wahab's DICOMs are stored
+
+    :param config: the configuration, e.g. from userconf.yml
+    :returns: Path to the directory
+    """
+    return rdsf_dir(config) / util.config()["wahab_dicom_dir"]
+
+
 def model_path(config: dict[str, Any]) -> pathlib.Path:
     """
     Get the path to the cached model, as created by scripts/train_model.py

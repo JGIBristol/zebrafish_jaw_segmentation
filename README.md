@@ -104,6 +104,16 @@ Perform inference using `inference_example.py`.
 PYTHONPATH=$(pwd) python scripts/train_model.py
 ```
 
+#### Running inference on a new fish
+I've hard coded lots of things which makes it slightly irritating to run the inference on a new fish; I haven't got around
+to making a nicer user interface for it yet.
+
+To run the inference on a new fish:
+ - Convert the CT scan to a 3d TIF if it isn't already, with filename `<n>.tif`
+ - Copy it to the "ct_scan_dir" specified in `config.yml`.
+ - Add the centre of the jaw to the dict in `fishjaw.inference.read.crop_lookup`, using `<n>` as the key
+ - run `scripts/inference.py` with `<n>` as a CLI argument
+
 ### Going further
 You can turn the voxels from the inference into a mesh by learning how to do that
 

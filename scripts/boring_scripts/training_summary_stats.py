@@ -6,6 +6,7 @@ Plot summary stats for the training, testing and validation data
 import pathlib
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from fishjaw.util import files, util
 from fishjaw.images.transform import jaw_centres
@@ -22,7 +23,12 @@ def _n_from_paths(paths: list[pathlib.Path]) -> list[int]:
     return [int(path.stem) for path in paths]
 
 
-def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
+def _print_info(
+    label: str,
+    n: list[int],
+    fish_info: pd.DataFrame,
+    dicom_dirs: list[str] | None = None,
+) -> None:
     """
     Print the fish info
 
@@ -30,6 +36,9 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
     :param fish_info: DataFrame with fish info
 
     """
+    if label == "train":
+        assert dicom_dirs is not None
+
     df_slice = fish_info[["age", "genotype", "strain"]].loc[n]
     end_str = f"{'=' * 80}\n"
 
@@ -54,6 +63,63 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
         )
         print(end_str)
 
+        # Get the training set for each fish
+        mapping = {}
+        for d in dicom_dirs:
+            path = pathlib.Path(d)
+
+            # Get N from the name
+            training_set_n = path.name.split("Training set ", maxsplit=1)[1]
+            training_set_n = int(training_set_n.split(" ", maxsplit=1)[0])
+
+            mapping[training_set_n] = _n_from_paths(list(path.glob("*.dcm")))
+
+        # Add a row to the df_slice for the training set
+        def get_training_set(n: int) -> str:
+            for k, v in mapping.items():
+                if n in v:
+                    return k
+            raise ValueError("aaa!")
+
+        df_slice["training_set"] = df_slice.index.map(get_training_set)
+
+        # Mark whether they're whole jaws
+        df_slice["full_jaws"] = df_slice["training_set"] != 3
+
+        # Plot a histogram of ages in training set
+        fig, axes = plt.subplots(1, 1, figsize=(8, 8))
+        bins = [0.5 + x for x in range(0, 37)]
+        axes.hist(
+            df_slice["age"],
+            bins=bins,
+        )
+        axes.set_title("Age distribution in training set")
+        axes.set_xlabel("Age (months)")
+        fig.tight_layout()
+        out_dir = files.boring_script_out_dir() / "train_data"
+        if not out_dir.exists():
+            out_dir.mkdir(parents=True)
+        fig.savefig(out_dir / f"age_distribution_{label}.png")
+
+        fig, axes = plt.subplots(1, 1, figsize=(8, 8))
+        axes.hist(
+            [
+                df_slice[df_slice["full_jaws"]]["age"],
+                df_slice[~df_slice["full_jaws"]]["age"],
+            ],
+            bins=bins,
+            stacked=True,
+            label=["Whole Jaws", "Jaw Joint Only"],
+        )
+        axes.set_title("Age distribution in training set")
+        axes.set_xlabel("Age (months)")
+        axes.legend()
+        fig.tight_layout()
+        out_dir = files.boring_script_out_dir() / "train_data"
+        if not out_dir.exists():
+            out_dir.mkdir(parents=True)
+        fig.savefig(out_dir / f"age_distribution_stacked_{label}.png")
+
 
 def main():
     """
@@ -72,9 +138,9 @@ def main():
 
     _print_info("val", val, fish_info)
     _print_info("test", test, fish_info)
-    _print_info("train", train, fish_info)
+    _print_info("train", train, fish_info, config["dicom_dirs"])
 
-    # Value counts for mutations
+    # TODO Value counts for mutations
 
 
 if __name__ == "__main__":

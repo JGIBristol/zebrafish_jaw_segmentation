@@ -5,11 +5,14 @@ Perform inference on an out-of-sample subject
 
 import pathlib
 import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import torch
 import tifffile
 import numpy as np
 import torchio as tio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
@@ -17,6 +20,61 @@ from fishjaw.model import model, data
 from fishjaw.images import metrics, transform
 from fishjaw.visualisation import images_3d, plot_meshes
 from fishjaw.inference import read, mesh
+
+
+def rotating_plots(mask: np.ndarray, out_dir: pathlib.Path, img_n: int) -> None:
+    """
+    Save an lots of images of a rotating mesh, which we can then
+    turn into a gif
+
+    You can turn these into an mp4 with e.g.
+    for filename in script_output/inference/new_jaws_largest_component/rotating_mesh/*; do n=`basename $filename`; ffmpeg -framerate 12 -pattern_type glob -i "script_output/inference/new_jaws_largest_component/rotating_mesh/${n}/*.png" -c:v libx264 script_output/inference/new_jaws_largest_component/${n}.mp4; done
+
+    """
+    plt.switch_backend("agg")
+    plt_lock = threading.Lock()
+
+    plot_dir = out_dir / "rotating_mesh" / f"{img_n}"
+    if not plot_dir.exists():
+        plot_dir.mkdir(parents=True)
+
+    def plot_proj(enum_angles):
+        """Helper fcn to change the rotation of a plot"""
+        i, angles = enum_angles
+        axis.view_init(*angles)
+        with plt_lock:
+            fig.savefig(f"{plot_dir}/mesh_{i:03}.png")
+            plt.close(fig)
+        return i
+
+    # Make a scatter plot of the mask
+    fig = plt.figure()
+    axis = fig.add_subplot(projection="3d")
+    co_ords = np.argwhere(mask > 0.5)
+    axis.scatter(
+        co_ords[:, 0],
+        co_ords[:, 1],
+        co_ords[:, 2],
+        c=co_ords[:, 2],
+        cmap="copper",
+        alpha=0.5,
+    )
+    axis.axis("off")
+
+    # Plot the mesh at various angles
+    num_frames = 108
+    azimuths = np.linspace(-90, 270, num_frames, endpoint=False)
+    elevations = list(np.linspace(-90, 90, num_frames // 2)) + list(
+        np.linspace(90, -90, num_frames // 2)
+    )
+    rolls = np.linspace(0, 360, num_frames, endpoint=False)
+
+    angles = list(enumerate(zip(azimuths, elevations, rolls)))
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        futures = [executor.submit(plot_proj, angle) for angle in angles]
+        for _ in tqdm(as_completed(futures), total=len(angles)):
+            pass
 
 
 def _subject(config: dict, args: argparse.Namespace) -> tio.Subject:
@@ -86,10 +144,10 @@ def _save_test_meshes(
     plot_meshes.projections(
         axes,
         prediction_mesh,
-        plot_kw={"alpha": 0.2, "color": "blue", "label": "Prediction"},
+        plot_kw={"alpha": 0.3, "color": "blue", "label": "Prediction"},
     )
     plot_meshes.projections(
-        axes, truth_mesh, plot_kw={"alpha": 0.1, "color": "grey", "label": "Truth"}
+        axes, truth_mesh, plot_kw={"alpha": 0.2, "color": "red", "label": "Truth"}
     )
 
     # Indicate Hausdorff distance
@@ -123,11 +181,13 @@ def _make_plots(
     out_dir, _ = args.model_name.split(".pkl")
     assert not _, "Model name should end with .pkl"
 
-    # Append _speckle if we're removing voxels
+    # Append bits if we're messing with things
     if args.speckle:
         out_dir += "_speckle"
     if args.splotch:
         out_dir += "_splotch"
+    if args.largest_component:
+        out_dir += "_largest_component"
 
     out_dir = files.script_out_dir() / "inference" / out_dir
     if not out_dir.exists():
@@ -183,9 +243,13 @@ def _make_plots(
     fig.savefig(out_dir / f"{prefix}_slices.png")
     plt.close(fig)
 
+    # Remove any unattached blobs
+    threshold = 0.5
+    if args.largest_component:
+        prediction = metrics.largest_connected_component(prediction > threshold)
+
     # Save the mesh
     if args.mesh:
-        threshold = 0.5
         print("Saving predicted mesh")
         _save_mesh(prediction, prefix, threshold, out_dir)
 
@@ -195,6 +259,9 @@ def _make_plots(
             thresholded = prediction > threshold
             _save_test_meshes(thresholded, truth, out_dir)
 
+    if args.plot_angles:
+        rotating_plots(prediction, out_dir, args.subject)
+
 
 def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> None:
     """
@@ -202,7 +269,7 @@ def _inference(args: argparse.Namespace, net: torch.nn.Module, config: dict) -> 
 
     """
     # Find which activation function to use from the config file
-    # This assumes this was the same activation function used during training...
+    # This was the config file used at training time, so we know its the right one
     activation = model.activation_name(config)
 
     # Either iterate over all subjects or just do the one
@@ -223,6 +290,11 @@ def main(args):
     """
     if args.subject == 247:
         raise RuntimeError("I think this one was in the training dataset...")
+
+    if args.largest_component and not (args.mesh or args.plot_angles):
+        raise ValueError(
+            "--largest_component has no effect without --mesh or --plot_angles"
+        )
 
     # If we're doing the splotch thing, we need to have an rng
     if args.splotch:
@@ -262,6 +334,11 @@ if __name__ == "__main__":
 
     parser.add_argument("--mesh", help="Save the mesh", action="store_true")
     parser.add_argument(
+        "--plot_angles",
+        help="Plot lots of pngs of the segmentation at various angles",
+        action="store_true",
+    )
+    parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
     )
@@ -276,6 +353,11 @@ if __name__ == "__main__":
         "--splotch",
         help="Make the segmentation worse by adding random blobs of noise to the prediction"
         "(to illustrate the effect on our metrics)",
+        action="store_true",
+    )
+    group.add_argument(
+        "--largest_component",
+        help="Keep only the largest connected component for mesh and angle plots.",
         action="store_true",
     )
 

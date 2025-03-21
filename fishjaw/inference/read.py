@@ -7,7 +7,9 @@ import pickle
 import pathlib
 
 import torch
+import pydicom
 import tifffile
+import numpy as np
 import torchio as tio
 
 from fishjaw.util import files
@@ -30,7 +32,43 @@ def crop_lookup() -> dict[int, tuple[int, int, int]]:
         120: (1595, 398, 251),  # 10month wt giantin giantin sib
         37: (1746, 405, 431),  # 7month wt wt col2:mcherry
         97: (1435, 174, 269),  # 36 month wt wt wnt:gfp col2a1:mch
+        5: (1768, 281, 374),  # 24 month wt,wt
+        6: (1751, 476, 476),  # 24 month wt,wt
+        7: (1600, 415, 274),  # 24 month wt,wt
+        344: (1626, 357, 397),  # 6month wt,wt
+        345: (1820, 322, 344),  # 6month wt,wt
+        346: (1558, 272, 307),  # 6month wt,wt
+        317: (1430, 378, 320),  # 6month wt,tert
+        318: (1332, 346, 401),  # 6month wt,tert
+        319: (1335, 332, 264),  # 6month wt,tert
+        415: (1733, 339, 309),  # 24month wt,wt
+        416: (1605, 358, 199),  # 24month wt,wt
+        417: (1655, 323, 374),  # 24month wt,wt
     }
+
+
+def _ct_scan_array(config: dict, img_n: int) -> np.ndarray:
+    """
+    Get the CT scan of choice as a greyscale numpy array.
+
+    This will be read from the 3D TIFS if possible, otherwise
+    will be read from the DICOMs.
+
+    :param config: configuration, as might be read from userconf.yml
+    :param img_n: the image number to read - reads from Wahab's 3D tiff files
+
+    :returns: the image
+
+    """
+    try:
+        img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"{img_n}.tif")
+    except FileNotFoundError:
+        dicom = pydicom.dcmread(files.wahab_dicoms_dir(config) / f"ak_{img_n}.dcm")
+        # Assume that this is the convention; its the default...
+        dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+        img = dicom.pixel_array
+
+    return img
 
 
 def inference_subject(config: dict, img_n: int) -> tio.Subject:
@@ -44,7 +82,7 @@ def inference_subject(config: dict, img_n: int) -> tio.Subject:
     :returns: the image as a torchio Subject
 
     """
-    img = tifffile.imread(files.wahab_3d_tifs_dir(config) / f"{img_n}.tif")
+    img = _ct_scan_array(config, img_n)
 
     img = transform.crop(
         img, crop_lookup()[img_n], transform.window_size(config), centred=True
