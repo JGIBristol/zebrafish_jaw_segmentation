@@ -79,17 +79,20 @@ def _print_info(
             for k, v in mapping.items():
                 if n in v:
                     return k
-            return "Unknown"
+            raise ValueError("aaa!")
+
         df_slice["training_set"] = df_slice.index.map(get_training_set)
 
         # Mark whether they're whole jaws
         df_slice["full_jaws"] = df_slice["training_set"] != 3
-        print(df_slice)
 
         # Plot a histogram of ages in training set
         fig, axes = plt.subplots(1, 1, figsize=(8, 8))
-        df_slice["age"].hist(ax=axes, bins=[0.5 + x for x in range(0, 37)])
-        axes.grid(False)
+        bins = [0.5 + x for x in range(0, 37)]
+        axes.hist(
+            df_slice["age"],
+            bins=bins,
+        )
         axes.set_title("Age distribution in training set")
         axes.set_xlabel("Age (months)")
         fig.tight_layout()
@@ -97,6 +100,25 @@ def _print_info(
         if not out_dir.exists():
             out_dir.mkdir(parents=True)
         fig.savefig(out_dir / f"age_distribution_{label}.png")
+
+        fig, axes = plt.subplots(1, 1, figsize=(8, 8))
+        axes.hist(
+            [
+                df_slice[df_slice["full_jaws"]]["age"],
+                df_slice[~df_slice["full_jaws"]]["age"],
+            ],
+            bins=bins,
+            stacked=True,
+            label=["Whole Jaws", "Jaw Joint Only"],
+        )
+        axes.set_title("Age distribution in training set")
+        axes.set_xlabel("Age (months)")
+        axes.legend()
+        fig.tight_layout()
+        out_dir = files.boring_script_out_dir() / "train_data"
+        if not out_dir.exists():
+            out_dir.mkdir(parents=True)
+        fig.savefig(out_dir / f"age_distribution_stacked_{label}.png")
 
 
 def main():
