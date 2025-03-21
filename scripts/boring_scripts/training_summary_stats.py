@@ -23,7 +23,12 @@ def _n_from_paths(paths: list[pathlib.Path]) -> list[int]:
     return [int(path.stem) for path in paths]
 
 
-def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
+def _print_info(
+    label: str,
+    n: list[int],
+    fish_info: pd.DataFrame,
+    dicom_dirs: list[str] | None = None,
+) -> None:
     """
     Print the fish info
 
@@ -31,6 +36,9 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
     :param fish_info: DataFrame with fish info
 
     """
+    if label == "train":
+        assert dicom_dirs is not None
+
     df_slice = fish_info[["age", "genotype", "strain"]].loc[n]
     end_str = f"{'=' * 80}\n"
 
@@ -54,6 +62,26 @@ def _print_info(label: str, n: list[int], fish_info: pd.DataFrame) -> None:
             .to_markdown()
         )
         print(end_str)
+
+        # Get the training set for each fish
+        mapping = {}
+        for d in dicom_dirs:
+            path = pathlib.Path(d)
+
+            # Get N from the name
+            training_set_n = path.name.split("Training set ", maxsplit=1)[1]
+            training_set_n = training_set_n.split(" ", maxsplit=1)[0]
+
+            mapping[training_set_n] = _n_from_paths(list(path.glob("*.dcm")))
+
+        # Add a row to the df_slice for the training set
+        def get_training_set(n: int) -> str:
+            for k, v in mapping.items():
+                if n in v:
+                    return k
+            return "Unknown"
+
+        df_slice["training_set"] = df_slice.index.map(get_training_set)
 
         # Plot a histogram of ages in training set
         fig, axes = plt.subplots(1, 1, figsize=(8, 8))
@@ -85,7 +113,7 @@ def main():
 
     _print_info("val", val, fish_info)
     _print_info("test", test, fish_info)
-    _print_info("train", train, fish_info)
+    _print_info("train", train, fish_info, config["dicom_dirs"])
 
     # TODO Value counts for mutations
 
