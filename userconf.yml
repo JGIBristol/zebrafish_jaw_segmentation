@@ -15,7 +15,7 @@ dicom_dirs:
 
 # Must end in .pkl (the model will be pickled)
 # The model will be saved in the model/ directory
-model_path: "new_jaws.pkl"
+model_path: "alpha_0_12_beta_0_88.pkl"
 
 # Which ones to use for testing and validation
 # all the others will be used for testing
@@ -36,8 +36,8 @@ loss: "monai.losses.TverskyLoss"
 loss_options: {
   "include_background": false,
   "to_onehot_y": true,
-  "alpha": 0.15,
-  "beta": 0.85,
+  "alpha": 0.12,
+  "beta": 0.88,
   "sigmoid": true,
 }
 

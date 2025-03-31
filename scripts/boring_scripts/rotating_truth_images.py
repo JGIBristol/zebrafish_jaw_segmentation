@@ -93,7 +93,7 @@ def _inference(model_name: str) -> np.ndarray:
     return metrics.largest_connected_component(prediction)
 
 
-def main(model_name: str):
+def main(model_name: str, skip_human: bool):
     """
     Read the jaws in, make rotating images of the truth data
     """
@@ -126,10 +126,11 @@ def main(model_name: str):
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
-    rotating_plots(tahlia, out_dir / "tahlia")
-    rotating_plots(felix, out_dir / "felix")
-    rotating_plots(harry, out_dir / "harry")
     rotating_plots(inference, out_dir / "inference")
+    if not skip_human:
+        rotating_plots(tahlia, out_dir / "tahlia")
+        rotating_plots(felix, out_dir / "felix")
+        rotating_plots(harry, out_dir / "harry")
 
 
 if __name__ == "__main__":
@@ -138,5 +139,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("model_name", type=str, help="The name of the model to use")
+    parser.add_argument(
+        "--skip_human",
+        action="store_true",
+        help="Skip the human segmentations and only create the inference files",
+    )
 
     main(**vars(parser.parse_args()))
