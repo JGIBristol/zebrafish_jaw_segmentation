@@ -126,7 +126,8 @@ def main(model_name: str, skip_human: bool):
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
-    rotating_plots(inference, out_dir / "inference")
+    model_name, = model_name.split("*.pkl")
+    rotating_plots(inference, out_dir / model_name)
     if not skip_human:
         rotating_plots(tahlia, out_dir / "tahlia")
         rotating_plots(felix, out_dir / "felix")
