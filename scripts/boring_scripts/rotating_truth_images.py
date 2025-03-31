@@ -1,5 +1,6 @@
 """
-Make an image stack showing the jaw rotating for the truth data
+Make an image stack showing the jaw rotating for the truth data labelled
+by Tahlia, Harry and Felix, and a model.
 
 you can turn them into videos with e.g.
 for filename in boring_script_output/rotating_meshes/*; do n=`basename $filename`; ffmpeg -framerate 12 -pattern_type glob -i "boring_script_output/rotating_meshes/${n}/*.png" -c:v libx264 -pix_fmt yuv420p boring_script_output/rotating_meshes/${n}.mp4; done
