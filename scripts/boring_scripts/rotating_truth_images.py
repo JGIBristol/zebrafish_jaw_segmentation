@@ -129,7 +129,6 @@ def main(model_name: str, skip_human: bool):
         rotating_plots(felix, out_dir / "felix")
         rotating_plots(harry, out_dir / "harry")
 
-
     print("Performing inference")
     inference = _inference(model_name)
 
