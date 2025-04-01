@@ -46,13 +46,14 @@ def main():
         with open(conf_path, "w", encoding="utf-8") as f:
             f.writelines(lines)
 
-        subprocess.run(
-            ["python", "scripts/train_model.py"],
-            check=True,
-            env=my_env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        with open(f"log_{name}.txt", "w", encoding="utf-8") as f:
+            subprocess.run(
+                ["python", "scripts/train_model.py"],
+                check=True,
+                env=my_env,
+                stdout=f,
+                stderr=subprocess.PIPE,
+            )
 
 
 if __name__ == "__main__":

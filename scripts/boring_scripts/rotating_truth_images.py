@@ -98,41 +98,43 @@ def main(model_name: str, skip_human: bool):
     """
     Read the jaws in, make rotating images of the truth data
     """
-    print("loading human segmentations")
-    config = util.userconf()
-    seg_dir = (
-        files.rdsf_dir(config)
-        / "1Felix and Rich make models"
-        / "Human validation STL and results"
-    )
-    felix = tifffile.imread(
-        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
-    )
-    harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
-    tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
-
-    print("Performing inference")
-    inference = _inference(model_name)
-
-    # Crop them to the same size as the model's output
-    print("Cropping")
-    felix, harry, tahlia = (
-        transform.crop(
-            x, read.crop_lookup()[97], transform.window_size(config), centred=True
-        )
-        for x in (felix, harry, tahlia)
-    )
-
     out_dir = files.boring_script_out_dir() / "rotating_meshes"
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
-    model_name, = model_name.split("*.pkl")
-    rotating_plots(inference, out_dir / model_name)
     if not skip_human:
+        print("loading human segmentations")
+        config = util.userconf()
+        seg_dir = (
+            files.rdsf_dir(config)
+            / "1Felix and Rich make models"
+            / "Human validation STL and results"
+        )
+        felix = tifffile.imread(
+            seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+        )
+        harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
+        tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
+
+        # Crop them to the same size as the model's output
+        print("Cropping")
+        felix, harry, tahlia = (
+            transform.crop(
+                x, read.crop_lookup()[97], transform.window_size(config), centred=True
+            )
+            for x in (felix, harry, tahlia)
+        )
+
         rotating_plots(tahlia, out_dir / "tahlia")
         rotating_plots(felix, out_dir / "felix")
         rotating_plots(harry, out_dir / "harry")
+
+
+    print("Performing inference")
+    inference = _inference(model_name)
+
+    (model_name,) = model_name.split("*.pkl")
+    rotating_plots(inference, out_dir / model_name)
 
 
 if __name__ == "__main__":
