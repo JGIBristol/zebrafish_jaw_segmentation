@@ -15,7 +15,7 @@ def main():
     Write stuff to userconf.yml, train a new model in a subprocess, and repeat
 
     """
-    alphas = [0.1, 0.15, 0.2, 0.01, 0.05, 0.25, 0.95, 0.90, 0.99, 0.88]
+    alphas = [0.22, 0.23, 0.28, 0.30, 0.32, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60]
     betas = [1 - alpha for alpha in alphas]
 
     names = [
