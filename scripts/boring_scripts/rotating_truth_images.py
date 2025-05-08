@@ -1,5 +1,6 @@
 """
-Make an image stack showing the jaw rotating for the truth data
+Make an image stack showing the jaw rotating for the truth data labelled
+by Tahlia, Harry and Felix, and a model.
 
 you can turn them into videos with e.g.
 for filename in boring_script_output/rotating_meshes/*; do n=`basename $filename`; ffmpeg -framerate 12 -pattern_type glob -i "boring_script_output/rotating_meshes/${n}/*.png" -c:v libx264 -pix_fmt yuv420p boring_script_output/rotating_meshes/${n}.mp4; done
@@ -93,43 +94,46 @@ def _inference(model_name: str) -> np.ndarray:
     return metrics.largest_connected_component(prediction)
 
 
-def main(model_name: str):
+def main(model_name: str, skip_human: bool):
     """
     Read the jaws in, make rotating images of the truth data
     """
-    print("loading human segmentations")
-    config = util.userconf()
-    seg_dir = (
-        files.rdsf_dir(config)
-        / "1Felix and Rich make models"
-        / "Human validation STL and results"
-    )
-    felix = tifffile.imread(
-        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
-    )
-    harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
-    tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
-
-    print("Performing inference")
-    inference = _inference(model_name)
-
-    # Crop them to the same size as the model's output
-    print("Cropping")
-    felix, harry, tahlia = (
-        transform.crop(
-            x, read.crop_lookup()[97], transform.window_size(config), centred=True
-        )
-        for x in (felix, harry, tahlia)
-    )
-
     out_dir = files.boring_script_out_dir() / "rotating_meshes"
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
-    rotating_plots(tahlia, out_dir / "tahlia")
-    rotating_plots(felix, out_dir / "felix")
-    rotating_plots(harry, out_dir / "harry")
-    rotating_plots(inference, out_dir / "inference")
+    if not skip_human:
+        print("loading human segmentations")
+        config = util.userconf()
+        seg_dir = (
+            files.rdsf_dir(config)
+            / "1Felix and Rich make models"
+            / "Human validation STL and results"
+        )
+        felix = tifffile.imread(
+            seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+        )
+        harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
+        tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
+
+        # Crop them to the same size as the model's output
+        print("Cropping")
+        felix, harry, tahlia = (
+            transform.crop(
+                x, read.crop_lookup()[97], transform.window_size(config), centred=True
+            )
+            for x in (felix, harry, tahlia)
+        )
+
+        rotating_plots(tahlia, out_dir / "tahlia")
+        rotating_plots(felix, out_dir / "felix")
+        rotating_plots(harry, out_dir / "harry")
+
+    print("Performing inference")
+    inference = _inference(model_name)
+
+    (model_name,) = model_name.split("*.pkl")
+    rotating_plots(inference, out_dir / model_name)
 
 
 if __name__ == "__main__":
@@ -138,5 +142,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("model_name", type=str, help="The name of the model to use")
+    parser.add_argument(
+        "--skip_human",
+        action="store_true",
+        help="Skip the human segmentations and only create the inference files",
+    )
 
     main(**vars(parser.parse_args()))

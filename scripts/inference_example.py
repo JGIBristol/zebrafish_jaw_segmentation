@@ -1,6 +1,9 @@
 """
 Perform inference on an out-of-sample subject
 
+NB you can do the rotating jaw thing to compare Harry/Tahlia/Felix/a model using
+boring_scripts/rotating_truth_images.py
+
 """
 
 import pathlib
