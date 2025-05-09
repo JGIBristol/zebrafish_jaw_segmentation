@@ -205,6 +205,21 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
     )
 
 
+def imgs2subject(img: np.ndarray, label: np.ndarray) -> tio.Subject:
+    """
+    Create a subject from a greyscale image and a label
+    """
+    return tio.Subject(
+        image=tio.Image(
+            tensor=_add_dimension(ints2float(img.copy()), dtype=torch.float32),
+            type=tio.INTENSITY,
+        ),
+        label=tio.Image(
+            tensor=_add_dimension(label.copy(), dtype=torch.uint8), type=tio.LABEL
+        ),
+    )
+
+
 def test_loader(
     patches: tio.GridSampler, *, batch_size: int
 ) -> torch.utils.data.DataLoader:
