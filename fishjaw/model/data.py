@@ -60,8 +60,12 @@ class DataConfig:
         """
 
         # Assign class variables
-        self._train_data = self._train_val_loader(train_subjects, config, train=True)
-        self._val_data = self._train_val_loader(val_subjects, config, train=False)
+        self._train_data: tio.SubjectsLoader = self._train_val_loader(
+            train_subjects, config, train=True
+        )
+        self._val_data: tio.SubjectsLoader = self._train_val_loader(
+            val_subjects, config, train=False
+        )
 
     def _train_val_loader(
         self,
