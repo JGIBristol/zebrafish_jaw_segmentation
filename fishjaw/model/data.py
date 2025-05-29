@@ -60,8 +60,12 @@ class DataConfig:
         """
 
         # Assign class variables
-        self._train_data = self._train_val_loader(train_subjects, config, train=True)
-        self._val_data = self._train_val_loader(val_subjects, config, train=False)
+        self._train_data: tio.SubjectsLoader = self._train_val_loader(
+            train_subjects, config, train=True
+        )
+        self._val_data: tio.SubjectsLoader = self._train_val_loader(
+            val_subjects, config, train=False
+        )
 
     def _train_val_loader(
         self,
@@ -202,6 +206,21 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
             tensor=_add_dimension(image, dtype=torch.float32), type=tio.INTENSITY
         ),
         label=tio.Image(tensor=_add_dimension(mask, dtype=torch.uint8), type=tio.LABEL),
+    )
+
+
+def imgs2subject(img: np.ndarray, label: np.ndarray) -> tio.Subject:
+    """
+    Create a subject from a greyscale image and a label
+    """
+    return tio.Subject(
+        image=tio.Image(
+            tensor=_add_dimension(ints2float(img.copy()), dtype=torch.float32),
+            type=tio.INTENSITY,
+        ),
+        label=tio.Image(
+            tensor=_add_dimension(label.copy(), dtype=torch.uint8), type=tio.LABEL
+        ),
     )
 
 
