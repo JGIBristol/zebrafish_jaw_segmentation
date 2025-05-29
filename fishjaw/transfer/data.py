@@ -10,6 +10,13 @@ import torchio as tio
 from fishjaw.util import files
 
 
+def _quadrate_dir(config: dict) -> pathlib.Path:
+    """
+    Get the directory where the quadrate data is stored
+    """
+    return pathlib.Path(config["quadrate_dir"])
+
+
 def _quadrate_paths(config: dict) -> dict[pathlib.Path, pathlib.Path]:
     """
     Return a mapping from the quadrate data paths to their respective labels
