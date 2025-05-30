@@ -40,112 +40,7 @@ import numpy as np
 from tqdm import tqdm
 
 from fishjaw.util import files, util
-
-
-@dataclass
-class Dicom:
-    """
-    Create a DICOM file from an image and label
-
-    """
-
-    image_path: pathlib.Path
-    label_path: pathlib.Path
-
-    def __post_init__(self):
-        self.label = tifffile.imread(self.label_path)
-
-        # If we've been passed a directory, stack the images inside it
-        self.image = (
-            tifffile.imread(self.image_path)
-            if self.image_path.is_file()
-            else self._stack_files()
-        )
-
-        if self.image.shape != self.label.shape:
-            raise ValueError(
-                f"Image and label shape do not match: {self.image.shape} vs {self.label.shape}"
-            )
-
-        if not set(np.unique(self.label)) == {0, 1}:
-            raise ValueError(f"Label must be binary, got {np.unique(self.label)}")
-
-        self.fish_label = self.image_path.name.split(".")[0]
-
-    def _stack_files(self) -> np.typing.NDArray:
-        """
-        Given a directory holding image files, return a stacked tiff
-
-        """
-        imgs = [
-            tifffile.imread(img)
-            for img in tqdm(
-                sorted(self.image_path.glob("*.tiff")),
-                desc=f"Reading from {self.image_path}",
-            )
-        ]
-        return np.stack(imgs, axis=0)
-
-
-def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
-    """
-    Write a dicom to file
-
-    :param dicom: Dicom object
-    :param out_path: Path to save the dicom to
-
-    """
-    file_meta = pydicom.dataset.FileMetaDataset()
-    ds = pydicom.dataset.FileDataset(
-        str(out_path), {}, file_meta=file_meta, preamble=b"\0" * 128
-    )
-
-    # DICOM metadata
-    ds.PatientName = dicom.fish_label
-    ds.PatientID = dicom.fish_label
-    ds.Modality = "CT"
-    ds.SeriesInstanceUID = pydicom.uid.generate_uid()
-    ds.StudyInstanceUID = pydicom.uid.generate_uid()
-    ds.SOPInstanceUID = pydicom.uid.generate_uid()
-    ds.SOPClassUID = pydicom.uid.CTImageStorage
-
-    # Image data
-    ds.NumberOfFrames, ds.Rows, ds.Columns = dicom.image.shape
-    ds.PixelData = dicom.image.tobytes()
-
-    # Ensure the pixel data type is set to 16-bit
-    ds.BitsAllocated = 16
-    ds.BitsStored = 16
-    ds.HighBit = 15
-    ds.PixelRepresentation = 0 if dicom.image.dtype.kind == "u" else 1
-
-    # Set required attributes for pixel data conversion
-    ds.SamplesPerPixel = 1
-    ds.PhotometricInterpretation = "MONOCHROME2"
-
-    # Set Window Center and Window Width, so that the image is displayed correctly
-    min_pixel_value = np.min(dicom.image)
-    max_pixel_value = np.max(dicom.image)
-    window_center = (max_pixel_value + min_pixel_value) / 2
-    window_width = max_pixel_value - min_pixel_value
-    ds.WindowCenter = window_center
-    ds.WindowWidth = window_width
-
-    # Label data
-    private_creator_tag = 0x00BBB000
-    ds.add_new(private_creator_tag, "LO", "LabelData")
-    label_data_tag = 0x00BBB001
-    ds.add_new(label_data_tag, "OB", dicom.label.tobytes())
-
-    # More crap
-    ds.is_little_endian = True
-    ds.is_implicit_VR = True
-    ds.ContentDate = str(datetime.date.today()).replace("-", "")
-    ds.ContentTime = (
-        str(datetime.datetime.now().time()).replace(":", "").split(".", maxsplit=1)[0]
-    )
-
-    ds.save_as(out_path, write_like_original=False)
+from fishjaw.model import data
 
 
 def _get_n(label_path: pathlib.Path) -> int:
@@ -225,12 +120,12 @@ def create_dicoms(
         else:
             try:
                 # These contain different labels for the different bones
-                dicom = Dicom(img_path, label_path)
+                dicom = data.Dicom(img_path, label_path)
             except ValueError as e:
                 print(f"Skipping {img_path} and {label_path}: {e}")
                 continue
 
-            write_dicom(dicom, dicom_path)
+            data.write_dicom(dicom, dicom_path)
 
 
 def main(dry_run: bool):
