@@ -138,14 +138,21 @@ def fine_tune_model(
 
         # Use the learning rate that we left off with
         lr = scheduler.get_last_lr()[0]
-        print(f"TODO remove: {lr=}")
         optimiser = getattr(torch.optim, config["optimiser"])(
             (p for p in net.parameters() if p.requires_grad),
             lr=lr,
         )
 
         net, train_losses_unfrozen, val_losses_unfrozen = model.train(
-            net, optimiser, loss, data_config, train_config
+            net,
+            optimiser,
+            loss,
+            data_config,
+            model.TrainingConfig(
+                config["device"],
+                epochs_unfrozen,
+                scheduler,
+            ),
         )
 
     return (

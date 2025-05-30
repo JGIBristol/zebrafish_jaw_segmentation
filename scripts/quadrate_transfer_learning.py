@@ -1,8 +1,7 @@
 """
 Either train a new model or fine tune an existing model on a small dataset of quadrates.
 
-Makes some plots of the loss, inference and meshes after taking the largest connected
-component of the prediction
+Makes some plots of the loss, inference and meshes
 
 """
 
@@ -30,12 +29,17 @@ def _plots(
     out_dir: pathlib.Path,
     train_losses: list[list[float]],
     val_losses: list[list[float]],
+    epochs: int | None = None,
 ) -> None:
     """
     Make all sorts of plots
+
+    If epochs specified, draws a vertical line at that epoch
     """
     # Plot training and validation losses
     fig = training.plot_losses(train_losses, val_losses)
+    if epochs:
+        fig.get_axes()[0].axvline(epochs, color="k", linestyle="--", label="Unfrozen")
     fig.savefig(out_dir / "losses.png")
     plt.close(fig)
 
@@ -51,7 +55,6 @@ def _plots(
         batch_size=config["batch_size"],
     )
     thresholded = prediction > 0.5
-    prediction = metrics.largest_connected_component(thresholded)
 
     # Plot truth
     truth = test_subject[tio.LABEL][tio.DATA].squeeze().numpy()
@@ -70,6 +73,7 @@ def _plots(
     # Plot test subject
     fig, _ = images_3d.plot_slices(test_img, prediction)
     fig.suptitle(f"Dice: {100 * dice:.2f}%, Hausdorff: {100 * hausdorff:.2f}%")
+    fig.tight_layout()
     fig.savefig(out_dir / "test_inference.png")
     plt.close(fig)
 
@@ -97,6 +101,8 @@ def _plots(
 
     axes[0].legend(loc="upper right")
 
+    fig.suptitle(f"Dice: {100 * dice:.2f}%, Hausdorff: {100 * hausdorff:.2f}%")
+    fig.tight_layout()
     fig.savefig(
         f"{out_dir}/overlaid_meshes.png",
         bbox_inches="tight",
@@ -225,12 +231,15 @@ def fine_tune(
     Read in the training data, load in the base model and fine tune it
     Make some plots of the loss, the inference on the testing data and output some metrics
     """
+    if train_all:
+        train_layers = list(range(5))
+
     config = util.userconf()
     out_dir = (
         pathlib.Path(util.config()["script_output"])
         / "transfer_learning"
         / "quadrate"
-        / f"fine_tune_{'_j'.join(map(str, train_layers)) if not train_all else 'all'}"
+        / f"fine_tune_{'_'.join(map(str, train_layers))}"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -261,6 +270,7 @@ def fine_tune(
         out_dir,
         train_losses,
         val_losses,
+        epochs,
     )
 
     # Plot the change in weights
@@ -311,7 +321,7 @@ if __name__ == "__main__":
         type=int,
         nargs="+",
         help="Layers to train, e.g. 0 1 2",
-        choices=list(range(6)),
+        choices=list(range(5)),
     )
     group.add_argument("--train-all", action="store_true", help="Train all layers")
     fine_tune_parser.set_defaults(func=fine_tune)
