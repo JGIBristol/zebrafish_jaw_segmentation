@@ -1,8 +1,22 @@
+"""
+Fine tune a model on a small dataset of quadrates,
+
+"""
+
+import argparse
+
+from fishjaw.util import util
+from fishjaw.transfer import data
+
+
 def train(*, epochs: int, **kwargs):
     """
     Read in the training data and use it to train a model.
     Make some plots of the loss, the inference on the testing data and output some metrics
     """
+    config = util.userconf()
+
+    train_subjects, val_subjects, test_subjects = data.quadrate_data(config)
 
 
 def fine_tune(
@@ -12,7 +26,9 @@ def fine_tune(
     Read in the training data, load in the base model and fine tune it
     Make some plots of the loss, the inference on the testing data and output some metrics
     """
-    print(args)
+    config = util.userconf()
+
+    train_subjects, val_subjects, test_subjects = data.quadrate_data(config)
 
 
 if __name__ == "__main__":
@@ -54,4 +70,4 @@ if __name__ == "__main__":
     fine_tune_parser.set_defaults(func=fine_tune)
 
     args = parser.parse_args()
-    args.func(args)
+    args.func(**vars(args))
