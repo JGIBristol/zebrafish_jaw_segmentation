@@ -12,10 +12,11 @@ import argparse
 import torch
 import torchio as tio
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from fishjaw.util import util
 from fishjaw.model import model
-from fishjaw.transfer import data
+from fishjaw.transfer import data, transfer_utils
 from fishjaw.images import metrics
 from fishjaw.model.data import DataConfig, get_patch_size
 from fishjaw.visualisation import training, images_3d, plot_meshes
@@ -157,11 +158,64 @@ def train(*, epochs: int, **kwargs):
     _plots(config, net, test_subject, out_dir, train_losses, val_losses)
 
 
+def _weight_deltas(
+    model_before: torch.nn.Module, model_after: torch.nn.Module
+) -> dict[str, torch.Tensor]:
+    """
+    Get the difference in weight between two models
+    """
+
+
+def boxplots(
+    model_before: torch.nn.Module, model_after: torch.nn.Module, out_dir: pathlib.Path
+) -> None:
+    """
+    Make a boxplot with the weight deltas
+
+    """
+    deltas = _weight_deltas(model_before, model_after)
+    # There are 27 weight types, I think
+    fig, axes = plt.subplots(9, 3, figsize=(9, 27), sharex=True, sharey=True)
+
+    weight_type_regex = transfer_utils.attn_unet_param_type_regex()
+    for axis, weight_type in zip(
+        tqdm(axes.flatten()), weight_type_regex.keys(), strict=True
+    ):
+        pattern = weight_type_regex[weight_type]
+        names = []
+        for k in deltas.keys():
+            if re.search(pattern, k):
+                names.append(k)
+
+        for i, d in enumerate([deltas[k] for k in names]):
+            axis.boxplot(
+                d.flatten().cpu().numpy(),
+                positions=[i],
+                widths=0.5,
+                vert=True,
+                patch_artist=True,
+            )
+            axis.set_title(weight_type)
+            axis.axhline(
+                0,
+                color="k",
+                linestyle="--",
+                linewidth=0.5,
+            )
+
+    fig.suptitle("$\Delta$ weight")
+    fig.supxlabel("Layer")
+    fig.supylabel("Change in weight")
+
+    fig.tight_layout()
+    fig.savefig(out_dir / "weight_deltas.png")
+
+
 def fine_tune(
     *,
     base_model: str,
     epochs: int,
-    unfreeze_epochs:int,
+    unfreeze_epochs: int,
     lr_multiplier: float,
     train_layers: list[int],
     train_all: bool,
