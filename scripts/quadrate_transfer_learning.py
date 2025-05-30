@@ -5,6 +5,7 @@ Makes some plots of the loss, inference and meshes
 
 """
 
+import re
 import pathlib
 import argparse
 
@@ -65,7 +66,7 @@ def _plots(
     # some metrics
     dice = metrics.dice_score(truth, prediction)
     hausdorff = metrics.hausdorff_distance(truth, thresholded)
-    with open(out_dir / "metrics.txt", "w") as f:
+    with open(out_dir / "metrics.txt", "w", encoding="utf-8") as f:
         f.write(
             metrics.table([truth], [prediction], thresholded_metrics=True).to_markdown()
         )
@@ -168,8 +169,19 @@ def _weight_deltas(
     model_before: torch.nn.Module, model_after: torch.nn.Module
 ) -> dict[str, torch.Tensor]:
     """
-    Get the difference in weight between two models
+    Get the difference in weights between two models
     """
+    deltas = {}
+    for (name1, param1), (name2, param2) in zip(
+        model_before.named_parameters(), model_after.named_parameters()
+    ):
+        assert name1 == name2, f"Names do not match: {name1} != {name2}"
+
+        if param1.requires_grad and "num_batches_tracked" not in name1:
+            delta = param2.data - param1.data
+            deltas[name1] = delta
+
+    return deltas
 
 
 def boxplots(
@@ -189,7 +201,7 @@ def boxplots(
     ):
         pattern = weight_type_regex[weight_type]
         names = []
-        for k in deltas.keys():
+        for k in deltas:
             if re.search(pattern, k):
                 names.append(k)
 
@@ -209,7 +221,7 @@ def boxplots(
                 linewidth=0.5,
             )
 
-    fig.suptitle("$\Delta$ weight")
+    fig.suptitle(r"$\Delta$ weight")
     fig.supxlabel("Layer")
     fig.supylabel("Change in weight")
 
@@ -274,6 +286,11 @@ def fine_tune(
     )
 
     # Plot the change in weights
+    boxplots(
+        model.load_model(base_model).load_model().to(config["device"]),
+        net,
+        out_dir,
+    )
 
 
 if __name__ == "__main__":
