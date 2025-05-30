@@ -48,10 +48,10 @@ def fine_tune_model(
     config: dict,
     model_name: str,
     data_config: data.DataConfig,
-    train_layers: str = list[int],
-    lr_multiplier: float = 0.1,
-    epochs_frozen: int = 150,
-    epochs_unfrozen: int = 50,
+    train_layers: str,
+    lr_multiplier: float,
+    epochs_frozen: int,
+    epochs_unfrozen: int,
 ) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
     Fine-tune a model on the provided data
@@ -118,10 +118,13 @@ def fine_tune_model(
     loss = model.lossfn(config)
 
     # Train the model with the frozen layers
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimiser, gamma=config["lr_lambda"]
+    )
     train_config = model.TrainingConfig(
         config["device"],
         epochs_frozen,
-        torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=config["lr_lambda"]),
+        scheduler,
     )
 
     net, train_losses, val_losses = model.train(
@@ -129,5 +132,24 @@ def fine_tune_model(
     )
 
     # Train the whole model
+    if epochs_unfrozen:
+        for param in net.parameters():
+            param.requires_grad = True
 
-    return
+        # Use the learning rate that we left off with
+        lr = scheduler.get_last_lr()[0]
+        print(f"TODO remove: {lr=}")
+        optimiser = getattr(torch.optim, config["optimiser"])(
+            (p for p in net.parameters() if p.requires_grad),
+            lr=lr,
+        )
+
+        net, train_losses_unfrozen, val_losses_unfrozen = model.train(
+            net, optimiser, loss, data_config, train_config
+        )
+
+    return (
+        net,
+        train_losses + train_losses_unfrozen if epochs_unfrozen else train_losses,
+        val_losses + val_losses_unfrozen if epochs_unfrozen else val_losses,
+    )

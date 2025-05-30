@@ -285,7 +285,7 @@ if __name__ == "__main__":
         "--unfreeze_epochs",
         help="Number of epochs with the model fully unfrozen",
         type=int,
-        default=25,
+        default=0,
     )
     fine_tune_parser.add_argument(
         "--lr_multiplier",
