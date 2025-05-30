@@ -5,6 +5,7 @@ Loading, pre-processing, etc. the data for the model
 
 import pathlib
 from typing import Any
+from dataclasses import dataclass
 
 import torch
 import torch.utils
