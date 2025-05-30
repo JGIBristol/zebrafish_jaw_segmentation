@@ -187,7 +187,6 @@ class DataConfig:
         :param subjects: The dataset. Training data should have random transforms applied
         :param train: If we're training or not
         :param patch_size: The size of the patches to extract
-        :param batch_size: The batch size
 
         :returns: The loader
 
@@ -199,6 +198,12 @@ class DataConfig:
 
         shuffle = train is True
         drop_last = train is True
+
+        if drop_last and len(subjects) < batch_size:
+            raise ValueError(
+                f"Cannot drop last batch when the number of subjects ({len(subjects)}) "
+                f"is less than the batch size ({batch_size})"
+            )
 
         patch_sampler = tio.UniformSampler(patch_size=patch_size)
 
