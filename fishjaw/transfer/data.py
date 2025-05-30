@@ -9,7 +9,7 @@ import torchio as tio
 from scipy.ndimage import center_of_mass
 
 from fishjaw.util import files
-from fishjaw.images import io
+from fishjaw.images import io, transform
 from fishjaw.model import data
 
 
@@ -81,7 +81,9 @@ def quadrate_data(
     """
     Get the train/validation/test quadrate data
 
-    Cropped around the centre of each label
+    Cropped around the centre of each label, using the crop size from the config.
+    Caches the data as DICOMs for faster repeated access - the first time you run this,
+    it will be much slower than later runs.
     """
     # Get a mapping from label paths to image paths
     paths = _quadrate_paths(config)
@@ -102,5 +104,19 @@ def quadrate_data(
         centroid = center_of_mass(mask)
 
         # Create the subject
+        crop_size = transform.window_size(config)
+        image = transform.crop(image, centroid, crop_size, centred=True)
+
+        subjects.append(
+            tio.Subject(
+                image=tio.Image(
+                    tensor=data._add_dimension(image, dtype=torch.float32),
+                    type=tio.INTENSITY,
+                ),
+                mask=tio.LabelMap(
+                    tensor=data._add_dimension(mask, dtype=torch.uint8), type=tio.LABEL
+                ),
+            )
+        )
 
     # Create datasets
