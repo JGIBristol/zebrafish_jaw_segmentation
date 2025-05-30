@@ -158,7 +158,13 @@ def train(*, epochs: int, **kwargs):
 
 
 def fine_tune(
-    *, base_model: str, epochs: int, train_layers: list[int], train_all: bool, **kwargs
+    *,
+    base_model: str,
+    epochs: int,
+    lr_multiplier: float,
+    train_layers: list[int],
+    train_all: bool,
+    **kwargs,
 ):
     """
     Read in the training data, load in the base model and fine tune it
@@ -181,6 +187,16 @@ def fine_tune(
     config["batch_size"] = len(train_subjects)
 
     quadrate_data = DataConfig(config, train_subjects, val_subjects)
+
+    # Load the model from disk
+    # Freeze params
+    # Get the bits of the model, unfreeze selectively
+    # Create a new optimiser that only updates the right layers
+    # Create a loss function
+    # Train the model
+    # Unfreeze all params and train for a bit more
+    # Make plots
+    # Plot the change in weights
 
 
 if __name__ == "__main__":
@@ -209,6 +225,12 @@ if __name__ == "__main__":
     fine_tune_parser.add_argument("base_model", help="Base model to fine-tune")
     fine_tune_parser.add_argument(
         "--epochs", type=int, default=100, help="Number of epochs"
+    )
+    fine_tune_parser.add_argument(
+        "--lr_multiplier",
+        help="Multiplier for the learning rate",
+        type=float,
+        default=1.0,
     )
     group = fine_tune_parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
