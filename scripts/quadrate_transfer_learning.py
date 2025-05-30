@@ -165,10 +165,21 @@ def fine_tune(
     Make some plots of the loss, the inference on the testing data and output some metrics
     """
     config = util.userconf()
-    out_dir = pathlib.Path(config["script_output"]) / "transfer_learning" / "quadrate"
+    out_dir = (
+        pathlib.Path(util.config()["script_output"])
+        / "transfer_learning"
+        / "quadrate"
+        / f"fine_tune_{'_j'.join(map(str, train_layers)) if not train_all else 'all'}"
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    train_subjects, val_subjects, test_subjects = data.quadrate_data(config)
+    # Create the right data and model setup
+    train_subjects, val_subjects, test_subject = data.quadrate_data(config)
+
+    # Hack - make the batch size the same size as the training data,
+    # otherwise we'll drop all of it
+    config["batch_size"] = len(train_subjects)
+
     quadrate_data = DataConfig(config, train_subjects, val_subjects)
 
 
