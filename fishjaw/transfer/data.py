@@ -5,7 +5,9 @@ Data for transfer learning
 import re
 import pathlib
 
+import torch
 import torchio as tio
+from tqdm import tqdm
 from scipy.ndimage import center_of_mass
 
 from fishjaw.util import files
