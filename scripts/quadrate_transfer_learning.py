@@ -161,6 +161,7 @@ def fine_tune(
     *,
     base_model: str,
     epochs: int,
+    unfreeze_epochs:int,
     lr_multiplier: float,
     train_layers: list[int],
     train_all: bool,
@@ -225,6 +226,12 @@ if __name__ == "__main__":
     fine_tune_parser.add_argument("base_model", help="Base model to fine-tune")
     fine_tune_parser.add_argument(
         "--epochs", type=int, default=100, help="Number of epochs"
+    )
+    fine_tune_parser.add_argument(
+        "--unfreeze_epochs",
+        help="Number of epochs with the model fully unfrozen",
+        type=int,
+        default=25,
     )
     fine_tune_parser.add_argument(
         "--lr_multiplier",
