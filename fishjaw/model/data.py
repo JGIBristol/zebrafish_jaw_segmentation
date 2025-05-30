@@ -4,27 +4,132 @@ Loading, pre-processing, etc. the data for the model
 """
 
 import pathlib
+import datetime
 from typing import Any
+from dataclasses import dataclass
 
-import torch
-import torch.utils
+import pydicom
+import tifffile
 import numpy as np
 import torchio as tio
+import torch, torch.utils
 from tqdm import tqdm
 
 from ..images import io, transform
 from ..util import files, util
 
 
-def get_patch_size(config: dict[str, Any]) -> tuple[int, int, int]:
+@dataclass
+class Dicom:
     """
-    Get the patch size from the configuration
-
-    :param config: The configuration, that might be from userconf.yml
-    :returns: The patch size as a tuple of ints ZYX
+    Create a DICOM file from an image and label
 
     """
-    return tuple(int(x) for x in config["patch_size"].split(","))
+
+    image_path: pathlib.Path
+    label_path: pathlib.Path
+    binarise: bool = False
+
+    def __post_init__(self):
+        """
+        :param binarise: If True, binarise the label to only include elements where
+                         the label == 4 or 5 (i.e. the quadrate in Wahab's labelling scheme)
+        """
+        self.label = tifffile.imread(self.label_path)
+        if self.binarise:
+            self.label = (self.label == 4) | (self.label == 5)
+
+        # If we've been passed a directory, stack the images inside it
+        self.image = (
+            tifffile.imread(self.image_path)
+            if self.image_path.is_file()
+            else self._stack_files()
+        )
+
+        if self.image.shape != self.label.shape:
+            raise ValueError(
+                f"Image and label shape do not match: {self.image.shape} vs {self.label.shape}"
+            )
+
+        if not set(np.unique(self.label)) == {0, 1}:
+            raise ValueError(f"Label must be binary, got {np.unique(self.label)}")
+
+        self.fish_label = self.image_path.name.split(".")[0]
+
+    def _stack_files(self) -> np.typing.NDArray:
+        """
+        Given a directory holding image files, return a stacked tiff
+
+        """
+        imgs = [
+            tifffile.imread(img)
+            for img in tqdm(
+                sorted(self.image_path.glob("*.tiff")),
+                desc=f"Reading from {self.image_path}",
+            )
+        ]
+        return np.stack(imgs, axis=0)
+
+
+def write_dicom(dicom: Dicom, out_path: pathlib.Path) -> None:
+    """
+    Write a dicom to file
+
+    :param dicom: Dicom object
+    :param out_path: Path to save the dicom to
+
+    """
+    file_meta = pydicom.dataset.FileMetaDataset()
+    ds = pydicom.dataset.FileDataset(
+        str(out_path), {}, file_meta=file_meta, preamble=b"\0" * 128
+    )
+
+    # DICOM metadata
+    ds.PatientName = dicom.fish_label
+    ds.PatientID = dicom.fish_label
+    ds.Modality = "CT"
+    ds.SeriesInstanceUID = pydicom.uid.generate_uid()
+    ds.StudyInstanceUID = pydicom.uid.generate_uid()
+    ds.SOPInstanceUID = pydicom.uid.generate_uid()
+    ds.SOPClassUID = pydicom.uid.CTImageStorage
+
+    # Image data
+    ds.NumberOfFrames, ds.Rows, ds.Columns = dicom.image.shape
+    ds.PixelData = dicom.image.tobytes()
+
+    # Ensure the pixel data type is set to 16-bit
+    ds.BitsAllocated = 16
+    ds.BitsStored = 16
+    ds.HighBit = 15
+    ds.PixelRepresentation = 0 if dicom.image.dtype.kind == "u" else 1
+
+    # Set required attributes for pixel data conversion
+    ds.SamplesPerPixel = 1
+    ds.PhotometricInterpretation = "MONOCHROME2"
+
+    # Set Window Center and Window Width, so that the image is displayed correctly
+    min_pixel_value = np.min(dicom.image)
+    max_pixel_value = np.max(dicom.image)
+    window_center = (max_pixel_value + min_pixel_value) / 2
+    window_width = max_pixel_value - min_pixel_value
+    ds.WindowCenter = window_center
+    ds.WindowWidth = window_width
+
+    # Label data
+    private_creator_tag = 0x00BBB000
+    ds.add_new(private_creator_tag, "LO", "LabelData")
+    label_data_tag = 0x00BBB001
+    ds.add_new(label_data_tag, "OB", dicom.label.tobytes())
+
+    # More crap
+    ds.is_little_endian = True
+    ds.is_implicit_VR = True
+    ds.ContentDate = str(datetime.date.today()).replace("-", "")
+    ds.ContentTime = (
+        str(datetime.datetime.now().time()).replace(":", "").split(".", maxsplit=1)[0]
+    )
+
+    ds.save_as(out_path, write_like_original=False)
 
 
 class DataConfig:
@@ -311,3 +416,14 @@ def read_dicoms_from_disk(
     (test_subject,) = test_subjects
 
     return train_subjects, val_subjects, test_subject
+
+
+def get_patch_size(config: dict[str, Any]) -> tuple[int, int, int]:
+    """
+    Get the patch size from the configuration
+
+    :param config: The configuration, that might be from userconf.yml
+    :returns: The patch size as a tuple of ints ZYX
+
+    """
+    return tuple(int(x) for x in config["patch_size"].split(","))
