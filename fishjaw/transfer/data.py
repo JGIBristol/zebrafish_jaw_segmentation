@@ -120,3 +120,12 @@ def quadrate_data(
         )
 
     # Create datasets
+    train_subjects = tio.SubjectsDataset(
+        subjects[:-2], transform=data._transforms(config["transforms"])
+    )
+    val_subjects = tio.SubjectsDataset(
+        subjects[-2:-1], transform=data._transforms(config["transforms"])
+    )
+    test_subject = tio.Subject(subjects[-1])
+
+    return train_subjects, val_subjects, test_subject
