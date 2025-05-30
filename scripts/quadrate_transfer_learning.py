@@ -22,57 +22,17 @@ from fishjaw.visualisation import training, images_3d, plot_meshes
 from fishjaw.inference import mesh
 
 
-def train(*, epochs: int, **kwargs):
+def _plots(
+    config: dict,
+    net: torch.nn.Module,
+    test_subject: tio.Subject,
+    out_dir: pathlib.Path,
+    train_losses: list[list[float]],
+    val_losses: list[list[float]],
+) -> None:
     """
-    Read in the training data and use it to train a model.
-    Make some plots of the loss, the inference on the testing data and output some metrics
-
-    Saves the model
+    Make all sorts of plots
     """
-    config = util.userconf()
-    out_dir = (
-        pathlib.Path(util.config()["script_output"])
-        / "transfer_learning"
-        / "quadrate"
-        / "base_model"
-    )
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create the right data and model setup
-    train_subjects, val_subjects, test_subject = data.quadrate_data(config)
-
-    # Hack - make the batch size the same size as the training data,
-    # otherwise we'll drop all of it
-    config["batch_size"] = len(train_subjects)
-
-    quadrate_data = DataConfig(config, train_subjects, val_subjects)
-
-    net = model.model(config["model_params"])
-    net = net.to(config["device"])
-
-    optimiser = model.optimiser(config, net)
-    loss = model.lossfn(config)
-
-    train_config = model.TrainingConfig(
-        config["device"],
-        epochs,
-        torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=config["lr_lambda"]),
-    )
-
-    # Train and save the model
-    net, train_losses, val_losses = model.train(
-        net, optimiser, loss, quadrate_data, train_config
-    )
-    torch.save(
-        {
-            "model_state_dict": net.state_dict(),
-            "optimizer_state_dict": optimiser.state_dict(),
-            "train_losses": train_losses,
-            "val_losses": val_losses,
-        },
-        out_dir / config["quadrate_model_path"],
-    )
-
     # Plot training and validation losses
     fig = training.plot_losses(train_losses, val_losses)
     fig.savefig(out_dir / "losses.png")
@@ -142,6 +102,59 @@ def train(*, epochs: int, **kwargs):
         pad_inches=0,
     )
     plt.close(fig)
+
+
+def train(*, epochs: int, **kwargs):
+    """
+    Read in the training data and use it to train a model.
+    Make some plots of the loss, the inference on the testing data and output some metrics
+
+    Saves the model
+    """
+    config = util.userconf()
+    out_dir = (
+        pathlib.Path(util.config()["script_output"])
+        / "transfer_learning"
+        / "quadrate"
+        / "base_model"
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create the right data and model setup
+    train_subjects, val_subjects, test_subject = data.quadrate_data(config)
+
+    # Hack - make the batch size the same size as the training data,
+    # otherwise we'll drop all of it
+    config["batch_size"] = len(train_subjects)
+
+    quadrate_data = DataConfig(config, train_subjects, val_subjects)
+
+    net = model.model(config["model_params"])
+    net = net.to(config["device"])
+
+    optimiser = model.optimiser(config, net)
+    loss = model.lossfn(config)
+
+    train_config = model.TrainingConfig(
+        config["device"],
+        epochs,
+        torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=config["lr_lambda"]),
+    )
+
+    # Train and save the model
+    net, train_losses, val_losses = model.train(
+        net, optimiser, loss, quadrate_data, train_config
+    )
+    torch.save(
+        {
+            "model_state_dict": net.state_dict(),
+            "optimizer_state_dict": optimiser.state_dict(),
+            "train_losses": train_losses,
+            "val_losses": val_losses,
+        },
+        out_dir / config["quadrate_model_path"],
+    )
+    _plots(config, net, test_subject, out_dir, train_losses, val_losses)
 
 
 def fine_tune(
