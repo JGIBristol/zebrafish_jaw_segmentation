@@ -6,8 +6,10 @@ import re
 import pathlib
 
 import torchio as tio
+from scipy.ndimage import center_of_mass
 
 from fishjaw.util import files
+from fishjaw.images import io
 from fishjaw.model import data
 
 
@@ -97,6 +99,7 @@ def quadrate_data(
         image, mask = io.read_dicom(dicom_path)
 
         # Get the crop centre from the centre of mass of the label
+        centroid = center_of_mass(mask)
 
         # Create the subject
 
