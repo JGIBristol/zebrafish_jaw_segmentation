@@ -43,5 +43,7 @@ def plot_losses(
     axis.set_xlabel("Epoch")
     axis.legend()
 
+    axis.set_ylim(0, 1)
+
     fig.tight_layout()
     return fig
