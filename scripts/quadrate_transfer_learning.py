@@ -243,14 +243,26 @@ def fine_tune(
 
     quadrate_data = DataConfig(config, train_subjects, val_subjects)
 
-    # Load the model from disk
-    # Freeze params
-    # Get the bits of the model, unfreeze selectively
-    # Create a new optimiser that only updates the right layers
-    # Create a loss function
-    # Train the model
-    # Unfreeze all params and train for a bit more
+    net, train_losses, val_losses = transfer_utils.fine_tune_model(
+        config,
+        base_model,
+        quadrate_data,
+        train_layers,
+        lr_multiplier,
+        epochs,
+        unfreeze_epochs,
+    )
+
     # Make plots
+    _plots(
+        config,
+        net,
+        test_subject,
+        out_dir,
+        train_losses,
+        val_losses,
+    )
+
     # Plot the change in weights
 
 
