@@ -74,7 +74,7 @@ def _cache_quadrate(
             f"Quadrate DICOM {dicom_path} already exists, not overwriting"
         )
 
-    data.write_dicom(data.Dicom(img_path, label_path), dicom_path)
+    data.write_dicom(data.Dicom(img_path, label_path, binarise=True), dicom_path)
 
 
 def quadrate_data(

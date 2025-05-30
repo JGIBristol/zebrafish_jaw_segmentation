@@ -28,9 +28,16 @@ class Dicom:
 
     image_path: pathlib.Path
     label_path: pathlib.Path
+    binarise: bool = False
 
     def __post_init__(self):
+        """
+        :param binarise: If True, binarise the label to only include elements where
+                         the label == 4 or 5 (i.e. the quadrate in Wahab's labelling scheme)
+        """
         self.label = tifffile.imread(self.label_path)
+        if self.binarise:
+            self.label = (self.label == 4) | (self.label == 5)
 
         # If we've been passed a directory, stack the images inside it
         self.image = (
