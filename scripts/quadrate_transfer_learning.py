@@ -6,12 +6,11 @@ component of the prediction
 
 """
 
-import pickle
 import pathlib
 import argparse
 
-import tio
 import torch
+import torchio as tio
 import matplotlib.pyplot as plt
 
 from fishjaw.util import util
@@ -32,7 +31,7 @@ def train(*, epochs: int, **kwargs):
     """
     config = util.userconf()
     out_dir = (
-        pathlib.Path(config["script_output"])
+        pathlib.Path(util.config()["script_output"])
         / "transfer_learning"
         / "quadrate"
         / "base_model"
@@ -41,6 +40,11 @@ def train(*, epochs: int, **kwargs):
 
     # Create the right data and model setup
     train_subjects, val_subjects, test_subject = data.quadrate_data(config)
+
+    # Hack - make the batch size the same size as the training data,
+    # otherwise we'll drop all of it
+    config["batch_size"] = len(train_subjects)
+
     quadrate_data = DataConfig(config, train_subjects, val_subjects)
 
     net = model.model(config["model_params"])
@@ -51,7 +55,7 @@ def train(*, epochs: int, **kwargs):
 
     train_config = model.TrainingConfig(
         config["device"],
-        config["epochs"],
+        epochs,
         torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=config["lr_lambda"]),
     )
 
@@ -90,19 +94,17 @@ def train(*, epochs: int, **kwargs):
 
     # Plot truth
     truth = test_subject[tio.LABEL][tio.DATA].squeeze().numpy()
-    fig, _ = images_3d.plot_slices(test_img, prediction)
+    fig, _ = images_3d.plot_slices(test_img, truth)
     fig.savefig(out_dir / "test_truth.png")
     plt.close(fig)
 
-    # Print out and save some metrics
+    # some metrics
     dice = metrics.dice_score(truth, prediction)
     hausdorff = metrics.hausdorff_distance(truth, thresholded)
-    metrics_table = metrics.table(
-        [truth], [prediction], thresholded_metrics=True
-    ).to_markdown()
-    print(metrics_table)
     with open(out_dir / "metrics.txt", "w") as f:
-        pickle.dump(metrics_table, f)
+        f.write(
+            metrics.table([truth], [prediction], thresholded_metrics=True).to_markdown()
+        )
 
     # Plot test subject
     fig, _ = images_3d.plot_slices(test_img, prediction)
