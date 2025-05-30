@@ -103,11 +103,15 @@ def quadrate_data(
         image, mask = io.read_dicom(dicom_path)
 
         # Get the crop centre from the centre of mass of the label
-        centroid = center_of_mass(mask)
+        centroid = tuple(round(x) for x in center_of_mass(mask))
 
         # Create the subject
         crop_size = transform.window_size(config)
         image = transform.crop(image, centroid, crop_size, centred=True)
+        image = data.ints2float(image.copy())
+
+        mask = transform.crop(mask, centroid, crop_size, centred=True)
+        mask = mask.copy()
 
         subjects.append(
             tio.Subject(
@@ -115,7 +119,7 @@ def quadrate_data(
                     tensor=data._add_dimension(image, dtype=torch.float32),
                     type=tio.INTENSITY,
                 ),
-                mask=tio.LabelMap(
+                label=tio.Image(
                     tensor=data._add_dimension(mask, dtype=torch.uint8), type=tio.LABEL
                 ),
             )
