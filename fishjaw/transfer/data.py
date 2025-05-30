@@ -40,6 +40,13 @@ def _quadrate_paths(config: dict) -> dict[pathlib.Path, pathlib.Path]:
     return dict(zip(labels, imgs, strict=True))
 
 
+def _dicom_path(config: dict, label_path: pathlib.Path) -> pathlib.Path:
+    """
+    Get the path to the DICOM file for a given label path
+    """
+    return _quadrate_dir(config) / f"{label_path.stem}.dcm"
+
+
 def _cache_quadrate(
     config: dict, img_path: pathlib.Path, label_path: pathlib.Path
 ) -> None:
@@ -56,7 +63,7 @@ def _cache_quadrate(
     if not quadrate_dir.is_dir():
         quadrate_dir.mkdir(parents=True)
 
-    dicom_path = quadrate_dir / f"{label_path.stem}.dcm"
+    dicom_path = _dicom_path(config, label_path)
 
     if dicom_path.exists():
         raise FileExistsError(
@@ -66,9 +73,31 @@ def _cache_quadrate(
     data.write_dicom(data.Dicom(img_path, label_path), dicom_path)
 
 
-def quadrate_data() -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
+def quadrate_data(
+    config: dict,
+) -> tuple[tio.SubjectsDataset, tio.SubjectsDataset, tio.Subject]:
     """
     Get the train/validation/test quadrate data
 
     Cropped around the centre of each label
     """
+    # Get a mapping from label paths to image paths
+    paths = _quadrate_paths(config)
+
+    # Build up a list of subjects
+    subjects = []
+    for label_path, img_path in tqdm(
+        paths.items(), total=len(paths), desc="Loading quadrate data"
+    ):
+        dicom_path = _dicom_path(config, label_path)
+        if not dicom_path.exists():
+            _cache_quadrate(config, img_path, label_path)
+
+        # Read the image and label
+        image, mask = io.read_dicom(dicom_path)
+
+        # Get the crop centre from the centre of mass of the label
+
+        # Create the subject
+
+    # Create datasets
