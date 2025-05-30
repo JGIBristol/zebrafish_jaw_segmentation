@@ -244,6 +244,7 @@ def fine_tune(
     Make some plots of the loss, the inference on the testing data and output some metrics
     """
     if train_all:
+        assert not unfreeze_epochs
         train_layers = list(range(5))
 
     config = util.userconf()
