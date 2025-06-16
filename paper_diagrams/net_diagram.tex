@@ -40,6 +40,13 @@
 	\node (enc3) [block, below right=1cm and -1cm of enc2] {$64\times20^3$};
 	\node (enc4) [block, below right=1cm and -1cm of enc3] {$128\times10^3$};
 
+    % Encoder - convolutions
+    \node (enc0b) [block, right=0.5cm of enc0] {$16\times160^3$};
+    \node (enc1b) [block, right=0.5cm of enc1] {$32\times160^3$};
+    \node (enc2b) [block, right=0.5cm of enc2] {$64\times160^3$};
+    \node (enc3b) [block, right=0.5cm of enc3] {$128\times160^3$};
+    \node (enc4b) [block, right=0.5cm of enc4] {$256\times160^3$};
+
 	% Decoder - skips
 	\node (dec0) [concat, right=15cm of enc0] {$128\times10^3$};
 	\node (dec1) [concat, right=12cm of enc1]   {$64\times20^3$};
@@ -67,13 +74,20 @@
 	\node (output_patch) [block, above=1cm of dec0b, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Original Image $192^3$};
 
+    % Arrows - conv
+    \draw[conv] (enc0) -- (enc0b);
+    \draw[conv] (enc1) -- (enc1b);
+    \draw[conv] (enc2) -- (enc2b);
+    \draw[conv] (enc3) -- (enc3b);
+    \draw[conv] (enc4) -- (enc4b);
+
 	% Arrows - Encoder
 	\draw[conv] (input_patch) -- (enc0);
-	\draw[pool] (enc0) -- (enc1);
-	\draw[pool] (enc1) -- (enc2);
-	\draw[pool] (enc2) -- (enc3);
-	\draw[pool] (enc3) -- (enc4);
-	\draw[pool] (enc4) -- (bottom);
+	\draw[pool] (enc0b) -- (enc1);
+	\draw[pool] (enc1b) -- (enc2);
+	\draw[pool] (enc2b) -- (enc3);
+	\draw[pool] (enc3b) -- (enc4);
+	\draw[pool] (enc4b) -- (bottom);
 
 	% Arrows - Decoder
 	\draw[up] (bottom) -- (dec4b);
@@ -84,15 +98,15 @@
 	\draw[conv] (dec0b) -- (output_patch);
 
 	% Skip Connections with Attention
-	\draw[skip] (enc4) -- (att4);
+	\draw[skip] (enc4b) -- (att4);
 	\draw[skip] (att4) -- (dec4);
-	\draw[skip] (enc3) -- (att3);
+	\draw[skip] (enc3b) -- (att3);
 	\draw[skip] (att3) -- (dec3);
-	\draw[skip] (enc2) -- (att2);
+	\draw[skip] (enc2b) -- (att2);
 	\draw[skip] (att2) -- (dec2);
-	\draw[skip] (enc1) -- (att1);
+	\draw[skip] (enc1b) -- (att1);
 	\draw[skip] (att1) -- (dec1);
-	\draw[skip] (enc0) -- (att0);
+	\draw[skip] (enc0b) -- (att0);
 	\draw[skip] (att0) -- (dec0);
 
 
