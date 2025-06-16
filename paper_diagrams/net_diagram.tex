@@ -23,6 +23,8 @@
 \tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
 \tikzstyle{gate} = [thick, ->, >=stealth, violet]
 \tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
+\tikzstyle{concat} = [draw, dotted, minimum width=1cm, minimum height=1cm]
+
 
 \begin{document}
 \begin{tikzpicture}[node distance=1.8cm and 0.5cm]
@@ -38,12 +40,19 @@
 	\node (enc3) [block, below right=1cm and -1cm of enc2] {$64\times20^3$};
 	\node (enc4) [block, below right=1cm and -1cm of enc3] {$128\times10^3$};
 
-	% Decoder
-	\node (dec0) [block, right=14cm of enc0] {$128\times10^3$};
-	\node (dec1) [block, right=11cm of enc1]   {$64\times20^3$};
-	\node (dec2) [block, right=8cm of  enc2]   {$32\times40^3$};
-	\node (dec3) [block, right=5cm of  enc3]   {$16\times80^3$};
-	\node (dec4) [block, right=2cm of  enc4]   {$8\times160^3$};
+	% Decoder - skips
+	\node (dec0) [concat, right=15cm of enc0] {$128\times10^3$};
+	\node (dec1) [concat, right=12cm of enc1]   {$64\times20^3$};
+	\node (dec2) [concat, right=9cm of  enc2]   {$32\times40^3$};
+	\node (dec3) [concat, right=6cm of  enc3]   {$16\times80^3$};
+	\node (dec4) [concat, right=3cm of  enc4]   {$8\times160^3$};
+
+	% Decoder - upsampling
+	\node (dec0b) [block, right=0cm of dec0] {$128\times10^3$};
+	\node (dec1b) [block, right=0cm of dec1]   {$64\times20^3$};
+	\node (dec2b) [block, right=0cm of dec2]   {$32\times40^3$};
+	\node (dec3b) [block, right=0cm of dec3]   {$16\times80^3$};
+	\node (dec4b) [block, right=0cm of dec4]   {$8\times160^3$};
 
 	% Bottleneck
 	\node (bottom) [block, below right=1cm and 0cm of enc4] {$256\times5^3$};
@@ -55,7 +64,7 @@
 	\node (att1) [attention, left=0.5cm of dec1] {$\sigma$};
 	\node (att0) [attention, left=0.5cm of dec0] {$\sigma$};
 
-	\node (output_patch) [block, above=1cm of dec0, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_patch) [block, above=1cm of dec0b, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Original Image $192^3$};
 
 	% Arrows - Encoder
@@ -67,12 +76,12 @@
 	\draw[pool] (enc4) -- (bottom);
 
 	% Arrows - Decoder
-	\draw[up] (bottom) -- (dec4);
-	\draw[up] (dec4) -- (dec3);
-	\draw[up] (dec3) -- (dec2);
-	\draw[up] (dec2) -- (dec1);
-	\draw[up] (dec1) -- (dec0);
-	\draw[conv] (dec0) -- (output_patch);
+	\draw[up] (bottom) -- (dec4b);
+	\draw[up] (dec4b) -- (dec3b);
+	\draw[up] (dec3b) -- (dec2b);
+	\draw[up] (dec2b) -- (dec1b);
+	\draw[up] (dec1b) -- (dec0b);
+	\draw[conv] (dec0b) -- (output_patch);
 
 	% Skip Connections with Attention
 	\draw[skip] (enc4) -- (att4);
@@ -101,6 +110,7 @@
 		\draw[up]   (0,0) -- +(0.6,0); & \node {Upsampling}; \\
 		\draw[skip] (0,0) -- +(0.6,0); & \node {Skip Connection}; \\
 		\draw[gate] (0,0) -- +(0.6,0); & \node {Gating Signal}; \\
+		\node[concat] {};             & \node {Concatenation}; \\
 	};
 
 \end{tikzpicture}
