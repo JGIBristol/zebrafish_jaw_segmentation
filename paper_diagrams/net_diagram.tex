@@ -95,12 +95,12 @@
 	\draw[gate] (dec1) -- (att0);
 
 	% Legend
-	\matrix[draw, below right=1cm and 1cm of dec2, align=left, column sep=0.5cm, row sep=0.3cm, font=\scriptsize] {
-		\node[conv] {}; & \node {Conv3D + ReLU $\times2$}; \\
-		\node[pool] {}; & \node {Max Pooling}; \\
-		\node[up] {}; & \node {Upsampling}; \\
-		\node[skip] {}; & \node {Skip Connection}; \\
-		\node[gate] {}; & \node {Gating Signal}; \\
+	\matrix[draw, below right=1cm and 1cm of dec2, column sep=0.4cm, row sep=0.3cm, font=\scriptsize] {
+		\draw[conv] (0,0) -- +(0.6,0); & \node {Conv3D + ReLU $\times2$}; \\
+		\draw[pool] (0,0) -- +(0.6,0); & \node {Max Pooling}; \\
+		\draw[up]   (0,0) -- +(0.6,0); & \node {Upsampling}; \\
+		\draw[skip] (0,0) -- +(0.6,0); & \node {Skip Connection}; \\
+		\draw[gate] (0,0) -- +(0.6,0); & \node {Gating Signal}; \\
 	};
 
 \end{tikzpicture}
