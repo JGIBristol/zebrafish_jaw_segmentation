@@ -35,10 +35,10 @@
 
 	% Encoder
 	\node (enc0) [block, below=1cm of input_patch] {$8\times160^3$};
-	\node (enc1) [block, below right=1cm and -1cm of enc0] {$16\times80^3$};
-	\node (enc2) [block, below right=1cm and -1cm of enc1] {$32\times40^3$};
-	\node (enc3) [block, below right=1cm and -1cm of enc2] {$64\times20^3$};
-	\node (enc4) [block, below right=1cm and -1cm of enc3] {$128\times10^3$};
+	\node (enc1) [block, below right=1cm and 0.5cm of enc0] {$16\times80^3$};
+	\node (enc2) [block, below right=1cm and 0.5cm of enc1] {$32\times40^3$};
+	\node (enc3) [block, below right=1cm and 0.5cm of enc2] {$64\times20^3$};
+	\node (enc4) [block, below right=1cm and 0.5cm of enc3] {$128\times10^3$};
 
     % Encoder - convolutions
     \node (enc0b) [block, right=0.5cm of enc0] {$16\times160^3$};
@@ -48,11 +48,11 @@
     \node (enc4b) [block, right=0.5cm of enc4] {$256\times160^3$};
 
 	% Decoder - skips
-	\node (dec0) [concat, right=15cm of enc0] {$128\times10^3$};
-	\node (dec1) [concat, right=12cm of enc1]   {$64\times20^3$};
-	\node (dec2) [concat, right=9cm of  enc2]   {$32\times40^3$};
-	\node (dec3) [concat, right=6cm of  enc3]   {$16\times80^3$};
-	\node (dec4) [concat, right=3cm of  enc4]   {$8\times160^3$};
+	\node (dec0) [concat, right=17cm of enc0] {$128\times10^3$};
+	\node (dec1) [concat, right=14cm of enc1]   {$64\times20^3$};
+	\node (dec2) [concat, right=11cm of  enc2]   {$32\times40^3$};
+	\node (dec3) [concat, right=8cm of  enc3]   {$16\times80^3$};
+	\node (dec4) [concat, right=4.5cm of  enc4]   {$8\times160^3$};
 
 	% Decoder - upsampling
 	\node (dec0b) [block, right=0cm of dec0] {$128\times10^3$};
@@ -62,7 +62,7 @@
 	\node (dec4b) [block, right=0cm of dec4]   {$8\times160^3$};
 
 	% Bottleneck
-	\node (bottom) [block, below right=1cm and 0cm of enc4] {$256\times5^3$};
+	\node (bottom) [block, below right=1cm and 2.5cm of enc4] {$256\times5^3$};
 
 	% Attention Gates
 	\node (att4) [attention, left=0.5cm of dec4] {$\sigma$};
@@ -112,13 +112,13 @@
 
 	% Gating Signals
 	\draw[gate] (bottom) -- (att4);
-	\draw[gate] (dec4) -- (att3);
-	\draw[gate] (dec3) -- (att2);
-	\draw[gate] (dec2) -- (att1);
-	\draw[gate] (dec1) -- (att0);
+	\draw[gate] (dec4b) -- (att3);
+	\draw[gate] (dec3b) -- (att2);
+	\draw[gate] (dec2b) -- (att1);
+	\draw[gate] (dec1b) -- (att0);
 
 	% Legend
-	\matrix[draw, below right=1cm and 1cm of dec2, column sep=0.4cm, row sep=0.3cm, font=\scriptsize] {
+	\matrix[draw, right=4cm of dec2, column sep=0.4cm, row sep=0.3cm, font=\scriptsize] {
 		\draw[conv] (0,0) -- +(0.6,0); & \node {Conv3D + ReLU $\times2$}; \\
 		\draw[pool] (0,0) -- +(0.6,0); & \node {Max Pooling}; \\
 		\draw[up]   (0,0) -- +(0.6,0); & \node {Upsampling}; \\
