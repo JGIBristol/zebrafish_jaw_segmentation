@@ -39,21 +39,21 @@
 	\node (enc4) [block, below right=1cm and -1cm of enc3] {$128\times10^3$};
 
 	% Decoder
-	\node (dec0) [block, right=17cm of enc0] {$128\times10^3$};
-	\node (dec1) [block, right=13.5cm of enc1]   {$64\times20^3$};
-	\node (dec2) [block, right=10cm of  enc2]   {$32\times40^3$};
-	\node (dec3) [block, right=6.5cm of  enc3]   {$16\times80^3$};
-	\node (dec4) [block, right=3cm of  enc4]   {$8\times160^3$};
+	\node (dec0) [block, right=14cm of enc0] {$128\times10^3$};
+	\node (dec1) [block, right=11cm of enc1]   {$64\times20^3$};
+	\node (dec2) [block, right=8cm of  enc2]   {$32\times40^3$};
+	\node (dec3) [block, right=5cm of  enc3]   {$16\times80^3$};
+	\node (dec4) [block, right=2cm of  enc4]   {$8\times160^3$};
 
 	% Bottleneck
-	\node (bottom) [block, below right=1cm and 0.5cm of enc4] {$256\times5^3$};
+	\node (bottom) [block, below right=1cm and 0cm of enc4] {$256\times5^3$};
 
 	% Attention Gates
-	\node (att4) [attention, left=1cm of dec4] {$\sigma$};
-	\node (att3) [attention, left=1cm of dec3] {$\sigma$};
-	\node (att2) [attention, left=1cm of dec2] {$\sigma$};
-	\node (att1) [attention, left=1cm of dec1] {$\sigma$};
-	\node (att0) [attention, left=1cm of dec0] {$\sigma$};
+	\node (att4) [attention, left=0.5cm of dec4] {$\sigma$};
+	\node (att3) [attention, left=0.5cm of dec3] {$\sigma$};
+	\node (att2) [attention, left=0.5cm of dec2] {$\sigma$};
+	\node (att1) [attention, left=0.5cm of dec1] {$\sigma$};
+	\node (att0) [attention, left=0.5cm of dec0] {$\sigma$};
 
 	\node (output_patch) [block, above=1cm of dec0, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Original Image $192^3$};
@@ -95,7 +95,7 @@
 	\draw[gate] (dec1) -- (att0);
 
 	% Legend
-	\matrix[draw, below right=2cm and 2cm of dec2, align=left, column sep=0.5cm, row sep=0.3cm, font=\scriptsize] {
+	\matrix[draw, below right=1cm and 1cm of dec2, align=left, column sep=0.5cm, row sep=0.3cm, font=\scriptsize] {
 		\node[conv] {}; & \node {Conv3D + ReLU $\times2$}; \\
 		\node[pool] {}; & \node {Max Pooling}; \\
 		\node[up] {}; & \node {Upsampling}; \\
