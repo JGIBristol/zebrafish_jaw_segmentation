@@ -13,95 +13,76 @@
 
 \documentclass{standalone}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
 
-\newlength{\blockwidth}
-\setlength{\blockwidth}{3cm}
-
-\newlength{\blockheight}
-\setlength{\blockheight}{1cm}
-
-\newlength{\yshift}
-\setlength{\yshift}{-0.5cm}
-
-\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=\blockheight]
-\tikzstyle{arrow} = [thick,->,>=stealth]
-\tikzstyle{skip} = [thick, dashed,->,>=stealth]
-\tikzstyle{attention} = [circle, draw, text centered, minimum height=1cm, minimum width=2em]
+% Styles
+\tikzstyle{block} = [rectangle, draw, text centered, minimum width=2cm, minimum height=1cm, fill=white]
+\tikzstyle{conv} = [thick, ->, >=stealth, black]
+\tikzstyle{pool} = [thick, ->, >=stealth, blue]
+\tikzstyle{up}   = [thick, ->, >=stealth, red]
+\tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
+\tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
 
 \begin{document}
-\begin{tikzpicture}[node distance=2cm]
+\begin{tikzpicture}[node distance=1.8cm and 0.5cm]
 
-    % Input
-    \node (input_label) [block] {Input};
-    \node (input) [block, below of=input_label, yshift=1cm]{$1\times160\times160\times160$};
+	% Input image and patch
+	\node (input_full) [block, fill=gray!10] {Original Image $192^3$};
+	\node (input_patch) [block, below=of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
-    % Contracting path
-    \node (head) [block, right of=input, xshift=\blockwidth] {$8\times160\times160\times160$};
+	% Encoder
+	\node (enc0) [block, right=3cm of input_patch] {$8\times160^3$};
+	\node (enc1) [block, below=of enc0] {$16\times80^3$};
+	\node (enc2) [block, below=of enc1] {$32\times40^3$};
+	\node (enc3) [block, below=of enc2] {$64\times20^3$};
+	\node (enc4) [block, below=of enc3] {$128\times10^3$};
 
-    \node (enc1) [block, below of=head, yshift=\yshift]{$16\times80\times80\times80$};
-    \node (enc2) [block, below of=enc1, yshift=\yshift]{$32\times40\times40\times40$};
-    \node (enc3) [block, below of=enc2, yshift=\yshift]{$64\times20\times20\times20$};
-    \node (enc4) [block, below of=enc3, yshift=\yshift]{$128\times10\times10\times10$};
+	% Bottleneck
+	\node (bottom) [block, below right=of enc4] {$256\times5^3$};
 
-    % Bottom layer
-    \node (bottom) [block, below right of=enc4, yshift=\yshift, xshift=\blockwidth]{$256\times5\times5\times5$};
+	% Decoder
+	\node (dec4) [block, above right=of bottom] {$128\times10^3$};
+	\node (dec3) [block, above=of dec4]   {$64\times20^3$};
+	\node (dec2) [block, above=of dec3]   {$32\times40^3$};
+	\node (dec1) [block, above=of dec2]   {$16\times80^3$};
+	\node (dec0) [block, above=of dec1]   {$8\times160^3$};
 
-    % Expanding Path
-    % No idea why the yshift is not working here
-    \node (dec4) [block, above of=bottom, yshift=\yshift + 0.4\blockheight, xshift=\blockwidth]{$128\times10\times10\times10$};
-    \node (dec3) [block, above of=dec4,   yshift=\yshift + \blockheight]{$64\times20\times20\times20$};
-    \node (dec2) [block, above of=dec3,   yshift=\yshift + \blockheight]{$32\times40\times40\times40$};
-    \node (dec1) [block, above of=dec2,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
+	\node (output) [block, right=3cm of dec0, fill=green!20, align=center] {Output\\$1\times160^3$};
 
-    \node (reduce) [block, above of=dec1, yshift=\yshift + \blockheight]{$8\times160\times160\times160$};
+	% Attention Gates
+	\node (att4) [attention, left=1cm of dec4] {Att};
+	\node (att3) [attention, left=1cm of dec3] {Att};
+	\node (att2) [attention, left=1cm of dec2] {Att};
+	\node (att1) [attention, left=1cm of dec1] {Att};
+	\node (att0) [attention, left=1cm of dec0] {Att};
 
-    % Output
-    \node (output) [block, right of=reduce, xshift=\blockwidth] {$1\times160\times160\times160$};
-    \node (output_label) [block, above of=output, yshift=-1cm]{Output};
+	% Arrows - Encoder
+	\draw[conv] (input_patch) -- (enc0);
+	\draw[pool] (enc0) -- (enc1);
+	\draw[pool] (enc1) -- (enc2);
+	\draw[pool] (enc2) -- (enc3);
+	\draw[pool] (enc3) -- (enc4);
+	\draw[pool] (enc4) -- (bottom);
 
-    % Attention Mechanisms, named from the top
-    \node (att1) [attention, left of=reduce, xshift=-0.25\blockwidth] {Att};
-    \node (att2) [attention, left of=dec1, xshift=-0.25\blockwidth] {Att};
-    \node (att3) [attention, left of=dec2, xshift=-0.25\blockwidth] {Att};
-    \node (att4) [attention, left of=dec3, xshift=-0.25\blockwidth] {Att};
-    \node (att5) [attention, left of=dec4, xshift=-0.25\blockwidth] {Att};
+	% Arrows - Decoder
+	\draw[up] (bottom) -- (dec4);
+	\draw[up] (dec4) -- (dec3);
+	\draw[up] (dec3) -- (dec2);
+	\draw[up] (dec2) -- (dec1);
+	\draw[up] (dec1) -- (dec0);
+	\draw[conv] (dec0) -- (output);
 
-    % ==== Arrows
-    % Contracting
-    \draw [arrow] (input) -- (head);
-    \draw [arrow] (head) -- (enc1);
-    \draw [arrow] (enc1) -- (enc2);
-    \draw [arrow] (enc2) -- (enc3);
-    \draw [arrow] (enc3) -- (enc4);
-    \draw [arrow] (enc4) -- (bottom);
-
-    % Expanding
-    \draw [arrow] (bottom) -- (dec4);
-    \draw [arrow] (dec4) -- (dec3);
-    \draw [arrow] (dec3) -- (dec2);
-    \draw [arrow] (dec2) -- (dec1);
-    \draw [arrow] (dec1) -- (reduce);
-    \draw [arrow] (reduce) -- (output);
-
-    % Attention
-    \draw [skip] (bottom) -- (att5);
-    \draw [skip] (dec4) -- (att4);
-    \draw [skip] (dec3) -- (att3);
-    \draw [skip] (dec2) -- (att2);
-    \draw [skip] (dec1) -- (att1);
-
-    % Skip Connections
-    \draw [skip] (enc4) -- (att5);
-    \draw [skip] (att5) -- (dec4);
-    \draw [skip] (enc3) -- (att4);
-    \draw [skip] (att4) -- (dec3);
-    \draw [skip] (enc2) -- (att3);
-    \draw [skip] (att3) -- (dec2);
-    \draw [skip] (enc1) -- (att2);
-    \draw [skip] (att2) -- (dec1);
-    \draw [skip] (head) -- (att1);
-    \draw [skip] (att1) -- (reduce);
+	% Skip Connections with Attention
+	\draw[skip] (enc4) -- (att4);
+	\draw[skip] (att4) -- (dec4);
+	\draw[skip] (enc3) -- (att3);
+	\draw[skip] (att3) -- (dec3);
+	\draw[skip] (enc2) -- (att2);
+	\draw[skip] (att2) -- (dec2);
+	\draw[skip] (enc1) -- (att1);
+	\draw[skip] (att1) -- (dec1);
+	\draw[skip] (enc0) -- (att0);
+	\draw[skip] (att0) -- (dec0);
 
 \end{tikzpicture}
 \end{document}
