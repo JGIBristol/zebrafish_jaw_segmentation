@@ -21,6 +21,7 @@
 \tikzstyle{pool} = [thick, ->, >=stealth, blue]
 \tikzstyle{up}   = [thick, ->, >=stealth, red]
 \tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
+\tikzstyle{gate} = [thick, ->, >=stealth, violet]
 \tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
 
 \begin{document}
@@ -28,33 +29,34 @@
 
 	% Input image and patch
 	\node (input_full) [block, fill=gray!10] {Original Image $192^3$};
-	\node (input_patch) [block, below=of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
+	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
 	% Encoder
-	\node (enc0) [block, right=3cm of input_patch] {$8\times160^3$};
-	\node (enc1) [block, below=of enc0] {$16\times80^3$};
-	\node (enc2) [block, below=of enc1] {$32\times40^3$};
-	\node (enc3) [block, below=of enc2] {$64\times20^3$};
-	\node (enc4) [block, below=of enc3] {$128\times10^3$};
-
-	% Bottleneck
-	\node (bottom) [block, below right=of enc4] {$256\times5^3$};
+	\node (enc0) [block, below=1cm of input_patch] {$8\times160^3$};
+	\node (enc1) [block, below right=1cm and -1cm of enc0] {$16\times80^3$};
+	\node (enc2) [block, below right=1cm and -1cm of enc1] {$32\times40^3$};
+	\node (enc3) [block, below right=1cm and -1cm of enc2] {$64\times20^3$};
+	\node (enc4) [block, below right=1cm and -1cm of enc3] {$128\times10^3$};
 
 	% Decoder
-	\node (dec4) [block, above right=of bottom] {$128\times10^3$};
-	\node (dec3) [block, above=of dec4]   {$64\times20^3$};
-	\node (dec2) [block, above=of dec3]   {$32\times40^3$};
-	\node (dec1) [block, above=of dec2]   {$16\times80^3$};
-	\node (dec0) [block, above=of dec1]   {$8\times160^3$};
+	\node (dec0) [block, right=17cm of enc0] {$128\times10^3$};
+	\node (dec1) [block, right=13.5cm of enc1]   {$64\times20^3$};
+	\node (dec2) [block, right=10cm of  enc2]   {$32\times40^3$};
+	\node (dec3) [block, right=6.5cm of  enc3]   {$16\times80^3$};
+	\node (dec4) [block, right=3cm of  enc4]   {$8\times160^3$};
 
-	\node (output) [block, right=3cm of dec0, fill=green!20, align=center] {Output\\$1\times160^3$};
+	% Bottleneck
+	\node (bottom) [block, below right=1cm and 0.5cm of enc4] {$256\times5^3$};
 
 	% Attention Gates
-	\node (att4) [attention, left=1cm of dec4] {Att};
-	\node (att3) [attention, left=1cm of dec3] {Att};
-	\node (att2) [attention, left=1cm of dec2] {Att};
-	\node (att1) [attention, left=1cm of dec1] {Att};
-	\node (att0) [attention, left=1cm of dec0] {Att};
+	\node (att4) [attention, left=1cm of dec4] {$\sigma$};
+	\node (att3) [attention, left=1cm of dec3] {$\sigma$};
+	\node (att2) [attention, left=1cm of dec2] {$\sigma$};
+	\node (att1) [attention, left=1cm of dec1] {$\sigma$};
+	\node (att0) [attention, left=1cm of dec0] {$\sigma$};
+
+	\node (output_patch) [block, above=1cm of dec0, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Original Image $192^3$};
 
 	% Arrows - Encoder
 	\draw[conv] (input_patch) -- (enc0);
@@ -70,7 +72,7 @@
 	\draw[up] (dec3) -- (dec2);
 	\draw[up] (dec2) -- (dec1);
 	\draw[up] (dec1) -- (dec0);
-	\draw[conv] (dec0) -- (output);
+	\draw[conv] (dec0) -- (output_patch);
 
 	% Skip Connections with Attention
 	\draw[skip] (enc4) -- (att4);
@@ -83,6 +85,23 @@
 	\draw[skip] (att1) -- (dec1);
 	\draw[skip] (enc0) -- (att0);
 	\draw[skip] (att0) -- (dec0);
+
+
+	% Gating Signals
+	\draw[gate] (bottom) -- (att4);
+	\draw[gate] (dec4) -- (att3);
+	\draw[gate] (dec3) -- (att2);
+	\draw[gate] (dec2) -- (att1);
+	\draw[gate] (dec1) -- (att0);
+
+	% Legend
+	\matrix[draw, below right=2cm and 2cm of dec2, align=left, column sep=0.5cm, row sep=0.3cm, font=\scriptsize] {
+		\node[conv] {}; & \node {Conv3D + ReLU $\times2$}; \\
+		\node[pool] {}; & \node {Max Pooling}; \\
+		\node[up] {}; & \node {Upsampling}; \\
+		\node[skip] {}; & \node {Skip Connection}; \\
+		\node[gate] {}; & \node {Gating Signal}; \\
+	};
 
 \end{tikzpicture}
 \end{document}
