@@ -79,7 +79,7 @@
 	\node (att0) [attention, left=0.5cm of dec0skip] {$\sigma$};
 
 	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
-	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
+	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
 	\draw[conv] (enc0) -- (enc0b);
