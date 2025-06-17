@@ -34,25 +34,27 @@
 	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
 	% Encoder
-	\node (enc0) [block, below=1cm of input_patch] {$8\times160^3$};
-	\node (enc1) [block, below right=1cm and 0.5cm of enc0] {$16\times80^3$};
-	\node (enc2) [block, below right=1cm and 0.5cm of enc1] {$32\times40^3$};
-	\node (enc3) [block, below right=1cm and 0.5cm of enc2] {$64\times20^3$};
-	\node (enc4) [block, below right=1cm and 0.5cm of enc3] {$128\times10^3$};
+	\node (enc0a) [block, below=1cm of input_patch] {$8\times160^3$};
+	\node (enc0b) [block, below=0.5cm of enc0a] {$16\times160^3$};
 
-	% Encoder - convolutions
-	\node (enc0b) [block, right=0.5cm of enc0] {$16\times160^3$};
-	\node (enc1b) [block, right=0.5cm of enc1] {$32\times80^3$};
-	\node (enc2b) [block, right=0.5cm of enc2] {$64\times40^3$};
-	\node (enc3b) [block, right=0.5cm of enc3] {$128\times20^3$};
-	\node (enc4b) [block, right=0.5cm of enc4] {$256\times10^3$};
+	\node (enc1a) [block, right=1cm of enc0b] {$16\times80^3$};
+	\node (enc1b) [block, below=0.5cm of enc1a] {$32\times80^3$};
+
+	\node (enc2a) [block, right=1cm of enc1b] {$32\times40^3$};
+	\node (enc2b) [block, below=0.5cm of enc2a] {$64\times40^3$};
+
+	\node (enc3a) [block, right=1cm of enc2b] {$64\times20^3$};
+	\node (enc3b) [block, below=0.5cm of enc3a] {$128\times20^3$};
+
+	\node (enc4a) [block, right=1cm of enc3b] {$128\times10^3$};
+	\node (enc4b) [block, below=0.5cm of enc4a] {$256\times10^3$};
 
 	% Decoder - skips
-	\node (dec0skip) [concat, right=28.5cm of enc0] {$8\times160^3$};
-	\node (dec1skip) [concat, right=22.5cm of enc1]   {$16\times80^3$};
-	\node (dec2skip) [concat, right=16.5cm of  enc2]   {$32\times40^3$};
-	\node (dec3skip) [concat, right=10.5cm of  enc3]   {$64\times20^3$};
-	\node (dec4skip) [concat, right=4.5cm of  enc4]   {$128\times10^3$};
+	\node (dec0skip) [concat, right=28.5cm of enc0b] {$8\times160^3$};
+	\node (dec1skip) [concat, right=22.5cm of enc1b]   {$16\times80^3$};
+	\node (dec2skip) [concat, right=16.5cm of enc2b]   {$32\times40^3$};
+	\node (dec3skip) [concat, right=10.5cm of enc3b]   {$64\times20^3$};
+	\node (dec4skip) [concat, right=4.5cm of  enc4b]   {$128\times10^3$};
 
 	% Decoder - upsampling
 	\node (dec0up) [block, right=0cm of dec0skip] {$8\times160^3$};
@@ -69,7 +71,7 @@
 	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
 
 	% Bottleneck
-	\node (bottom) [block, below right=1cm and 2.5cm of enc4] {$256\times5^3$};
+	\node (bottom) [block, below right=1cm and 2.5cm of enc4b] {$256\times5^3$};
 
 	% Attention Gates
 	\node (att4) [attention, left=0.5cm of dec4skip] {$\sigma$};
@@ -82,18 +84,18 @@
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
-	\draw[conv] (enc0) -- (enc0b);
-	\draw[conv] (enc1) -- (enc1b);
-	\draw[conv] (enc2) -- (enc2b);
-	\draw[conv] (enc3) -- (enc3b);
-	\draw[conv] (enc4) -- (enc4b);
+	\draw[conv] (enc0a) -- (enc0b);
+	\draw[conv] (enc1a) -- (enc1b);
+	\draw[conv] (enc2a) -- (enc2b);
+	\draw[conv] (enc3a) -- (enc3b);
+	\draw[conv] (enc4a) -- (enc4b);
 
 	% Arrows - Encoder
-	\draw[conv] (input_patch) -- (enc0);
-	\draw[pool] (enc0b) -- (enc1);
-	\draw[pool] (enc1b) -- (enc2);
-	\draw[pool] (enc2b) -- (enc3);
-	\draw[pool] (enc3b) -- (enc4);
+	\draw[conv] (input_patch) -- (enc0a);
+	\draw[pool] (enc0b) -- (enc1a);
+	\draw[pool] (enc1b) -- (enc2a);
+	\draw[pool] (enc2b) -- (enc3a);
+	\draw[pool] (enc3b) -- (enc4a);
 	\draw[pool] (enc4b) -- (bottom);
 
 	% Arrows - Decoder
