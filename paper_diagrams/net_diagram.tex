@@ -30,7 +30,7 @@
 \begin{tikzpicture}[node distance=1.8cm and 0.5cm]
 
 	% Input image and patch
-	\node (input_full) [block, fill=gray!10] {Original Image $192^3$};
+	\node (input_full) [block, fill=gray!10] {Original Image $1\times192^3$};
 	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
 	% Encoder
@@ -40,18 +40,18 @@
 	\node (enc3) [block, below right=1cm and 0.5cm of enc2] {$64\times20^3$};
 	\node (enc4) [block, below right=1cm and 0.5cm of enc3] {$128\times10^3$};
 
-    % Encoder - convolutions
-    \node (enc0b) [block, right=0.5cm of enc0] {$16\times160^3$};
-    \node (enc1b) [block, right=0.5cm of enc1] {$32\times160^3$};
-    \node (enc2b) [block, right=0.5cm of enc2] {$64\times160^3$};
-    \node (enc3b) [block, right=0.5cm of enc3] {$128\times160^3$};
-    \node (enc4b) [block, right=0.5cm of enc4] {$256\times160^3$};
+	% Encoder - convolutions
+	\node (enc0b) [block, right=0.5cm of enc0] {$16\times160^3$};
+	\node (enc1b) [block, right=0.5cm of enc1] {$32\times160^3$};
+	\node (enc2b) [block, right=0.5cm of enc2] {$64\times160^3$};
+	\node (enc3b) [block, right=0.5cm of enc3] {$128\times160^3$};
+	\node (enc4b) [block, right=0.5cm of enc4] {$256\times160^3$};
 
 	% Decoder - skips
-	\node (dec0) [concat, right=17cm of enc0] {$128\times10^3$};
-	\node (dec1) [concat, right=14cm of enc1]   {$64\times20^3$};
-	\node (dec2) [concat, right=11cm of  enc2]   {$32\times40^3$};
-	\node (dec3) [concat, right=8cm of  enc3]   {$16\times80^3$};
+	\node (dec0) [concat, right=28.5cm of enc0] {$128\times10^3$};
+	\node (dec1) [concat, right=22.5cm of enc1]   {$64\times20^3$};
+	\node (dec2) [concat, right=16.5cm of  enc2]   {$32\times40^3$};
+	\node (dec3) [concat, right=10.5cm of  enc3]   {$16\times80^3$};
 	\node (dec4) [concat, right=4.5cm of  enc4]   {$8\times160^3$};
 
 	% Decoder - upsampling
@@ -72,14 +72,14 @@
 	\node (att0) [attention, left=0.5cm of dec0] {$\sigma$};
 
 	\node (output_patch) [block, above=1cm of dec0b, fill=green!20, align=center] {Output\\$1\times160^3$};
-	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Original Image $192^3$};
+	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
-    % Arrows - conv
-    \draw[conv] (enc0) -- (enc0b);
-    \draw[conv] (enc1) -- (enc1b);
-    \draw[conv] (enc2) -- (enc2b);
-    \draw[conv] (enc3) -- (enc3b);
-    \draw[conv] (enc4) -- (enc4b);
+	% Arrows - conv
+	\draw[conv] (enc0) -- (enc0b);
+	\draw[conv] (enc1) -- (enc1b);
+	\draw[conv] (enc2) -- (enc2b);
+	\draw[conv] (enc3) -- (enc3b);
+	\draw[conv] (enc4) -- (enc4b);
 
 	% Arrows - Encoder
 	\draw[conv] (input_patch) -- (enc0);
@@ -118,13 +118,13 @@
 	\draw[gate] (dec1b) -- (att0);
 
 	% Legend
-	\matrix[draw, right=4cm of dec2, column sep=0.4cm, row sep=0.3cm, font=\scriptsize] {
-		\draw[conv] (0,0) -- +(0.6,0); & \node {Conv3D + ReLU $\times2$}; \\
-		\draw[pool] (0,0) -- +(0.6,0); & \node {Max Pooling}; \\
-		\draw[up]   (0,0) -- +(0.6,0); & \node {Upsampling}; \\
-		\draw[skip] (0,0) -- +(0.6,0); & \node {Skip Connection}; \\
-		\draw[gate] (0,0) -- +(0.6,0); & \node {Gating Signal}; \\
-		\node[concat] {};             & \node {Concatenation}; \\
+	\matrix[draw, below=3cm of dec0, column sep=0.4cm, row sep=0.3cm, font=\large] {
+		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Conv3D + ReLU $\times2$}; \\
+		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
+		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Upsampling}; \\
+		\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
+		\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
+		\node[concat] {};               & \node[align=left, text width=4cm] {Concatenation}; \\
 	};
 
 \end{tikzpicture}
