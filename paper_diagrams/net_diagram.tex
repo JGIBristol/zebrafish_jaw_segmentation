@@ -48,30 +48,37 @@
 	\node (enc4b) [block, right=0.5cm of enc4] {$256\times10^3$};
 
 	% Decoder - skips
-	\node (dec0) [concat, right=28.5cm of enc0] {$8\times160^3$};
-	\node (dec1) [concat, right=22.5cm of enc1]   {$16\times80^3$};
-	\node (dec2) [concat, right=16.5cm of  enc2]   {$32\times40^3$};
-	\node (dec3) [concat, right=10.5cm of  enc3]   {$64\times20^3$};
-	\node (dec4) [concat, right=4.5cm of  enc4]   {$128\times10^3$};
+	\node (dec0skip) [concat, right=28.5cm of enc0] {$8\times160^3$};
+	\node (dec1skip) [concat, right=22.5cm of enc1]   {$16\times80^3$};
+	\node (dec2skip) [concat, right=16.5cm of  enc2]   {$32\times40^3$};
+	\node (dec3skip) [concat, right=10.5cm of  enc3]   {$64\times20^3$};
+	\node (dec4skip) [concat, right=4.5cm of  enc4]   {$128\times10^3$};
 
 	% Decoder - upsampling
-	\node (dec0b) [block, right=0cm of dec0] {$8\times160^3$};
-	\node (dec1b) [block, right=0cm of dec1]   {$16\times80^3$};
-	\node (dec2b) [block, right=0cm of dec2]   {$32\times40^3$};
-	\node (dec3b) [block, right=0cm of dec3]   {$64\times20^3$};
-	\node (dec4b) [block, right=0cm of dec4]   {$128\times10^3$};
+	\node (dec0up) [block, right=0cm of dec0skip] {$8\times160^3$};
+	\node (dec1up) [block, right=0cm of dec1skip]   {$16\times80^3$};
+	\node (dec2up) [block, right=0cm of dec2skip]   {$32\times40^3$};
+	\node (dec3up) [block, right=0cm of dec3skip]   {$64\times20^3$};
+	\node (dec4up) [block, right=0cm of dec4skip]   {$128\times10^3$};
+
+	% Decoder - concat
+	\node (dec0concat) [block, right=0.5cm of dec0up] {$8\times160^3$};
+	\node (dec1concat) [block, right=0.5cm of dec1up] {$16\times80^3$};
+	\node (dec2concat) [block, right=0.5cm of dec2up] {$32\times40^3$};
+	\node (dec3concat) [block, right=0.5cm of dec3up] {$64\times20^3$};
+	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
 
 	% Bottleneck
 	\node (bottom) [block, below right=1cm and 2.5cm of enc4] {$256\times5^3$};
 
 	% Attention Gates
-	\node (att4) [attention, left=0.5cm of dec4] {$\sigma$};
-	\node (att3) [attention, left=0.5cm of dec3] {$\sigma$};
-	\node (att2) [attention, left=0.5cm of dec2] {$\sigma$};
-	\node (att1) [attention, left=0.5cm of dec1] {$\sigma$};
-	\node (att0) [attention, left=0.5cm of dec0] {$\sigma$};
+	\node (att4) [attention, left=0.5cm of dec4skip] {$\sigma$};
+	\node (att3) [attention, left=0.5cm of dec3skip] {$\sigma$};
+	\node (att2) [attention, left=0.5cm of dec2skip] {$\sigma$};
+	\node (att1) [attention, left=0.5cm of dec1skip] {$\sigma$};
+	\node (att0) [attention, left=0.5cm of dec0skip] {$\sigma$};
 
-	\node (output_patch) [block, above=1cm of dec0b, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=gray!10, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
@@ -90,35 +97,35 @@
 	\draw[pool] (enc4b) -- (bottom);
 
 	% Arrows - Decoder
-	\draw[up] (bottom) -- (dec4b);
-	\draw[up] (dec4b) -- (dec3b);
-	\draw[up] (dec3b) -- (dec2b);
-	\draw[up] (dec2b) -- (dec1b);
-	\draw[up] (dec1b) -- (dec0b);
-	\draw[conv] (dec0b) -- (output_patch);
+	\draw[up] (bottom) -- (dec4concat);
+	\draw[up] (dec4concat) -- (dec3concat);
+	\draw[up] (dec3concat) -- (dec2concat);
+	\draw[up] (dec2concat) -- (dec1concat);
+	\draw[up] (dec1concat) -- (dec0concat);
+	\draw[conv] (dec0concat) -- (output_patch);
 
 	% Skip Connections with Attention
 	\draw[skip] (enc4b) -- (att4);
-	\draw[skip] (att4) -- (dec4);
+	\draw[skip] (att4) -- (dec4concat);
 	\draw[skip] (enc3b) -- (att3);
-	\draw[skip] (att3) -- (dec3);
+	\draw[skip] (att3) -- (dec3concat);
 	\draw[skip] (enc2b) -- (att2);
-	\draw[skip] (att2) -- (dec2);
+	\draw[skip] (att2) -- (dec2concat);
 	\draw[skip] (enc1b) -- (att1);
-	\draw[skip] (att1) -- (dec1);
+	\draw[skip] (att1) -- (dec1concat);
 	\draw[skip] (enc0b) -- (att0);
-	\draw[skip] (att0) -- (dec0);
+	\draw[skip] (att0) -- (dec0concat);
 
 
 	% Gating Signals
 	\draw[gate] (bottom) -- (att4);
-	\draw[gate] (dec4b) -- (att3);
-	\draw[gate] (dec3b) -- (att2);
-	\draw[gate] (dec2b) -- (att1);
-	\draw[gate] (dec1b) -- (att0);
+	\draw[gate] (dec4concat) -- (att3);
+	\draw[gate] (dec3concat) -- (att2);
+	\draw[gate] (dec2concat) -- (att1);
+	\draw[gate] (dec1concat) -- (att0);
 
 	% Legend
-	\matrix[draw, below=3cm of dec0, column sep=0.4cm, row sep=0.3cm, font=\large] {
+	\matrix[draw, below=3cm of dec0concat, column sep=0.4cm, row sep=0.3cm, font=\large] {
 		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
 		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
 		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {UpConv}; \\
