@@ -52,33 +52,31 @@
 	% Bottleneck
 	\node (bottom) [block, right=1cm of enc4b] {$128\times5^3$};
 
-	% Decoder - skips
-	\node (dec0skip) [concat, right=28.5cm of enc0b] {$8\times160^3$};
-	\node (dec1skip) [concat, right=22.5cm of enc1b]   {$16\times80^3$};
-	\node (dec2skip) [concat, right=16.5cm of enc2b]   {$32\times40^3$};
-	\node (dec3skip) [concat, right=10.5cm of enc3b]   {$64\times20^3$};
-	\node (dec4skip) [concat, right=4.5cm of  enc4b]   {$128\times10^3$};
-
-	% Decoder - upsampling
-	\node (dec0up) [block, right=0cm of dec0skip] {$8\times160^3$};
-	\node (dec1up) [block, right=0cm of dec1skip]   {$16\times80^3$};
-	\node (dec2up) [block, right=0cm of dec2skip]   {$32\times40^3$};
-	\node (dec3up) [block, right=0cm of dec3skip]   {$64\times20^3$};
+	% Attention Gates
+	\node (att4) [attention, above=0.5cm of bottom] {$\sigma$};
+	\node (dec4skip) [concat, right=1.5cm of att4]   {$128\times10^3$};
 	\node (dec4up) [block, right=0cm of dec4skip]   {$128\times10^3$};
-
-	% Decoder - concat
-	\node (dec0concat) [block, right=0.5cm of dec0up] {$8\times160^3$};
-	\node (dec1concat) [block, right=0.5cm of dec1up] {$16\times80^3$};
-	\node (dec2concat) [block, right=0.5cm of dec2up] {$32\times40^3$};
-	\node (dec3concat) [block, right=0.5cm of dec3up] {$64\times20^3$};
 	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
 
-	% Attention Gates
-	\node (att4) [attention, left=0.5cm of dec4skip] {$\sigma$};
-	\node (att3) [attention, left=0.5cm of dec3skip] {$\sigma$};
-	\node (att2) [attention, left=0.5cm of dec2skip] {$\sigma$};
-	\node (att1) [attention, left=0.5cm of dec1skip] {$\sigma$};
-	\node (att0) [attention, left=0.5cm of dec0skip] {$\sigma$};
+	\node (att3) [attention, above=0.5cm of dec4concat] {$\sigma$};
+	\node (dec3skip) [concat, right=1.5cm of att3]   {$64\times20^3$};
+	\node (dec3up) [block, right=0cm of dec3skip]   {$64\times20^3$};
+	\node (dec3concat) [block, right=0.5cm of dec3up] {$64\times20^3$};
+
+	\node (att2) [attention, above=0.5cm of dec3concat] {$\sigma$};
+	\node (dec2skip) [concat, right=1.5cm of att2]   {$32\times40^3$};
+	\node (dec2up) [block, right=0cm of dec2skip]   {$32\times40^3$};
+	\node (dec2concat) [block, right=0.5cm of dec2up] {$32\times40^3$};
+
+	\node (att1) [attention, above=0.5cm of dec2concat] {$\sigma$};
+	\node (dec1skip) [concat, right=1.5cm of att1]   {$16\times80^3$};
+	\node (dec1up) [block, right=0cm of dec1skip]   {$16\times80^3$};
+	\node (dec1concat) [block, right=0.5cm of dec1up] {$16\times80^3$};
+
+	\node (att0) [attention, above=0.5cm of dec1concat] {$\sigma$};
+	\node (dec0skip) [concat, right=1.5cm of att0] {$8\times160^3$};
+	\node (dec0up) [block, right=0cm of dec0skip] {$8\times160^3$};
+	\node (dec0concat) [block, right=0.5cm of dec0up] {$8\times160^3$};
 
 	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
@@ -99,42 +97,42 @@
 	\draw[pool] (enc4b) -- (bottom);
 
 	% Arrows - Decoder
-	\draw[up] (bottom) -- (dec4concat);
-	\draw[up] (dec4concat) -- (dec3concat);
-	\draw[up] (dec3concat) -- (dec2concat);
-	\draw[up] (dec2concat) -- (dec1concat);
-	\draw[up] (dec1concat) -- (dec0concat);
-	\draw[conv] (dec0concat) -- (output_patch);
+	% \draw[up] (bottom) -- (dec4concat);
+	% \draw[up] (dec4concat) -- (dec3concat);
+	% \draw[up] (dec3concat) -- (dec2concat);
+	% \draw[up] (dec2concat) -- (dec1concat);
+	% \draw[up] (dec1concat) -- (dec0concat);
+	% \draw[conv] (dec0concat) -- (output_patch);
 
 	% Skip Connections with Attention
-	\draw[skip] (enc4a) -- (att4);
-	\draw[skip] (att4) -- (dec4concat);
-	\draw[skip] (enc3a) -- (att3);
-	\draw[skip] (att3) -- (dec3concat);
-	\draw[skip] (enc2a) -- (att2);
-	\draw[skip] (att2) -- (dec2concat);
-	\draw[skip] (enc1a) -- (att1);
-	\draw[skip] (att1) -- (dec1concat);
-	\draw[skip] (enc0a) -- (att0);
-	\draw[skip] (att0) -- (dec0concat);
+	% \draw[skip] (enc4a) -- (att4);
+	% \draw[skip] (att4) -- (dec4concat);
+	% \draw[skip] (enc3a) -- (att3);
+	% \draw[skip] (att3) -- (dec3concat);
+	% \draw[skip] (enc2a) -- (att2);
+	% \draw[skip] (att2) -- (dec2concat);
+	% \draw[skip] (enc1a) -- (att1);
+	% \draw[skip] (att1) -- (dec1concat);
+	% \draw[skip] (enc0a) -- (att0);
+	% \draw[skip] (att0) -- (dec0concat);
 
 
 	% Gating Signals
-	\draw[gate] (bottom) -- (att4);
-	\draw[gate] (dec4concat) -- (att3);
-	\draw[gate] (dec3concat) -- (att2);
-	\draw[gate] (dec2concat) -- (att1);
-	\draw[gate] (dec1concat) -- (att0);
+	% \draw[gate] (bottom) -- (att4);
+	% \draw[gate] (dec4concat) -- (att3);
+	% \draw[gate] (dec3concat) -- (att2);
+	% \draw[gate] (dec2concat) -- (att1);
+	% \draw[gate] (dec1concat) -- (att0);
 
 	% Legend
-	\matrix[draw, below=3cm of dec0concat, column sep=0.4cm, row sep=0.3cm, font=\large] {
-		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
-		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
-		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {UpConv}; \\
-		\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
-		\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
-		\node[concat] {};               & \node[align=left, text width=4cm] {Concatenation}; \\
-	};
+	% \matrix[draw, below=3cm of dec0concat, column sep=0.4cm, row sep=0.3cm, font=\large] {
+	% 	\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
+	% 	\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
+	% 	\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {UpConv}; \\
+	% 	\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
+	% 	\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
+	% 	\node[concat] {};               & \node[align=left, text width=4cm] {Concatenation}; \\
+	% };
 
 \end{tikzpicture}
 \end{document}
