@@ -34,20 +34,23 @@
 	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
 	% Encoder
-	\node (enc0a) [block, below=1cm of input_patch] {$8\times160^3$};
-	\node (enc0b) [block, below=0.5cm of enc0a] {$16\times160^3$};
+	\node (enc0a) [block, right=0.5cm of input_patch] {$8\times160^3$};
+	\node (enc0b) [block, below=0.5cm of enc0a] {$8\times80^3$};
 
 	\node (enc1a) [block, right=1cm of enc0b] {$16\times80^3$};
-	\node (enc1b) [block, below=0.5cm of enc1a] {$32\times80^3$};
+	\node (enc1b) [block, below=0.5cm of enc1a] {$16\times40^3$};
 
 	\node (enc2a) [block, right=1cm of enc1b] {$32\times40^3$};
-	\node (enc2b) [block, below=0.5cm of enc2a] {$64\times40^3$};
+	\node (enc2b) [block, below=0.5cm of enc2a] {$32\times20^3$};
 
 	\node (enc3a) [block, right=1cm of enc2b] {$64\times20^3$};
-	\node (enc3b) [block, below=0.5cm of enc3a] {$128\times20^3$};
+	\node (enc3b) [block, below=0.5cm of enc3a] {$64\times10^3$};
 
 	\node (enc4a) [block, right=1cm of enc3b] {$128\times10^3$};
-	\node (enc4b) [block, below=0.5cm of enc4a] {$256\times10^3$};
+	\node (enc4b) [block, below=0.5cm of enc4a] {$128\times5^3$};
+
+	% Bottleneck
+	\node (bottom) [block, right=1cm of enc4b] {$128\times5^3$};
 
 	% Decoder - skips
 	\node (dec0skip) [concat, right=28.5cm of enc0b] {$8\times160^3$};
@@ -69,9 +72,6 @@
 	\node (dec2concat) [block, right=0.5cm of dec2up] {$32\times40^3$};
 	\node (dec3concat) [block, right=0.5cm of dec3up] {$64\times20^3$};
 	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
-
-	% Bottleneck
-	\node (bottom) [block, below right=1cm and 2.5cm of enc4b] {$256\times5^3$};
 
 	% Attention Gates
 	\node (att4) [attention, left=0.5cm of dec4skip] {$\sigma$};
@@ -107,15 +107,15 @@
 	\draw[conv] (dec0concat) -- (output_patch);
 
 	% Skip Connections with Attention
-	\draw[skip] (enc4b) -- (att4);
+	\draw[skip] (enc4a) -- (att4);
 	\draw[skip] (att4) -- (dec4concat);
-	\draw[skip] (enc3b) -- (att3);
+	\draw[skip] (enc3a) -- (att3);
 	\draw[skip] (att3) -- (dec3concat);
-	\draw[skip] (enc2b) -- (att2);
+	\draw[skip] (enc2a) -- (att2);
 	\draw[skip] (att2) -- (dec2concat);
-	\draw[skip] (enc1b) -- (att1);
+	\draw[skip] (enc1a) -- (att1);
 	\draw[skip] (att1) -- (dec1concat);
-	\draw[skip] (enc0b) -- (att0);
+	\draw[skip] (enc0a) -- (att0);
 	\draw[skip] (att0) -- (dec0concat);
 
 
