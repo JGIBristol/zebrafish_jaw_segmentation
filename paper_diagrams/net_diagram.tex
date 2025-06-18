@@ -38,22 +38,22 @@
 
 	% Encoder
 	\node (enc0a) [block, below=2.5cm of input_patch] {$8\times160^3$};
-	\node (enc0b) [block, below left=2cm and 1cm of enc0a] {$8\times80^3$};
+	\node (enc0b) [block, below left=2cm and 1cm of enc0a] {$16\times160^3$};
 
 	\node (enc1a) [block, right=1cm of enc0b] {$16\times80^3$};
-	\node (enc1b) [block, below left=2cm and 1cm of enc1a] {$16\times40^3$};
+	\node (enc1b) [block, below left=2cm and 1cm of enc1a] {$32\times80^3$};
 
 	\node (enc2a) [block, right=1cm of enc1b] {$32\times40^3$};
-	\node (enc2b) [block, below left=2cm and 1cm of enc2a] {$32\times20^3$};
+	\node (enc2b) [block, below left=2cm and 1cm of enc2a] {$64\times40^3$};
 
 	\node (enc3a) [block, right=1cm of enc2b] {$64\times20^3$};
-	\node (enc3b) [block, below left=2cm and 1cm of enc3a] {$64\times10^3$};
+	\node (enc3b) [block, below left=2cm and 1cm of enc3a] {$128\times20^3$};
 
 	\node (enc4a) [block, right=1cm of enc3b] {$128\times10^3$};
-	\node (enc4b) [block, below=1cm of enc4a] {$128\times5^3$};
+	\node (enc4b) [block, below=1cm of enc4a] {$256\times10^3$};
 
 	% Bottleneck
-	\node (bottom) [block, right=1cm of enc4b] {$128\times5^3$};
+	\node (bottom) [block, right=1cm of enc4b] {$256\times5^3$};
 
 	% Attention Gates
 	\node (att4) [attention, above=1cm of bottom] {$\sigma$};
