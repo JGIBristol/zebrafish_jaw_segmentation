@@ -56,27 +56,27 @@
 	\node (att4) [attention, above=1.5cm of bottom] {$\sigma$};
 	\node (dec4skip) [concat, right=1.5cm of att4]   {$128\times10^3$};
 	\node (dec4up) [block, below=0cm of dec4skip]   {$128\times10^3$};
-	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
+	\node (dec4concat) [block, above=0.5cm of att4] {$128\times10^3$};
 
 	\node (att3) [attention, above=0.5cm of dec4concat] {$\sigma$};
 	\node (dec3skip) [concat, right=1.5cm of att3]   {$64\times20^3$};
-	\node (dec3up) [block, right=0cm of dec3skip]   {$64\times20^3$};
-	\node (dec3concat) [block, right=0.5cm of dec3up] {$64\times20^3$};
+	\node (dec3up) [block, below=0cm of dec3skip]   {$64\times20^3$};
+	\node (dec3concat) [block, above=0.5cm of att3] {$64\times20^3$};
 
 	\node (att2) [attention, above=0.5cm of dec3concat] {$\sigma$};
 	\node (dec2skip) [concat, right=1.5cm of att2]   {$32\times40^3$};
-	\node (dec2up) [block, right=0cm of dec2skip]   {$32\times40^3$};
-	\node (dec2concat) [block, right=0.5cm of dec2up] {$32\times40^3$};
+	\node (dec2up) [block, below=0cm of dec2skip]   {$32\times40^3$};
+	\node (dec2concat) [block, above=0.5cm of att2] {$32\times40^3$};
 
 	\node (att1) [attention, above=0.5cm of dec2concat] {$\sigma$};
 	\node (dec1skip) [concat, right=1.5cm of att1]   {$16\times80^3$};
-	\node (dec1up) [block, right=0cm of dec1skip]   {$16\times80^3$};
-	\node (dec1concat) [block, right=0.5cm of dec1up] {$16\times80^3$};
+	\node (dec1up) [block, below=0cm of dec1skip]   {$16\times80^3$};
+	\node (dec1concat) [block, above=0.5cm of att1] {$16\times80^3$};
 
 	\node (att0) [attention, above=0.5cm of dec1concat] {$\sigma$};
 	\node (dec0skip) [concat, right=1.5cm of att0] {$8\times160^3$};
-	\node (dec0up) [block, right=0cm of dec0skip] {$8\times160^3$};
-	\node (dec0concat) [block, right=0.5cm of dec0up] {$8\times160^3$};
+	\node (dec0up) [block, below=0cm of dec0skip] {$8\times160^3$};
+	\node (dec0concat) [block, above=0.5cm of att0] {$8\times160^3$};
 
 	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
