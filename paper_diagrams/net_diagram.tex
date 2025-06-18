@@ -137,7 +137,7 @@
 	\matrix[draw, below left=-2cm and 2cm of input_patch, column sep=0.4cm, row sep=0.3cm, font=\large] {
 		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
 		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
-		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {UpConv}; \\
+		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Transposed Conv}; \\
 		\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
 		\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
 		\draw[merge] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Convolution}; \\
