@@ -23,7 +23,7 @@
 \tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
 \tikzstyle{gate} = [thick, ->, >=stealth, violet]
 \tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
-\tikzstyle{concat} = [draw, dotted, minimum width=1cm, minimum height=1cm]
+\tikzstyle{concat} = [draw, dotted, minimum width=2cm, minimum height=1cm, text centered]
 
 
 \begin{document}
@@ -35,27 +35,27 @@
 
 	% Encoder
 	\node (enc0a) [block, right=0.5cm of input_patch] {$8\times160^3$};
-	\node (enc0b) [block, below=0.5cm of enc0a] {$8\times80^3$};
+	\node (enc0b) [block, below left=1.5cm and 1cm of enc0a] {$8\times80^3$};
 
 	\node (enc1a) [block, right=1cm of enc0b] {$16\times80^3$};
-	\node (enc1b) [block, below=0.5cm of enc1a] {$16\times40^3$};
+	\node (enc1b) [block, below left=1.5cm and 1cm of enc1a] {$16\times40^3$};
 
 	\node (enc2a) [block, right=1cm of enc1b] {$32\times40^3$};
-	\node (enc2b) [block, below=0.5cm of enc2a] {$32\times20^3$};
+	\node (enc2b) [block, below left=1.5cm and 1cm of enc2a] {$32\times20^3$};
 
 	\node (enc3a) [block, right=1cm of enc2b] {$64\times20^3$};
-	\node (enc3b) [block, below=0.5cm of enc3a] {$64\times10^3$};
+	\node (enc3b) [block, below left=1.5cm and 1cm of enc3a] {$64\times10^3$};
 
 	\node (enc4a) [block, right=1cm of enc3b] {$128\times10^3$};
-	\node (enc4b) [block, below=0.5cm of enc4a] {$128\times5^3$};
+	\node (enc4b) [block, below=1.5cm of enc4a] {$128\times5^3$};
 
 	% Bottleneck
 	\node (bottom) [block, right=1cm of enc4b] {$128\times5^3$};
 
 	% Attention Gates
-	\node (att4) [attention, above=0.5cm of bottom] {$\sigma$};
+	\node (att4) [attention, above=1.5cm of bottom] {$\sigma$};
 	\node (dec4skip) [concat, right=1.5cm of att4]   {$128\times10^3$};
-	\node (dec4up) [block, right=0cm of dec4skip]   {$128\times10^3$};
+	\node (dec4up) [block, below=0cm of dec4skip]   {$128\times10^3$};
 	\node (dec4concat) [block, right=0.5cm of dec4up] {$128\times10^3$};
 
 	\node (att3) [attention, above=0.5cm of dec4concat] {$\sigma$};
