@@ -18,7 +18,7 @@
 % Styles - blocks
 \tikzstyle{block} = [rectangle, draw, text centered, minimum width=2cm, minimum height=1cm, fill=white]
 \tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
-\tikzstyle{concatmerge} = [circle, draw, text centred, minimum size=0.5cm]
+\tikzstyle{concatmerge} = [circle, draw, text centered, minimum size=0.05cm, font=\tiny]
 
 % arrows
 \tikzstyle{conv} = [thick, ->, >=stealth, black]
@@ -57,26 +57,33 @@
 
 	% Attention Gates
 	\node (att4) [attention, right=1cm of enc4a] {$\sigma$};
-	\node (dec4up) [block, above right=1cm and 1cm of bottom]   {$128\times10^3$};
-	\node (dec4concat) [block, right=1cm of att4] {$128\times10^3$};
+	\node (merge4) [concatmerge, right=0.5cm of att4] {$+$};
+	\node (dec4up) [block, above right=1cm and 0.5cm of bottom]   {$128\times10^3$};
+	\node (dec4concat) [block, right=2cm of att4] {$128\times10^3$};
 
 	\node (att3) [attention, right=1cm of enc3a] {$\sigma$};
+	\node (merge3) [concatmerge, right=0.5cm of att3] {$+$};
 	\node (dec3up) [block, right=2cm of att3]   {$64\times20^3$};
-	\node (dec3concat) [block, above=0.5cm of att3] {$64\times20^3$};
+	\node (dec3concat) [block, below=0.5cm of att3] {$64\times20^3$};
 
 	\node (att2) [attention, right=1cm of enc2a] {$\sigma$};
+	\node (merge2) [concatmerge, right=0.5cm of att2] {$+$};
 	\node (dec2up) [block, right=2cm of att2]   {$32\times40^3$};
-	\node (dec2concat) [block, above=0.5cm of att2] {$32\times40^3$};
+	\node (dec2concat) [block, below=0.5cm of att2] {$32\times40^3$};
 
 	\node (att1) [attention, right=1cm of enc1a] {$\sigma$};
+	\node (merge1) [concatmerge, right=0.5cm of att1] {$+$};
 	\node (dec1up) [block, right=2cm of att1]   {$16\times80^3$};
-	\node (dec1concat) [block, above=0.5cm of att1] {$16\times80^3$};
+	\node (dec1concat) [block, below=0.5cm of att1] {$16\times80^3$};
 
 	\node (att0) [attention, right=1cm of enc0a] {$\sigma$};
+	\node (merge0) [concatmerge, right=0.5cm of att0] {$+$};
 	\node (dec0up) [block, right=2cm of att1] {$8\times160^3$};
-	\node (dec0concat) [block, above=0.5cm of att0] {$8\times160^3$};
+	\node (dec0concat) [block, below=0.5cm of att0] {$8\times160^3$};
 
-	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (tail) [block, right=1cm of merge0] {$8\times160^3$};
+
+	\node (output_patch) [block, above=2.5cm of tail, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
@@ -112,12 +119,13 @@
 
 	% Legend
 	\matrix[draw, below left=-2cm and 2cm of input_patch, column sep=0.4cm, row sep=0.3cm, font=\large] {
-		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
-		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
-		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Transposed Conv}; \\
-		\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
-		\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
-		\draw[merge] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Convolution}; \\
+		\draw[conv] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
+		\draw[pool] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Max Pooling}; \\
+		\draw[up]   (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Transposed Conv}; \\
+		\draw[skip] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Skip Connection}; \\
+		\draw[gate] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Gating Signal}; \\
+		\draw[merge] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Convolution}; \\
+		\node[concatmerge] at (0.3, 0) {+};\draw[thick](0.4, -0.2) -- +(0.6, 0.0); & \node[align=left, text width=4cm] {Concatenation}; \\
 	};
 
 \end{tikzpicture}
