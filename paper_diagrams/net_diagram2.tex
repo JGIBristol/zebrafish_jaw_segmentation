@@ -85,6 +85,13 @@
 	\node (output_patch) [block, above=2.5cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=green!20, above=4cm of output_patch] {Segmentation Mask$1\times192^3$};
 
+	% Arrows for patch extratction
+	\draw[thick, bend right=30, dotted, ->] (input_full.south west) to (input_patch.north west);
+	\draw[thick, bend right=30, dotted, ->] (output_patch.north east) to (output_full.south east);
+
+	\node (extraction) [below=2cm of input_full, align=center] {Extract patches};
+	\node (stitching) [below=2cm of output_full, align=center] {Stitch together patches};
+
 	% Arrows - conv
 	\draw[conv] (enc0a.south west) -- (enc0b.north east);
 	\draw[conv] (enc1a.south west) -- (enc1b.north east);
@@ -151,29 +158,29 @@
 		% Arrow examples
 		\node {\begin{tikzpicture}[baseline]
 				\draw[conv] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[pool] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Max Pooling}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Max Pooling};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[up] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Transposed Conv}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Transposed Conv};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[skip] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Skip Connection}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Skip Connection};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[gate] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Gating Signal}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Gating Signal};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[merge] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Convolution}; \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Convolution};  \\
 
-		\node[attention] {$\sigma$}; & \node[align=left, text width=4cm] {Attention Gate}; \\
+		\node[attention] {$\sigma$}; & \node[align=left, text width=4cm] {Attention Gate};  \\
 		\node[concatmerge] {+}; & \node[align=left, text width=4cm] {Concatenation}; \\
 	};
 
