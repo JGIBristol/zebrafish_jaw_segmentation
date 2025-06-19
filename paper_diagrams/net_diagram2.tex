@@ -169,12 +169,12 @@
 			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Transposed Conv};  \\
 
 		\node {\begin{tikzpicture}[baseline]
-				\draw[skip] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Skip Connection};  \\
-
-		\node {\begin{tikzpicture}[baseline]
 				\draw[gate] (0,0) -- (0.6,0);
 			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Gating Signal};  \\
+
+		\node {\begin{tikzpicture}[baseline]
+				\draw[skip] (0,0) -- (0.6,0);
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Copy};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[merge] (0,0) -- (0.6,0);
