@@ -155,7 +155,11 @@
 		column sep=0.6cm, row sep=0.4cm,
 	] {
 
-		% Arrow examples
+
+		\node[block] {c$\times$H$^3$}; & \node[align=left, text width=4cm, minimum height=0.1cm] {Feature Map}; \\
+		\node[attention] {$\sigma$}; & \node[align=left, text width=4cm] {Attention Gate};  \\
+		\node[concatmerge] {+}; & \node[align=left, text width=4cm] {Concatenation}; \\
+
 		\node {\begin{tikzpicture}[baseline]
 				\draw[conv] (0,0) -- (0.6,0);
 			\end{tikzpicture}}; & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$};  \\
@@ -179,10 +183,6 @@
 		\node {\begin{tikzpicture}[baseline]
 				\draw[merge] (0,0) -- (0.6,0);
 			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Convolution};  \\
-
-		\node[attention] {$\sigma$}; & \node[align=left, text width=4cm] {Attention Gate};  \\
-		\node[concatmerge] {+}; & \node[align=left, text width=4cm] {Concatenation}; \\
-		\node[block] {c$\times$H$^3$}; & \node[align=left, text width=4cm] {Feature Map}; \\
 	};
 
 \end{tikzpicture}
