@@ -86,11 +86,11 @@
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
-	\draw[conv] (enc0a) -- (enc0b);
-	\draw[conv] (enc1a) -- (enc1b);
-	\draw[conv] (enc2a) -- (enc2b);
-	\draw[conv] (enc3a) -- (enc3b);
-	\draw[conv] (enc4a) -- (enc4b);
+	\draw[conv] (enc0a.south west) -- (enc0b.north east);
+	\draw[conv] (enc1a.south west) -- (enc1b.north east);
+	\draw[conv] (enc2a.south west) -- (enc2b.north east);
+	\draw[conv] (enc3a.south west) -- (enc3b.north east);
+	\draw[conv] (enc4a.south west) -- (enc4b.north east);
 
 	% Arrows - Encoder
 	\draw[conv] (input_patch) -- (enc0a);
@@ -98,7 +98,7 @@
 	\draw[pool] (enc1b) -- (enc2a);
 	\draw[pool] (enc2b) -- (enc3a);
 	\draw[pool] (enc3b) -- (enc4a);
-	\draw[pool] (enc4b) -- (bottom);
+	\draw[pool] (enc4b.south east) -- (bottom.north west);
 
 	% Skip Connections with Attention
 	\draw[skip] (enc4a) -- (att4);
@@ -107,6 +107,12 @@
 	\draw[skip] (enc1a) -- (att1);
 	\draw[skip] (enc0a) -- (att0);
 
+	\draw[skip] (att4) -- (merge4);
+	\draw[skip] (att3) -- (merge3);
+	\draw[skip] (att2) -- (merge2);
+	\draw[skip] (att1) -- (merge1);
+	\draw[skip] (att0) -- (merge0);
+
 	% Gating Signals
 	\draw[gate] (dec4up) -- (att4);
 	\draw[gate] (dec3up) -- (att3);
@@ -114,7 +120,28 @@
 	\draw[gate] (dec1up) -- (att1);
 	\draw[gate] (dec0up) -- (att0);
 
+	% Concatenation
+	\draw[concat] (dec4up.north) -- (merge4);
+	\draw[concat] (dec3up.north) -- (merge3);
+	\draw[concat] (dec2up.north) -- (merge2);
+	\draw[concat] (dec1up.north) -- (merge1);
+	\draw[concat] (dec0up.north) -- (merge0);
+
 	% Merge convolutions
+	\draw[merge] (merge4) -- (dec4concat);
+	\draw[merge] (merge3) -- (dec3concat);
+	\draw[merge] (merge2) -- (dec2concat);
+	\draw[merge] (merge1) -- (dec1concat);
+	\draw[merge] (merge0) -- (dec0concat);
+
+	% Up Sampling
+	\draw[up] (bottom.north east) -- (dec4up.south);
+	\draw[up] (dec4concat.north west) -- (dec3up.south east);
+	\draw[up] (dec3concat.north west) -- (dec2up.south east);
+	\draw[up] (dec2concat.north west) -- (dec1up.south east);
+	\draw[up] (dec1concat.north west) -- (dec0up.south east);
+
+	\draw[merge] (dec0concat) -- (output_patch);
 
 	% Legend
 	\matrix[draw, below left=-2cm and 2cm of input_patch, column sep=0.4cm, row sep=0.3cm, font=\large] {
@@ -124,7 +151,8 @@
 		\draw[skip] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Skip Connection}; \\
 		\draw[gate] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Gating Signal}; \\
 		\draw[merge] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Convolution}; \\
-		\node[concatmerge] at (0.3, 0) {+};\draw[concat](0.4, -0.2) -- +(0.6, 0.0); & \node[align=left, text width=4cm] {Concatenation}; \\
+		\node[attention] {$\sigma$} ;                                      & \node[align=left, text width=4cm] {Attention Gate}; \\
+		\node[concatmerge] {+};\draw[concat](0.4, -0.2) -- +(0.6, 0.0); & \node[align=left, text width=4cm] {Concatenation}; \\
 	};
 
 \end{tikzpicture}
