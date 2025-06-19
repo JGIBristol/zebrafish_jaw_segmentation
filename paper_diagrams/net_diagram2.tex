@@ -27,6 +27,7 @@
 \tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
 \tikzstyle{gate} = [thick, ->, >=stealth, blue]
 \tikzstyle{merge} = [thick, ->, >=stealth, red]
+\tikzstyle{concat} = [draw, thick, black]
 
 
 \begin{document}
@@ -125,7 +126,7 @@
 		\draw[skip] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Skip Connection}; \\
 		\draw[gate] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Gating Signal}; \\
 		\draw[merge] (0,-0.3) -- +(0.6,0.0);                         & \node[align=left, text width=4cm] {Convolution}; \\
-		\node[concatmerge] at (0.3, 0) {+};\draw[thick](0.4, -0.2) -- +(0.6, 0.0); & \node[align=left, text width=4cm] {Concatenation}; \\
+		\node[concatmerge] at (0.3, 0) {+};\draw[concat](0.4, -0.2) -- +(0.6, 0.0); & \node[align=left, text width=4cm] {Concatenation}; \\
 	};
 
 \end{tikzpicture}
