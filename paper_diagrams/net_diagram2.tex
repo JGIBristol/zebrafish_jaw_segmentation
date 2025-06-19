@@ -35,7 +35,7 @@
 
 	% Input image and patch
 	\node (input_full) [block, fill=gray!10] {Original Image $1\times192^3$};
-	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
+	\node (input_patch) [block, below=4cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
 	% Encoder
 	\node (enc0a) [block, below=2.5cm of input_patch] {$8\times160^3$};
@@ -83,7 +83,7 @@
 	\node (dec0up) [block, below=0.5cm of att0] {$8\times160^3$};
 
 	\node (output_patch) [block, above=2.5cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
-	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
+	\node (output_full) [block, fill=green!20, above=4cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
 	\draw[conv] (enc0a.south west) -- (enc0b.north east);
