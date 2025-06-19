@@ -55,36 +55,34 @@
 
 	% Bottleneck
 	\node (bottom) [block, below right=1cm and 1cm of enc4b] {$256\times5^3$};
+	\node (dec4up) [block, above right=1cm and 0.5cm of bottom]   {$128\times10^3$};
 
 	% Attention Gates
 	\node (att4) [attention, right=1cm of enc4a] {$\sigma$};
 	\node (merge4) [concatmerge, right=0.5cm of att4] {$+$};
-	\node (dec4up) [block, above right=1cm and 0.5cm of bottom]   {$128\times10^3$};
 	\node (dec4concat) [block, right=2cm of att4] {$128\times10^3$};
 
 	\node (att3) [attention, right=1cm of enc3a] {$\sigma$};
+	\node (dec3concat) [block, right=2cm of att3]   {$64\times20^3$};
 	\node (merge3) [concatmerge, right=0.5cm of att3] {$+$};
-	\node (dec3up) [block, right=2cm of att3]   {$64\times20^3$};
-	\node (dec3concat) [block, below=0.5cm of att3] {$64\times20^3$};
+	\node (dec3up) [block, below=0.5cm of att3] {$64\times20^3$};
 
 	\node (att2) [attention, right=1cm of enc2a] {$\sigma$};
+	\node (dec2concat) [block, right=2cm of att2]   {$32\times40^3$};
 	\node (merge2) [concatmerge, right=0.5cm of att2] {$+$};
-	\node (dec2up) [block, right=2cm of att2]   {$32\times40^3$};
-	\node (dec2concat) [block, below=0.5cm of att2] {$32\times40^3$};
+	\node (dec2up) [block, below=0.5cm of att2] {$32\times40^3$};
 
 	\node (att1) [attention, right=1cm of enc1a] {$\sigma$};
+	\node (dec1concat) [block, right=2cm of att1]   {$16\times80^3$};
 	\node (merge1) [concatmerge, right=0.5cm of att1] {$+$};
-	\node (dec1up) [block, right=2cm of att1]   {$16\times80^3$};
-	\node (dec1concat) [block, below=0.5cm of att1] {$16\times80^3$};
+	\node (dec1up) [block, below=0.5cm of att1] {$16\times80^3$};
 
 	\node (att0) [attention, right=1cm of enc0a] {$\sigma$};
+	\node (dec0concat) [block, right=2cm of att0] {$8\times160^3$};
 	\node (merge0) [concatmerge, right=0.5cm of att0] {$+$};
-	\node (dec0up) [block, right=2cm of att1] {$8\times160^3$};
-	\node (dec0concat) [block, below=0.5cm of att0] {$8\times160^3$};
+	\node (dec0up) [block, below=0.5cm of att0] {$8\times160^3$};
 
-	\node (tail) [block, right=1cm of merge0] {$8\times160^3$};
-
-	\node (output_patch) [block, above=2.5cm of tail, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_patch) [block, above=2.5cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
 	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
 
 	% Arrows - conv
@@ -110,11 +108,11 @@
 	\draw[skip] (enc0a) -- (att0);
 
 	% Gating Signals
-	% \draw[gate] (dec4up) -- (att4);
-	% \draw[gate] (dec3up) -- (att3);
-	% \draw[gate] (dec2up) -- (att2);
-	% \draw[gate] (dec1up) -- (att1);
-	% \draw[gate] (dec0up) -- (att0);
+	\draw[gate] (dec4up) -- (att4);
+	\draw[gate] (dec3up) -- (att3);
+	\draw[gate] (dec2up) -- (att2);
+	\draw[gate] (dec1up) -- (att1);
+	\draw[gate] (dec0up) -- (att0);
 
 	% Merge convolutions
 
