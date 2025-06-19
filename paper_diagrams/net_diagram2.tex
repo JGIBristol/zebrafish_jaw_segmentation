@@ -27,7 +27,6 @@
 \tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
 \tikzstyle{gate} = [thick, ->, >=stealth, blue]
 \tikzstyle{merge} = [thick, ->, >=stealth, red]
-\tikzstyle{concat} = [draw, thick, black]
 
 
 \begin{document}
@@ -90,7 +89,7 @@
 	\draw[thick, bend right=30, dotted, ->] (output_patch.north east) to (output_full.south east);
 
 	\node (extraction) [below=2cm of input_full, align=center] {Extract patches};
-	\node (stitching) [below=2cm of output_full, align=center] {Stitch together patches};
+	\node (stitching) [below=2cm of output_full, align=center] {Aggregate patches};
 
 	% Arrows - conv
 	\draw[conv] (enc0a.south west) -- (enc0b.north east);
@@ -128,11 +127,11 @@
 	\draw[gate] (dec0up) -- (att0);
 
 	% Concatenation
-	\draw[concat] (dec4up.north) -- (merge4);
-	\draw[concat] (dec3up.north) -- (merge3);
-	\draw[concat] (dec2up.north) -- (merge2);
-	\draw[concat] (dec1up.north) -- (merge1);
-	\draw[concat] (dec0up.north) -- (merge0);
+	\draw[skip] (dec4up.east) -- ++(0.3cm,0) -- (merge4.south);
+	\draw[skip] (dec3up.east) -- ++(0.3cm,0) -- (merge3.south);
+	\draw[skip] (dec2up.east) -- ++(0.3cm,0) -- (merge2.south);
+	\draw[skip] (dec1up.east) -- ++(0.3cm,0) -- (merge1.south);
+	\draw[skip] (dec0up.east) -- ++(0.3cm,0) -- (merge0.south);
 
 	% Merge convolutions
 	\draw[merge] (merge4) -- (dec4concat);
@@ -156,33 +155,33 @@
 	] {
 
 
-		\node[block] {c$\times$H$^3$}; & \node[align=left, text width=4cm, minimum height=0.1cm] {Feature Map}; \\
-		\node[attention] {$\sigma$}; & \node[align=left, text width=4cm] {Attention Gate};  \\
-		\node[concatmerge] {+}; & \node[align=left, text width=4cm] {Concatenation}; \\
+		\node[block] {c$\times$H$^3$};  & \node[align=left, text width=4cm, minimum height=0.1cm] {Feature Map};  \\
+		\node[attention] {$\sigma$};  & \node[align=left, text width=4cm] {Attention Gate};  \\
+		\node[concatmerge] {+};  & \node[align=left, text width=4cm] {Concatenation};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[conv] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$};  \\
+			\end{tikzpicture}};  & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[pool] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Max Pooling};  \\
+			\end{tikzpicture}};  & \node[align=left, text width=4cm] {Strided Conv};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[up] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Transposed Conv};  \\
+			\end{tikzpicture}};  & \node[align=left, text width=4cm] {Transposed Conv};  \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[gate] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Gating Signal};  \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Gating Signal}; \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[skip] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Copy};  \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Copy}; \\
 
 		\node {\begin{tikzpicture}[baseline]
 				\draw[merge] (0,0) -- (0.6,0);
-			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Convolution};  \\
+			\end{tikzpicture}}; & \node[align=left, text width=4cm] {Convolution}; \\
 	};
 
 \end{tikzpicture}
