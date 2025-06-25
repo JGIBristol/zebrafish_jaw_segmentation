@@ -1,0 +1,44 @@
+% A schematic diagram showing the shape of the feature map as it passes through the network.
+
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+
+% Styles - blocks
+\tikzstyle{block} = [rectangle, draw, text centered, minimum width=2cm, minimum height=1cm, fill=white]
+\tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
+\tikzstyle{concatmerge} = [circle, draw, text centered, minimum size=0.05cm, font=\tiny]
+
+% arrows
+\tikzstyle{conv} = [thick, ->, >=stealth, black]
+\tikzstyle{pool} = [thick, ->, >=stealth, green]
+\tikzstyle{up}   = [thick, ->, >=stealth, orange]
+\tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
+\tikzstyle{gate} = [thick, ->, >=stealth, blue]
+\tikzstyle{merge} = [thick, ->, >=stealth, red]
+
+
+\begin{document}
+\begin{tikzpicture}[node distance=1.8cm and 0.5cm]
+
+	% Input image and patch
+	\node (input_full) [block, fill=gray!10] {Original Image $1\times192^3$};
+	\node (input_patch) [block, below=2cm of input_full, fill=gray!30, align=center] {Input Patch\\$1\times160^3$};
+
+	% Encoder
+	\node (output_patch) [block, right=5cm of input_patch, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_full) [block, fill=green!20, above=2cm of output_patch] {Segmentation Mask$1\times192^3$};
+
+	% Blocks
+	\node[draw, fit={([yshift=-1cm]input_patch.south west) ([yshift=-3cm]output_patch.south east)}, inner sep=0pt, align=center] (block0) {\huge{$8\times 160^3$}};
+	\node[draw, fit={([yshift=-1cm]block0.south west) ([yshift=-3cm]block0.south east)}, inner sep=0pt, align=center] (block1) {\huge{$16\times 80^3$}};
+	\node[draw, fit={([yshift=-1cm]block1.south west) ([yshift=-3cm]block1.south east)}, inner sep=0pt, align=center] (block2) {\huge{$32 \times 40^3$}};
+	\node[draw, fit={([yshift=-1cm]block2.south west) ([yshift=-3cm]block2.south east)}, inner sep=0pt, align=center] (block3) {\huge{$64 \times 20^3$}};
+	\node[draw, fit={([yshift=-1cm]block3.south west) ([yshift=-3cm]block3.south east)}, inner sep=0pt, align=center] (block4) {\huge{$128 \times 10^3$}};
+
+	\node[draw, fit={([yshift=-1cm]block4.south west) ([xshift=2cm, yshift=-2cm]block4.south west)}, inner sep=0pt, align=center] (bottleneck1) {$256 \times 10^3$};
+	\node[draw, fit={([yshift=-1cm]block4.south east) ([xshift=-2cm, yshift=-2cm]block4.south east)}, inner sep=0pt, align=center] (bottleneck2) {$256 \times 5^3$};
+
+
+\end{tikzpicture}
+\end{document}
