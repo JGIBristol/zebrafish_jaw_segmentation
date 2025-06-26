@@ -1,40 +1,40 @@
 \documentclass{standalone}
 \usepackage{tikz}
-\usetikzlibrary{positioning, arrows.meta}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds}
 
-% Define styles
+% Styles
 \tikzstyle{io} = [rectangle, draw, minimum width=3.5cm, minimum height=1cm, fill=gray!20, font=\small]
-\tikzstyle{block} = [rectangle, draw, minimum width=3cm, minimum height=1.4cm, fill=blue!10, font=\small]
+\tikzstyle{block} = [rectangle, draw, minimum width=3cm, minimum height=1.5cm, fill=blue!10, font=\small]
 \tikzstyle{bottleneck} = [rectangle, draw, minimum width=3cm, minimum height=1.4cm, fill=purple!15, font=\small]
 \tikzstyle{arrow} = [thick, ->, >=stealth]
 \tikzstyle{skip} = [thick, dotted, ->, >=stealth, gray]
-\tikzstyle{textlabel} = [font=\small]
+\tikzstyle{sectionbox} = [draw=black, thick, dashed, inner sep=0.3cm, rounded corners=4pt]
 
 \begin{document}
-\begin{tikzpicture}[node distance=1.2cm and 2cm]
+\begin{tikzpicture}[node distance=1.5cm and 3cm]
 
-  % Input stack
-  \node (input_img) [io] {Input Image};
-  \node (input_patch) [io, below=of input_img] {Extracted Patch};
+  % Input & output (left side)
+  \node (input_img) [io] {Input Volume};
+  \node (input_patch) [io, below=1cm of input_img] {Extracted Patch};
 
-  % Encoder path (vertical stack)
-  \node (enc1) [block, below=of input_patch, xshift=-2.8cm] {Low-level Features};
-  \node (enc2) [block, below=of enc1] {Mid-level Features};
-  \node (enc3) [block, below=of enc2] {High-level Features};
+  % Encoder (left column)
+  \node (enc1) [block, below=2cm of input_patch] {Low-level Features};
+  \node (enc2) [block, below=1cm of enc1] {Mid-level Features};
+  \node (enc3) [block, below=1cm of enc2] {High-level Features};
 
-  % Bottleneck
-  \node (bottleneck) [bottleneck, below=of enc3, xshift=4cm] {Abstract Representation};
+  % Bottleneck (centered)
+  \node (bottleneck) [bottleneck, below right=4cm and 0cm of enc2.south east] {Abstract Representation};
 
-  % Decoder path (mirrored vertical stack)
-  \node (dec3) [block, above=of bottleneck, xshift=2.8cm] {Reconstruct Structure};
-  \node (dec2) [block, above=of dec3] {Recover Detail};
-  \node (dec1) [block, above=of dec2] {Refine Boundaries};
+  % Decoder (right column, mirrored)
+  \node (dec1) [block, right=4cm of enc1] {Refine Boundaries};
+  \node (dec2) [block, right=4cm of enc2] {Recover Detail};
+  \node (dec3) [block, right=4cm of enc3] {Reconstruct Structure};
 
-  % Output stack
-  \node (output_patch) [io, above=of dec1] {Output Patch};
-  \node (output_img) [io, above=of output_patch] {Segmentation Mask};
+  % Output
+  \node (output_patch) [io, above=2cm of dec1] {Output Patch};
+  \node (output_img) [io, above=1cm of output_patch] {Segmentation Mask};
 
-  % Arrows (main flow)
+  % Arrows - main flow
   \draw[arrow] (input_img) -- (input_patch);
   \draw[arrow] (input_patch) -- (enc1);
   \draw[arrow] (enc1) -- (enc2);
@@ -46,14 +46,16 @@
   \draw[arrow] (dec1) -- (output_patch);
   \draw[arrow] (output_patch) -- (output_img);
 
-  % Skip connections (dotted)
-  \draw[skip] (enc1.east) to[bend left=20] (dec1.west);
+  % Skip connections
+  \draw[skip] (enc3.east) to[bend left=15] (dec3.west);
   \draw[skip] (enc2.east) to[bend left=15] (dec2.west);
-  \draw[skip] (enc3.east) to[bend left=10] (dec3.west);
+  \draw[skip] (enc1.east) to[bend left=15] (dec1.west);
 
-  % Side labels
-  \node[textlabel, rotate=90, left=0.5cm of enc2] {Encoder\\\footnotesize Detects features};
-  \node[textlabel, rotate=90, right=0.5cm of dec2] {Decoder\\\footnotesize Reconstructs meaning};
+  % Section boxes
+  \begin{scope}[on background layer]
+    \node [sectionbox, fit=(enc1)(enc2)(enc3), label=left:\textbf{Encoder}] {};
+    \node [sectionbox, fit=(dec1)(dec2)(dec3), label=right:\textbf{Decoder}] {};
+  \end{scope}
 
 \end{tikzpicture}
 \end{document}
