@@ -4,7 +4,7 @@
 
 % Styles
 \tikzstyle{io} = [rectangle, draw, minimum width=3.5cm, minimum height=1cm, fill=gray!20, font=\small]
-\tikzstyle{block} = [rectangle, draw, minimum width=3cm, minimum height=1.5cm, fill=blue!10, font=\small]
+\tikzstyle{block} = [rectangle, draw, minimum width=3cm, minimum height=1.5cm, fill=blue!10, font=\small, align=center]
 \tikzstyle{bottleneck} = [rectangle, draw, minimum width=3cm, minimum height=1.4cm, fill=purple!15, font=\small]
 \tikzstyle{arrow} = [thick, ->, >=stealth]
 \tikzstyle{skip} = [thick, dotted, ->, >=stealth, gray]
@@ -26,9 +26,9 @@
   \node (bottleneck) [bottleneck, below right=4cm and 0cm of enc2.south east] {Abstract Representation};
 
   % Decoder (right column, mirrored)
-  \node (dec1) [block, right=4cm of enc1] {Refine Boundaries};
-  \node (dec2) [block, right=4cm of enc2] {Recover Detail};
-  \node (dec3) [block, right=4cm of enc3] {Reconstruct Structure};
+  \node (dec1) [block, right=4cm of enc1] {Finer Details};
+  \node (dec2) [block, right=4cm of enc2] {Intermediate\\ Details};
+  \node (dec3) [block, right=4cm of enc3] {Coarse\\ Reconstruction};
 
   % Output
   \node (output_patch) [io, above=2cm of dec1] {Output Patch};
@@ -46,10 +46,10 @@
   \draw[arrow] (dec1) -- (output_patch);
   \draw[arrow] (output_patch) -- (output_img);
 
-  % Skip connections
-  \draw[skip] (enc3.east) to[bend left=15] (dec3.west);
-  \draw[skip] (enc2.east) to[bend left=15] (dec2.west);
-  \draw[skip] (enc1.east) to[bend left=15] (dec1.west);
+  % Skip connections with labels
+  \draw[skip] (enc3.east) to[bend left=15] node[midway, above, font=\footnotesize, gray] {} (dec3.west);
+  \draw[skip] (enc2.east) to[bend left=15] node[midway, above, font=\footnotesize, gray] {} (dec2.west);
+  \draw[skip] (enc1.east) to[bend left=15] node[midway, above, font=\footnotesize, gray] {Skip Connection} (dec1.west);
 
   % Section boxes
   \begin{scope}[on background layer]
