@@ -13,95 +13,136 @@
 
 \documentclass{standalone}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
 
-\newlength{\blockwidth}
-\setlength{\blockwidth}{3cm}
+% Styles - blocks
+\tikzstyle{block} = [rectangle, draw, text centered, minimum width=2cm, minimum height=1cm, fill=white]
+\tikzstyle{attention} = [circle, draw, text centered, minimum size=1cm, fill=orange!20]
+\tikzstyle{concat} = [draw, dotted, minimum width=0.5cm, minimum height=0.5cm, text centered]
 
-\newlength{\blockheight}
-\setlength{\blockheight}{1cm}
+% arrows
+\tikzstyle{conv} = [thick, ->, >=stealth, black]
+\tikzstyle{pool} = [thick, ->, >=stealth, green]
+\tikzstyle{up}   = [thick, ->, >=stealth, orange]
+\tikzstyle{skip} = [thick, dashed, ->, >=stealth, gray]
+\tikzstyle{gate} = [thick, ->, >=stealth, blue]
+\tikzstyle{merge} = [thick, ->, >=stealth, red]
 
-\newlength{\yshift}
-\setlength{\yshift}{-0.5cm}
-
-\tikzstyle{block} = [rectangle, draw, text centered, text width=\blockwidth, minimum height=\blockheight]
-\tikzstyle{arrow} = [thick,->,>=stealth]
-\tikzstyle{skip} = [thick, dashed,->,>=stealth]
-\tikzstyle{attention} = [circle, draw, text centered, minimum height=1cm, minimum width=2em]
 
 \begin{document}
-\begin{tikzpicture}[node distance=2cm]
+\begin{tikzpicture}[node distance=1.8cm and 0.5cm]
 
-    % Input
-    \node (input_label) [block] {Input};
-    \node (input) [block, below of=input_label, yshift=1cm]{$1\times160\times160\times160$};
+	% Input image and patch
+	\node (input_full) [block, fill=gray!10] {Original Image $1\times192^3$};
+	\node (input_patch) [block, below=1.5cm of input_full, fill=gray!30, align=center] {Extracted Patch\\$1\times160^3$};
 
-    % Contracting path
-    \node (head) [block, right of=input, xshift=\blockwidth] {$8\times160\times160\times160$};
+	% Encoder
+	\node (enc0a) [block, below=2.5cm of input_patch] {$8\times160^3$};
+	\node (enc0b) [block, below left=2cm and 1cm of enc0a] {$16\times160^3$};
 
-    \node (enc1) [block, below of=head, yshift=\yshift]{$16\times80\times80\times80$};
-    \node (enc2) [block, below of=enc1, yshift=\yshift]{$32\times40\times40\times40$};
-    \node (enc3) [block, below of=enc2, yshift=\yshift]{$64\times20\times20\times20$};
-    \node (enc4) [block, below of=enc3, yshift=\yshift]{$128\times10\times10\times10$};
+	\node (enc1a) [block, right=1cm of enc0b] {$16\times80^3$};
+	\node (enc1b) [block, below left=2cm and 1cm of enc1a] {$32\times80^3$};
 
-    % Bottom layer
-    \node (bottom) [block, below right of=enc4, yshift=\yshift, xshift=\blockwidth]{$256\times5\times5\times5$};
+	\node (enc2a) [block, right=1cm of enc1b] {$32\times40^3$};
+	\node (enc2b) [block, below left=2cm and 1cm of enc2a] {$64\times40^3$};
 
-    % Expanding Path
-    % No idea why the yshift is not working here
-    \node (dec4) [block, above of=bottom, yshift=\yshift + 0.4\blockheight, xshift=\blockwidth]{$128\times10\times10\times10$};
-    \node (dec3) [block, above of=dec4,   yshift=\yshift + \blockheight]{$64\times20\times20\times20$};
-    \node (dec2) [block, above of=dec3,   yshift=\yshift + \blockheight]{$32\times40\times40\times40$};
-    \node (dec1) [block, above of=dec2,   yshift=\yshift + \blockheight]{$16\times80\times80\times80$};
+	\node (enc3a) [block, right=1cm of enc2b] {$64\times20^3$};
+	\node (enc3b) [block, below left=2cm and 1cm of enc3a] {$128\times20^3$};
 
-    \node (reduce) [block, above of=dec1, yshift=\yshift + \blockheight]{$8\times160\times160\times160$};
+	\node (enc4a) [block, right=1cm of enc3b] {$128\times10^3$};
+	\node (enc4b) [block, below=1cm of enc4a] {$256\times10^3$};
 
-    % Output
-    \node (output) [block, right of=reduce, xshift=\blockwidth] {$1\times160\times160\times160$};
-    \node (output_label) [block, above of=output, yshift=-1cm]{Output};
+	% Bottleneck
+	\node (bottom) [block, right=1cm of enc4b] {$256\times5^3$};
 
-    % Attention Mechanisms, named from the top
-    \node (att1) [attention, left of=reduce, xshift=-0.25\blockwidth] {Att};
-    \node (att2) [attention, left of=dec1, xshift=-0.25\blockwidth] {Att};
-    \node (att3) [attention, left of=dec2, xshift=-0.25\blockwidth] {Att};
-    \node (att4) [attention, left of=dec3, xshift=-0.25\blockwidth] {Att};
-    \node (att5) [attention, left of=dec4, xshift=-0.25\blockwidth] {Att};
+	% Attention Gates
+	\node (att4) [attention, above=1cm of bottom] {$\sigma$};
+	\node (dec4skip) [concat, right=1.5cm of att4, minimum height=1cm, minimum width=2cm]   {$128\times10^3$};
+	\node (dec4up) [block, below=0cm of dec4skip]   {$128\times10^3$};
+	\node (dec4concat) [block, above=0.5cm of att4] {$128\times10^3$};
 
-    % ==== Arrows
-    % Contracting
-    \draw [arrow] (input) -- (head);
-    \draw [arrow] (head) -- (enc1);
-    \draw [arrow] (enc1) -- (enc2);
-    \draw [arrow] (enc2) -- (enc3);
-    \draw [arrow] (enc3) -- (enc4);
-    \draw [arrow] (enc4) -- (bottom);
+	\node (att3) [attention, above=0.5cm of dec4concat] {$\sigma$};
+	\node (dec3skip) [concat, right=1.5cm of att3, minimum height=1cm, minimum width=2cm]   {$64\times20^3$};
+	\node (dec3up) [block, below=0cm of dec3skip]   {$64\times20^3$};
+	\node (dec3concat) [block, above=0.5cm of att3] {$64\times20^3$};
 
-    % Expanding
-    \draw [arrow] (bottom) -- (dec4);
-    \draw [arrow] (dec4) -- (dec3);
-    \draw [arrow] (dec3) -- (dec2);
-    \draw [arrow] (dec2) -- (dec1);
-    \draw [arrow] (dec1) -- (reduce);
-    \draw [arrow] (reduce) -- (output);
+	\node (att2) [attention, above=0.5cm of dec3concat] {$\sigma$};
+	\node (dec2skip) [concat, right=1.5cm of att2, minimum height=1cm, minimum width=2cm]   {$32\times40^3$};
+	\node (dec2up) [block, below=0cm of dec2skip]   {$32\times40^3$};
+	\node (dec2concat) [block, above=0.5cm of att2] {$32\times40^3$};
 
-    % Attention
-    \draw [skip] (bottom) -- (att5);
-    \draw [skip] (dec4) -- (att4);
-    \draw [skip] (dec3) -- (att3);
-    \draw [skip] (dec2) -- (att2);
-    \draw [skip] (dec1) -- (att1);
+	\node (att1) [attention, above=0.5cm of dec2concat] {$\sigma$};
+	\node (dec1skip) [concat, right=1.5cm of att1, minimum height=1cm, minimum width=2cm]   {$16\times80^3$};
+	\node (dec1up) [block, below=0cm of dec1skip]   {$16\times80^3$};
+	\node (dec1concat) [block, above=0.5cm of att1] {$16\times80^3$};
 
-    % Skip Connections
-    \draw [skip] (enc4) -- (att5);
-    \draw [skip] (att5) -- (dec4);
-    \draw [skip] (enc3) -- (att4);
-    \draw [skip] (att4) -- (dec3);
-    \draw [skip] (enc2) -- (att3);
-    \draw [skip] (att3) -- (dec2);
-    \draw [skip] (enc1) -- (att2);
-    \draw [skip] (att2) -- (dec1);
-    \draw [skip] (head) -- (att1);
-    \draw [skip] (att1) -- (reduce);
+	\node (att0) [attention, above=0.5cm of dec1concat] {$\sigma$};
+	\node (dec0skip) [concat, right=1.5cm of att0, minimum height=1cm, minimum width=2cm] {$8\times160^3$};
+	\node (dec0up) [block, below=0cm of dec0skip] {$8\times160^3$};
+	\node (dec0concat) [block, above=0.5cm of dec0skip] {$8\times160^3$};
+
+	\node (output_patch) [block, above=1cm of dec0concat, fill=green!20, align=center] {Output\\$1\times160^3$};
+	\node (output_full) [block, fill=green!20, above=1.5cm of output_patch] {Segmentation Mask$1\times192^3$};
+
+	% Arrows - conv
+	\draw[conv] (enc0a) -- (enc0b);
+	\draw[conv] (enc1a) -- (enc1b);
+	\draw[conv] (enc2a) -- (enc2b);
+	\draw[conv] (enc3a) -- (enc3b);
+	\draw[conv] (enc4a) -- (enc4b);
+
+	% Arrows - Encoder
+	\draw[conv] (input_patch) -- (enc0a);
+	\draw[pool] (enc0b) -- (enc1a);
+	\draw[pool] (enc1b) -- (enc2a);
+	\draw[pool] (enc2b) -- (enc3a);
+	\draw[pool] (enc3b) -- (enc4a);
+	\draw[pool] (enc4b) -- (bottom);
+
+	% Arrows - Decoder
+	\draw[up] (bottom.north east) -- (dec4up);
+	\draw[up] (dec4concat.north east) -- (dec3up);
+	\draw[up] (dec3concat.north east) -- (dec2up);
+	\draw[up] (dec2concat.north east) -- (dec1up);
+	\draw[up] (dec1concat.north east) -- (dec0up);
+	\draw[conv] (dec0concat) -- (output_patch);
+
+	% Skip Connections with Attention
+	\draw[skip] (enc4a) -- (att4);
+	\draw[skip] (att4) -- (dec4skip);
+	\draw[skip] (enc3a) -- (att3);
+	\draw[skip] (att3) -- (dec3skip);
+	\draw[skip] (enc2a) -- (att2);
+	\draw[skip] (att2) -- (dec2skip);
+	\draw[skip] (enc1a) -- (att1);
+	\draw[skip] (att1) -- (dec1skip);
+	\draw[skip] (enc0a) -- (att0);
+	\draw[skip] (att0) -- (dec0skip);
+
+	% Gating Signals
+	\draw[gate] (bottom) -- (att4);
+	\draw[gate] (dec4concat) -- (att3);
+	\draw[gate] (dec3concat) -- (att2);
+	\draw[gate] (dec2concat) -- (att1);
+	\draw[gate] (dec1concat) -- (att0);
+
+	% Merge convolutions
+	\draw[merge] (dec4skip.north west) -- (dec4concat);
+	\draw[merge] (dec3skip.north west) -- (dec3concat);
+	\draw[merge] (dec2skip.north west) -- (dec2concat);
+	\draw[merge] (dec1skip.north west) -- (dec1concat);
+	\draw[merge] (dec0skip.north) -- (dec0concat);
+
+	% Legend
+	\matrix[draw, below left=-2cm and 2cm of input_patch, column sep=0.4cm, row sep=0.3cm, font=\large] {
+		\draw[conv] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {(Conv3D + ReLU) $\times2$}; \\
+		\draw[pool] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Max Pooling}; \\
+		\draw[up]   (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Transposed Conv}; \\
+		\draw[skip] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Skip Connection}; \\
+		\draw[gate] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Gating Signal}; \\
+		\draw[merge] (0,-0.3) -- +(0.6,0.0); & \node[align=left, text width=4cm] {Convolution}; \\
+		\node[concat] {};               & \node[align=left, text width=4cm] {Concatenation}; \\
+	};
 
 \end{tikzpicture}
 \end{document}
