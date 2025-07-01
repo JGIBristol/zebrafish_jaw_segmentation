@@ -3,6 +3,11 @@
 *.dcm
 *.stl
 *.tif
+script_output/
+boring_script_output/
+
+# If we want to track a model in git, we'll need to explicitly add it
+model/
 
 # Models/data
 *.pth
