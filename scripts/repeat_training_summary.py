@@ -4,38 +4,42 @@ read the tables of metrics from the logs and build a table.
 
 Then print some summary stats
 """
-import io
-import os
+
 import pathlib
 import argparse
+
 import pandas as pd
+import matplotlib.pyplot as plt
+
+from fishjaw.util import files
 
 
-def extract_table_from_file(filepath):
-    with open(filepath, 'r') as f:
-        lines = f.readlines()
+def extract_table_from_file(filepath: pathlib.Path) -> pd.DataFrame:
+    """
+    Read a markdown table from file
 
-    # Find the start of the markdown table
-    for i, line in enumerate(lines):
-        if line.strip().startswith("| label"):
-            table_start = i
-            break
-    else:
-        raise ValueError(f"No table found in {filepath}")
+    """
+    df = pd.read_csv(
+        filepath, sep="|", engine="python", skipinitialspace=True, skiprows=7
+    )
+    df.columns = df.columns.str.strip()
 
-    # Extract table lines and read using StringIO
-    table_lines = lines[table_start:]
-    table_str = ''.join(table_lines)
-    df = pd.read_csv(io.StringIO(table_str), sep='|', engine='python', skipinitialspace=True)
+    df = df.map(lambda s: s.strip() if isinstance(s, str) else s)
 
-    # Clean up DataFrame
-    # df = df.drop(columns=[''])  # Drop empty column caused by leading/trailing '|'
-    df.columns = [col.strip() for col in df.columns]
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    # Drop broken row and cols
+    df = df.drop(index=0)
+    for col in df.columns:
+        if "unnamed" in col.lower():
+            df = df.drop(columns=[col])
+
     df = df.set_index("label")
-    df = df.apply(pd.to_numeric, errors='ignore')
+
+    # Turn everything to floats
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="raise")
 
     return df
+
 
 def main():
     """
@@ -53,7 +57,9 @@ def main():
     ref_df = dfs[0].loc[["felix", "harry", "tahlia"]]
     for i, df in enumerate(dfs[1:], start=1):
         if not df.loc[["felix", "harry", "tahlia"]].equals(ref_df):
-            raise AssertionError(f"Mismatch in felix/harry/tahlia values in file: {files[i]}")
+            raise AssertionError(
+                f"Mismatch in felix/harry/tahlia values in file: {files[i]}"
+            )
 
     # Create the final combined DataFrame
     final_df = ref_df.copy()
@@ -61,8 +67,39 @@ def main():
         inference_row = df.loc["inference"].copy()
         inference_row.name = f"inference_{i+1}"
         final_df = pd.concat([final_df, pd.DataFrame([inference_row])])
+    final_df.drop(["felix", "harry", "tahlia"], inplace=True)
 
-    print(final_df)
+    print(final_df.describe().to_markdown())
+
+    fig, axis = plt.subplots()
+
+    axis.hist(final_df["Dice"], bins=25, label="Models", color="#648FFF")
+    axis.axvline(
+        ref_df.loc["felix", "Dice"],
+        linestyle="--",
+        label="P1",
+        color="#DC267F",
+    )
+    axis.axvline(
+        ref_df.loc["tahlia", "Dice"],
+        linestyle="--",
+        label="P2",
+        color="#FE6100",
+    )
+    axis.axvline(
+        ref_df.loc["harry", "Dice"],
+        linestyle="--",
+        label="P3",
+        color="#FFB000",
+    )
+
+    axis.legend()
+    axis.set_xlabel("Dice Score")
+    axis.set_yticks(range(3))
+
+    fig.tight_layout()
+    fig.savefig(files.script_out_dir() / "dice_hist.png")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

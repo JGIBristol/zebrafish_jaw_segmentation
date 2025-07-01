@@ -6,5 +6,5 @@ set -e
 
 for i in {0..19}; do
     # Run the training script
-    PYTHONPATH=$(pwd) python scripts/compare_segmentations.py attempt_n${i}.pkl > "logs/attempt_${i}_inference.log" 2>&1
+    PYTHONPATH=$(pwd) python scripts/compare_segmentations.py attempt_n${i}.pkl | tee "logs/attempt_${i}_inference.log" 2>&1
 done
