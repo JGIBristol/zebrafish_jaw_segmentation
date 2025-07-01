@@ -95,11 +95,7 @@ def inference_subject(config: dict, img_n: int) -> tio.Subject:
     :returns: the image as a torchio Subject
 
     """
-    img = _ct_scan_array(config, img_n)
-
-    img = transform.crop(
-        img, crop_lookup()[img_n], transform.window_size(config), centred=True
-    )
+    img = cropped_img(config, img_n)
 
     # Scale to [0, 1]
     img = data.ints2float(img)
