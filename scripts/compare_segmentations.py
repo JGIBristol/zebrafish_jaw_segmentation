@@ -90,7 +90,7 @@ def _inference(model_name: str) -> NDArray:
     return metrics.largest_connected_component(prediction)
 
 
-def main(*, model_name: str):
+def main(*, model_name: str, plot_mesh: bool) -> None:
     """
     Load the model, read the chosen image and perform inference
     Save the output image
@@ -156,8 +156,9 @@ def main(*, model_name: str):
     table.set_index("label", inplace=True)
     print(table.to_markdown())
 
-    for label, segmentation in zip(table.index, segmentations):
-        plot_meshes(segmentation, felix, out_dir, label)
+    if plot_mesh:
+        for label, segmentation in zip(table.index, segmentations):
+            plot_meshes(segmentation, felix, out_dir, label)
 
 
 if __name__ == "__main__":
@@ -167,5 +168,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
+    )
+    parser.add_argument(
+        "--plot-mesh",
+        help="Whether to plot meshes of the segmentations",
+        action="store_true",
+        default=False,
     )
     main(**vars(parser.parse_args()))
