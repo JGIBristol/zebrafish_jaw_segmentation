@@ -41,6 +41,44 @@ def extract_table_from_file(filepath: pathlib.Path) -> pd.DataFrame:
     return df
 
 
+def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
+    """
+    Plot histograms of the Dice scores + HD for all the models
+    """
+    fig, axes = plt.subplots(1, 2)
+
+    for axis, label in zip(axes, ["Dice", "1-Hausdorff_0.5"]):
+        axes[0].hist(final_df[label], bins=25, label="Models", color="#648FFF")
+        axes[0].axvline(
+            ref_df.loc["felix", label],
+            linestyle="--",
+            label="P1",
+            color="#DC267F",
+        )
+        axes[0].axvline(
+            ref_df.loc["tahlia", label],
+            linestyle="--",
+            label="P2",
+            color="#FE6100",
+        )
+        axes[0].axvline(
+            ref_df.loc["harry", label],
+            linestyle="--",
+            label="P3",
+            color="#FFB000",
+        )
+
+        axis.set_yticks(range(3))
+
+    axes[0].legend()
+
+    axes[0].set_xlabel("Dice Score")
+    axes[1].set_xlabel("Hausdorff Distance (normalised)")
+
+    fig.tight_layout()
+    fig.savefig(files.script_out_dir() / "repeat_hists.png")
+
+
 def main():
     """
     Read all the markdown tables, convert them to dataframes, do some checks
@@ -71,34 +109,7 @@ def main():
 
     print(final_df.describe().to_markdown())
 
-    fig, axis = plt.subplots()
-
-    axis.hist(final_df["Dice"], bins=25, label="Models", color="#648FFF")
-    axis.axvline(
-        ref_df.loc["felix", "Dice"],
-        linestyle="--",
-        label="P1",
-        color="#DC267F",
-    )
-    axis.axvline(
-        ref_df.loc["tahlia", "Dice"],
-        linestyle="--",
-        label="P2",
-        color="#FE6100",
-    )
-    axis.axvline(
-        ref_df.loc["harry", "Dice"],
-        linestyle="--",
-        label="P3",
-        color="#FFB000",
-    )
-
-    axis.legend()
-    axis.set_xlabel("Dice Score")
-    axis.set_yticks(range(3))
-
-    fig.tight_layout()
-    fig.savefig(files.script_out_dir() / "dice_hist.png")
+    hists(final_df, ref_df)
 
 
 if __name__ == "__main__":
