@@ -45,16 +45,20 @@ def main(model_name: str) -> None:
     Read images from the RDSF and the model from disk, perform inference
     then plot slices
     """
+    config = util.userconf()
+
     out_dir = files.script_out_dir() / "compare_slices"
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
     # perform inference
+    print("Performing inference")
     inference = _inference(model_name)
 
     # load human segmentations
+    print("Loading human segmentations")
     seg_dir = (
-        files.rdsf_dir(util.userconf())
+        files.rdsf_dir(config)
         / "1Felix and Rich make models"
         / "Human validation STL and results"
     )
@@ -64,7 +68,11 @@ def main(model_name: str) -> None:
     harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
     tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
 
+    # Read the original image
+    scan = read.cropped_img(config, 97)
+
     # plot slices
+    print("Plotting slices")
 
 
 if __name__ == "__main__":
@@ -72,7 +80,7 @@ if __name__ == "__main__":
         description="Compare a selected slice through the segmentation between humans and the model"
     )
     parser.add_argument(
-        "model_name",
+        "--model_name",
         help="Which model to load from the models dir; e.g. 'model_state.pkl'",
         default="paper_model.pkl",
     )
