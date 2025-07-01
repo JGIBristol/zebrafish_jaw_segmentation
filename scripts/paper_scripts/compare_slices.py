@@ -2,11 +2,45 @@
 Compare a selected slice through the segmentation between humans and the model
 
 """
+import argparse
 
-from fishjaw.util import files
+import tifffile
+import numpy as np
+from numpy.typing import NDArray
+
+from fishjaw.util import files, util
+from fishjaw.model import model, data
+from fishjaw.images import metrics
+from fishjaw.inference import read
 
 
-def main():
+def _inference(model_name: str) -> NDArray:
+    """
+    Do the inference, save the plots
+
+    """
+    # Load the model and training-time config
+    model_state = model.load_model(model_name)
+
+    config = model_state.config
+    net = model_state.load_model(set_eval=True)
+    net.to("cuda")
+
+    prediction = model.predict(
+        net,
+        read.inference_subject(config, 97),
+        patch_size=data.get_patch_size(config),
+        patch_overlap=(4, 4, 4),
+        activation=model.activation_name(config),
+    )
+
+    # Threshold the segmentation
+    prediction = (prediction > 0.5).astype(np.uint8)
+
+    return metrics.largest_connected_component(prediction)
+
+
+def main(model_name: str) -> None:
     """
     Read images from the RDSF and the model from disk, perform inference
     then plot slices
@@ -14,11 +48,22 @@ def main():
     out_dir = files.script_out_dir() / "compare_slices"
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
-    
-    # load model
-    # load input image
+
     # perform inference
+    inference = _inference(model_name)
+
     # load human segmentations
+    seg_dir = (
+        files.rdsf_dir(util.userconf())
+        / "1Felix and Rich make models"
+        / "Human validation STL and results"
+    )
+    felix = tifffile.imread(
+        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+    )
+    harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
+    tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
+
     # plot slices
 
 

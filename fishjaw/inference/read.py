@@ -71,6 +71,19 @@ def _ct_scan_array(config: dict, img_n: int) -> np.ndarray:
     return img
 
 
+def cropped_img(config: dict, img_n: int) -> np.ndarray:
+    """
+    Read + crop the required image
+
+    """
+    return transform.crop(
+        _ct_scan_array(config, img_n),
+        crop_lookup()[img_n],
+        transform.window_size(config),
+        centred=True,
+    )
+
+
 def inference_subject(config: dict, img_n: int) -> tio.Subject:
     """
     Read the image of choice and turn it into a Subject, cropping it according
