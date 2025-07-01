@@ -45,23 +45,23 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
     """
     Plot histograms of the Dice scores + HD for all the models
     """
-    fig, axes = plt.subplots(1, 2)
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     for axis, label in zip(axes, ["Dice", "1-Hausdorff_0.5"]):
-        axes[0].hist(final_df[label], bins=25, label="Models", color="#648FFF")
-        axes[0].axvline(
+        axis.hist(final_df[label], bins=25, label="Models", color="#648FFF")
+        axis.axvline(
             ref_df.loc["felix", label],
             linestyle="--",
             label="P1",
             color="#DC267F",
         )
-        axes[0].axvline(
+        axis.axvline(
             ref_df.loc["tahlia", label],
             linestyle="--",
             label="P2",
             color="#FE6100",
         )
-        axes[0].axvline(
+        axis.axvline(
             ref_df.loc["harry", label],
             linestyle="--",
             label="P3",
