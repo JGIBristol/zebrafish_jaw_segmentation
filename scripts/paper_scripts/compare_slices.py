@@ -2,16 +2,19 @@
 Compare a selected slice through the segmentation between humans and the model
 
 """
+
 import argparse
 
 import tifffile
 import numpy as np
+import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 
 from fishjaw.util import files, util
 from fishjaw.model import model, data
-from fishjaw.images import metrics
+from fishjaw.images import metrics, transform
 from fishjaw.inference import read
+from fishjaw.visualisation import images_3d
 
 
 def _inference(model_name: str) -> NDArray:
@@ -68,11 +71,27 @@ def main(model_name: str) -> None:
     harry = tifffile.imread(seg_dir / "Harry" / "ak_97.tif.labels.tif")
     tahlia = tifffile.imread(seg_dir / "Tahlia" / "tpollock_97_avizo.labels.tif")
 
+    felix, harry, tahlia = (
+        transform.crop(
+            x, read.crop_lookup()[97], transform.window_size(config), centred=True
+        )
+        for x in (felix, harry, tahlia)
+    )
+
     # Read the original image
     scan = read.cropped_img(config, 97)
 
     # plot slices
-    print("Plotting slices")
+    for name, data in [
+        ("inference", inference),
+        ("felix", felix),
+        ("harry", harry),
+        ("tahlia", tahlia),
+    ]:
+        print(f"Plotting {name} slices")
+        fig, _ = images_3d.plot_slices(scan, data)
+        fig.savefig(out_dir / f"{name}_slice.png")
+        plt.close(fig)
 
 
 if __name__ == "__main__":
