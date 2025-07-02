@@ -14,7 +14,6 @@ from fishjaw.util import files, util
 from fishjaw.model import model, data
 from fishjaw.images import metrics, transform
 from fishjaw.inference import read
-from fishjaw.visualisation import images_3d
 
 
 def _inference(model_name: str) -> NDArray:
@@ -82,16 +81,21 @@ def main(model_name: str) -> None:
     scan = read.cropped_img(config, 97)
 
     # plot slices
-    for name, data in [
-        ("inference", inference),
-        ("felix", felix),
-        ("harry", harry),
-        ("tahlia", tahlia),
-    ]:
-        print(f"Plotting {name} slices")
-        fig, _ = images_3d.plot_slices(scan, data)
-        fig.savefig(out_dir / f"{name}_slice.png")
-        plt.close(fig)
+    fig, axes = plt.subplots(2, 2)
+    n = 69
+    vmin, vmax = np.min(scan[n]), np.max(scan[n])
+    for name, label, axis in zip(
+        ["felix", "harry", "tahlia", "inference"],
+        ["P1", "P2", "P3", "Inference"],
+        axes.flat,
+    ):
+        axis.imshow(scan[n], cmap="gray", vmin=vmin, vmax=vmax)
+        axis.imshow(locals()[name][n], cmap="hot_r", alpha=0.5)
+        axis.set_title(label)
+        axis.axis("off")
+
+    fig.tight_layout()
+    fig.savefig(out_dir / f"compare_slices.png")
 
 
 if __name__ == "__main__":
