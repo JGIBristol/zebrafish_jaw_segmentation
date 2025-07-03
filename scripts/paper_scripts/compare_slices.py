@@ -3,6 +3,7 @@ Compare a selected slice through the segmentation between humans and the model
 
 """
 
+import pathlib
 import argparse
 
 import tifffile
@@ -40,6 +41,34 @@ def _inference(model_name: str) -> NDArray:
     prediction = (prediction > 0.5).astype(np.uint8)
 
     return metrics.largest_connected_component(prediction)
+
+
+def _plot_slices(
+    out_dir: pathlib.Path,
+    scan: NDArray,
+    felix: NDArray,
+    harry: NDArray,
+    tahlia: NDArray,
+    inference: NDArray,
+) -> None:
+    """
+    Plot slices on a figure and save it
+    """
+    fig, axes = plt.subplots(2, 2)
+    n = 69
+    vmin, vmax = np.min(scan[n]), np.max(scan[n])
+    for name, label, axis in zip(
+        ["felix", "harry", "tahlia", "inference"],
+        ["P1", "P2", "P3", "Inference"],
+        axes.flat,
+    ):
+        axis.imshow(scan[n], cmap="gray", vmin=vmin, vmax=vmax)
+        axis.imshow(locals()[name][n], cmap="hot_r", alpha=0.5)
+        axis.set_title(label)
+        axis.axis("off")
+
+    fig.tight_layout()
+    fig.savefig(out_dir / f"compare_slices.png")
 
 
 def main(model_name: str) -> None:
@@ -80,22 +109,7 @@ def main(model_name: str) -> None:
     # Read the original image
     scan = read.cropped_img(config, 97)
 
-    # plot slices
-    fig, axes = plt.subplots(2, 2)
-    n = 69
-    vmin, vmax = np.min(scan[n]), np.max(scan[n])
-    for name, label, axis in zip(
-        ["felix", "harry", "tahlia", "inference"],
-        ["P1", "P2", "P3", "Inference"],
-        axes.flat,
-    ):
-        axis.imshow(scan[n], cmap="gray", vmin=vmin, vmax=vmax)
-        axis.imshow(locals()[name][n], cmap="hot_r", alpha=0.5)
-        axis.set_title(label)
-        axis.axis("off")
-
-    fig.tight_layout()
-    fig.savefig(out_dir / f"compare_slices.png")
+    _plot_slices(out_dir, scan, felix, harry, tahlia, inference)
 
 
 if __name__ == "__main__":
