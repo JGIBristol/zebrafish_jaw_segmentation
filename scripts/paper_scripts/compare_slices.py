@@ -8,8 +8,10 @@ import argparse
 
 import tifffile
 import numpy as np
+import tqdm
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
+from matplotlib.gridspec import GridSpec
 
 from fishjaw.util import files, util
 from fishjaw.model import model, data
@@ -68,7 +70,49 @@ def _plot_slices(
         axis.axis("off")
 
     fig.tight_layout()
-    fig.savefig(out_dir / f"compare_slices.png")
+    fig.savefig(out_dir / "compare_slices.png")
+
+
+def _plot_projections(
+    out_dir: pathlib.Path,
+    felix: NDArray,
+    harry: NDArray,
+    tahlia: NDArray,
+    inference: NDArray,
+) -> None:
+    """
+    Plot projection on a figure and save it
+
+    """
+    fig = plt.figure(figsize=(10, 10))
+    gs = GridSpec(4, 2, figure=fig, hspace=0.05, wspace=0.05)
+
+    side_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "1256"]
+    top_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "3478"]
+
+    pbar = tqdm.tqdm(total=8, desc="Plotting projections")
+    plot_kw = {"cmap": "copper", "alpha": 0.5, "s": 2, "marker": "s"}
+    for i, x in enumerate((felix, harry, tahlia, inference)):
+        co_ords = np.argwhere(x > 0.5)
+        side_axis, top_axis = (side_axes[i], top_axes[i])
+        side_axis.scatter(
+            co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
+        )
+        side_axis.view_init(elev=90, azim=-90, roll=-140)
+        pbar.update(1)
+
+        top_axis.scatter(
+            co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
+        )
+        top_axis.view_init(azim=30, elev=180)
+        pbar.update(1)
+
+    # for axis in side_axes + top_axes:
+    #     axis.axis("off")
+
+    fig.tight_layout()
+
+    fig.savefig(out_dir / "compare_projections.png")
 
 
 def main(model_name: str) -> None:
@@ -110,6 +154,7 @@ def main(model_name: str) -> None:
     scan = read.cropped_img(config, 97)
 
     _plot_slices(out_dir, scan, felix, harry, tahlia, inference)
+    _plot_projections(out_dir, felix, harry, tahlia, inference)
 
 
 if __name__ == "__main__":
