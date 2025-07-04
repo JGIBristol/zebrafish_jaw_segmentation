@@ -73,20 +73,23 @@ def main(alpha: float):
     dice_scores = [dice(cube1, cube) for cube in (cube1, cube2, cube3)]
     hausdorff_scores = [hausdorff_score(cube1, cube) for cube in (cube1, cube2, cube3)]
     combined_scores = [
-        combined_hausdorff_dice_metric(cube1, cube2, alpha)
+        combined_hausdorff_dice_metric(cube1, cube, alpha)
         for cube in (cube1, cube2, cube3)
     ]
 
-    scores = pd.DataFrame({
-        "Cube": ["Cube 1", "Cube 2", "Cube 3"],
-        "Dice Score": dice_scores,
-        "Hausdorff Score": hausdorff_scores,
-        "Combined Score": combined_scores
-    })
-    print(scores)
+    scores = pd.DataFrame(
+        {
+            "Cube": ["Cube 1", "Cube 2", "Cube 3"],
+            "Dice Score": dice_scores,
+            "Hausdorff Score": hausdorff_scores,
+            "Combined Score": combined_scores,
+        }
+    )
 
     # Visualization
-    fig, (cube_axes, table_axes) = plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
+    fig, (cube_axes, table_axes) = plt.subplots(
+        2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"}
+    )
     cube_kw = {"edgecolor": "none", "alpha": 0.6}
 
     for axis, cube, colour in zip(
@@ -96,9 +99,31 @@ def main(alpha: float):
         axis.set_xlim(0, 50)
         axis.set_ylim(0, 50)
         axis.set_zlim(0, 50)
-    
+
     # Add tables to the axes
-    
+    for axis, (_, row) in zip(table_axes.flatten(), scores.iterrows()):
+        print(row[1:])
+        axis.axis("off")
+
+        # Convert the row data to the format expected by plt.table
+        cell_data = [
+            [f"{val:.3f}" if isinstance(val, float) else str(val)] for val in row[1:]
+        ]
+        col_labels = scores.columns[1:].tolist()
+
+        table = axis.table(
+            cellText=cell_data,
+            rowLabels=col_labels,  # Use rowLabels instead of colLabels for vertical layout
+            cellLoc="center",
+            loc="center",
+            colWidths=[0.3],  # Adjust width as needed
+        )
+
+        # Style the table
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        table.scale(1, 2)  # Make rows taller
+
     plt.tight_layout()
 
     image_filename = "3d_cube_comparison_dice_hausdorff.png"
