@@ -92,19 +92,22 @@ def main(alpha: float):
     )
     cube_kw = {"edgecolor": "none", "alpha": 0.6}
 
-    for axis, cube, colour in zip(
-        cube_axes, (cube1, cube2, cube3), ("blue", "red", "green")
+    for axis, cube, colour, title in zip(
+        cube_axes,
+        (cube1, cube2, cube3),
+        ("blue", "red", "green"),
+        ["Original", "Protrusion Cube", "Smoothed Cube"],
     ):
         axis.voxels(cube, facecolors=colour, **cube_kw)
         axis.set_xlim(0, 50)
         axis.set_ylim(0, 50)
         axis.set_zlim(0, 50)
+        axis.set_title(title, fontsize=22, y=0.80)
 
     plt.tight_layout()
 
     # Add tables to the axes
     for axis, (_, row) in zip(table_axes.flatten(), scores.iterrows()):
-        print(row[1:])
         axis.axis("off")
 
         # Convert the row data to the format expected by plt.table
