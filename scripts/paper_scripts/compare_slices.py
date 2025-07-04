@@ -72,6 +72,16 @@ def _plot_slices(
     fig.savefig(out_dir / "compare_slices.png")
 
 
+def _calculate_point_size(axis: plt.Axes, img_size: tuple[int, int, int]) -> float:
+    """Calculate point size so each point is roughly 1 pixel"""
+    assert set(img_size) == {img_size[0]}, "Image must be cubic"
+
+    fig_width_px = (
+        axis.figure.get_figwidth() * axis.figure.dpi * axis.get_position().width
+    )
+    return (fig_width_px / img_size[0]) ** 2
+
+
 def _plot_projections(
     out_dir: pathlib.Path,
     felix: NDArray,
@@ -107,17 +117,31 @@ def _plot_projections(
     side_axes = [fig.add_axes(posns[0], projection="3d") for posns in positions]
     top_axes = [fig.add_axes(posns[1], projection="3d") for posns in positions]
 
-    plot_kw = {"cmap": "copper", "alpha": 1, "s": 3.5, "marker": "s"}
+    plot_kw = {
+        "cmap": "copper",
+        "alpha": 1,
+        "marker": "s",
+        "s": _calculate_point_size(side_axes[0], felix.shape),
+    }
     for i, x in enumerate((felix, harry, tahlia, inference)):
         co_ords = np.argwhere(x > 0.5)
+
         side_axis, top_axis = (side_axes[i], top_axes[i])
         side_axis.scatter(
-            co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
+            co_ords[:, 0],
+            co_ords[:, 1],
+            co_ords[:, 2],
+            c=co_ords[:, 2],
+            **plot_kw,
         )
         side_axis.view_init(elev=45, azim=-90, roll=-140)
 
         top_axis.scatter(
-            co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
+            co_ords[:, 0],
+            co_ords[:, 1],
+            co_ords[:, 2],
+            c=co_ords[:, 2],
+            **plot_kw,
         )
         top_axis.view_init(azim=30, elev=180)
 
