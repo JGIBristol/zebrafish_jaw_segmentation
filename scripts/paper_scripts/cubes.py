@@ -100,6 +100,8 @@ def main(alpha: float):
         axis.set_ylim(0, 50)
         axis.set_zlim(0, 50)
 
+    plt.tight_layout()
+
     # Add tables to the axes
     for axis, (_, row) in zip(table_axes.flatten(), scores.iterrows()):
         print(row[1:])
@@ -113,18 +115,17 @@ def main(alpha: float):
 
         table = axis.table(
             cellText=cell_data,
-            rowLabels=col_labels,  # Use rowLabels instead of colLabels for vertical layout
+            rowLabels=col_labels,
             cellLoc="center",
-            loc="center",
-            colWidths=[0.3],  # Adjust width as needed
+            loc="best",
+            colWidths=[0.3],
         )
 
-        # Style the table
         table.auto_set_font_size(False)
-        table.set_fontsize(10)
-        table.scale(1, 2)  # Make rows taller
+        table.set_fontsize(20)
+        table.scale(1, 4)  # Make rows taller
 
-    plt.tight_layout()
+        axis.set_xlim(0, 1)
 
     image_filename = "3d_cube_comparison_dice_hausdorff.png"
     plt.savefig(image_filename, dpi=300, bbox_inches="tight")
