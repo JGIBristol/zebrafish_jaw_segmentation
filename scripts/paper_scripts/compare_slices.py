@@ -1,5 +1,6 @@
 """
-Compare a selected slice through the segmentation between humans and the model
+Compare slices through the segmentation between humans and the model,
+and plot some projections of the segmentation in 3D.
 
 """
 
@@ -84,21 +85,21 @@ def _plot_projections(
     Plot projection on a figure and save it
 
     """
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(20, 20))
     gs = GridSpec(4, 2, figure=fig, hspace=0.05, wspace=0.05)
 
     side_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "1256"]
     top_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "3478"]
 
     pbar = tqdm.tqdm(total=8, desc="Plotting projections")
-    plot_kw = {"cmap": "copper", "alpha": 0.5, "s": 2, "marker": "s"}
+    plot_kw = {"cmap": "copper", "alpha": 1, "s": 2, "marker": "s"}
     for i, x in enumerate((felix, harry, tahlia, inference)):
         co_ords = np.argwhere(x > 0.5)
         side_axis, top_axis = (side_axes[i], top_axes[i])
         side_axis.scatter(
             co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
         )
-        side_axis.view_init(elev=90, azim=-90, roll=-140)
+        side_axis.view_init(elev=45, azim=-90, roll=-140)
         pbar.update(1)
 
         top_axis.scatter(
