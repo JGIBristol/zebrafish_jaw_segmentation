@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -56,124 +58,76 @@ def combined_hausdorff_dice_metric(dice_score, hausdorff_dist, max_dist):
     return combined_metric
 
 
-# Create three cubes: a perfect cube, a distorted one, and a blurred symmetrical cube
+def main():
+    """
+    Create the cubes/deformed cubes, calculate the metrics, create axes and plot
+    """
+    # Create three cubes: a perfect cube, a distorted one, and a blurred symmetrical cube
+    dim = (50, 50, 50)
+    cube1 = create_cube(dim, size=20, offset=(15, 15, 15))
 
-dim = (50, 50, 50)
+    # Distorted non-symmetrical cube with protrusions
+    cube2 = create_cube(dim, size=20, offset=(15, 15, 15))
+    cube2 = add_protrusions(cube2)
+    cube2 = gaussian_filter(cube2, sigma=1)
+    cube2[cube2 > 0.5] = 1
+    cube2[cube2 <= 0.5] = 0
 
-cube1 = create_cube(dim, size=20, offset=(15, 15, 15))  # Perfect cube
+    # Symmetrical cube with distortion (blurred cube)
+    cube3 = create_cube(dim, size=20, offset=(15, 15, 15))
+    cube3 = gaussian_filter(cube3, sigma=4)
+    cube3[cube3 > 0.5] = 1
+    cube3[cube3 <= 0.5] = 0
 
-# Distorted non-symmetrical cube with protrusions
+    dice_score1 = dice_coefficient_3d(cube1, cube1)
+    dice_score2 = dice_coefficient_3d(cube1, cube2)
+    dice_score3 = dice_coefficient_3d(cube1, cube3)
 
-cube2 = create_cube(dim, size=20, offset=(15, 15, 15))
+    # Calculate Hausdorff distances
+    hausdorff_dist1 = hausdorff_distance(cube1, cube1)
+    hausdorff_dist2 = hausdorff_distance(cube1, cube2)
+    hausdorff_dist3 = hausdorff_distance(cube1, cube3)
 
-cube2 = add_protrusions(cube2)
+    # Calculate maximum possible distance (diagonal of the volume's bounding box)
+    max_dist = np.sqrt(dim[0] ** 2 + dim[1] ** 2 + dim[2] ** 2)
 
-cube2 = gaussian_filter(cube2, sigma=1)
+    # Calculate combined Hausdorff-Dice metrics
+    combined_metric1 = combined_hausdorff_dice_metric(
+        dice_score1, hausdorff_dist1, max_dist
+    )
+    combined_metric2 = combined_hausdorff_dice_metric(
+        dice_score2, hausdorff_dist2, max_dist
+    )
+    combined_metric3 = combined_hausdorff_dice_metric(
+        dice_score3, hausdorff_dist3, max_dist
+    )
 
-cube2[cube2 > 0.5] = 1
+    # Visualization
+    fig = plt.figure(figsize=(15, 5))
 
-cube2[cube2 <= 0.5] = 0
+    ax1 = fig.add_subplot(131, projection="3d")
+    plot_cube(cube1, ax1, color="blue", alpha=0.6)
+    ax1.set_title(
+        f"Cube 1 (Perfect)¥nDice: {dice_score1:.2f}, Hausdorff: {hausdorff_dist1:.2f}¥nCombined: {combined_metric1:.2f}"
+    )
 
-# Symmetrical cube with distortion (blurred cube)
+    ax2 = fig.add_subplot(132, projection="3d")
+    plot_cube(cube2, ax2, color="red", alpha=0.6)
+    ax2.set_title(
+        f"Cube 2 (Non-Symmetrical)¥nDice: {dice_score2:.2f}, Hausdorff: {hausdorff_dist2:.2f}¥nCombined: {combined_metric2:.2f}"
+    )
 
-cube3 = create_cube(dim, size=20, offset=(15, 15, 15))
+    ax3 = fig.add_subplot(133, projection="3d")
+    plot_cube(cube3, ax3, color="green", alpha=0.6)
+    ax3.set_title(
+        f"Cube 3 (Symmetrical Blur)¥nDice: {dice_score3:.2f}, Hausdorff: {hausdorff_dist3:.2f}¥nCombined: {combined_metric3:.2f}"
+    )
+    plt.tight_layout()
 
-cube3 = gaussian_filter(cube3, sigma=4)  # Heavy blur but symmetrical
+    image_filename = "3d_cube_comparison_dice_hausdorff.png"
+    plt.savefig(image_filename, dpi=300, bbox_inches="tight")
+    print(f"Plot saved as '{image_filename}'")
 
-cube3[cube3 > 0.5] = 1
-
-cube3[cube3 <= 0.5] = 0
-
-# Calculate Dice scores
-
-dice_score1 = dice_coefficient_3d(cube1, cube1)
-
-dice_score2 = dice_coefficient_3d(cube1, cube2)
-
-dice_score3 = dice_coefficient_3d(cube1, cube3)
-
-# Ensure similar Dice scores
-
-print(f"Dice score (cube 1): {dice_score1:.2f}")
-
-print(f"Dice score (cube 2): {dice_score2:.2f}")
-
-print(f"Dice score (cube 3): {dice_score3:.2f}")
-
-# Calculate Hausdorff distances
-
-hausdorff_dist1 = hausdorff_distance(cube1, cube1)  # Should be 0 (perfect match)
-
-hausdorff_dist2 = hausdorff_distance(cube1, cube2)
-
-hausdorff_dist3 = hausdorff_distance(cube1, cube3)
-
-# Calculate maximum possible distance (diagonal of the volume's bounding box)
-
-max_dist = np.sqrt(dim[0] ** 2 + dim[1] ** 2 + dim[2] ** 2)
-
-# Calculate combined Hausdorff-Dice metrics
-
-combined_metric1 = combined_hausdorff_dice_metric(
-    dice_score1, hausdorff_dist1, max_dist
-)
-
-combined_metric2 = combined_hausdorff_dice_metric(
-    dice_score2, hausdorff_dist2, max_dist
-)
-
-combined_metric3 = combined_hausdorff_dice_metric(
-    dice_score3, hausdorff_dist3, max_dist
-)
-
-print(f"Hausdorff distance (cube 1): {hausdorff_dist1:.2f}")
-
-print(f"Hausdorff distance (cube 2): {hausdorff_dist2:.2f}")
-
-print(f"Hausdorff distance (cube 3): {hausdorff_dist3:.2f}")
-
-print(f"Combined Metric (cube 1): {combined_metric1:.2f}")
-
-print(f"Combined Metric (cube 2): {combined_metric2:.2f}")
-
-print(f"Combined Metric (cube 3): {combined_metric3:.2f}")
-
-# Visualization
-
-fig = plt.figure(figsize=(15, 5))
-
-# Plot perfect cube (cube1)
-
-ax1 = fig.add_subplot(131, projection="3d")
-
-plot_cube(cube1, ax1, color="blue", alpha=0.6)
-
-ax1.set_title(
-    f"Cube 1 (Perfect)¥nDice: {dice_score1:.2f}, Hausdorff: {hausdorff_dist1:.2f}¥nCombined: {combined_metric1:.2f}"
-)
-
-# Plot distorted non-symmetrical cube (cube2)
-
-ax2 = fig.add_subplot(132, projection="3d")
-
-plot_cube(cube2, ax2, color="red", alpha=0.6)
-
-ax2.set_title(
-    f"Cube 2 (Non-Symmetrical)¥nDice: {dice_score2:.2f}, Hausdorff: {hausdorff_dist2:.2f}¥nCombined: {combined_metric2:.2f}"
-)
-
-# Plot blurred symmetrical cube (cube3)
-
-ax3 = fig.add_subplot(133, projection="3d")
-
-plot_cube(cube3, ax3, color="green", alpha=0.6)
-
-ax3.set_title(
-    f"Cube 3 (Symmetrical Blur)¥nDice: {dice_score3:.2f}, Hausdorff: {hausdorff_dist3:.2f}¥nCombined: {combined_metric3:.2f}"
-)
-
-image_filename = "3d_cube_comparison_dice_hausdorff.png"
-
-plt.tight_layout()
-plt.savefig(image_filename, dpi=300, bbox_inches="tight")
-print(f"Plot saved as '{image_filename}'")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="3D Cube Comparison with Dice and Hausdorff Metrics")
+    main(**vars(parser.parse_args()))
