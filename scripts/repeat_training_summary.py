@@ -109,6 +109,9 @@ def main():
 
     print(final_df.describe().to_markdown())
 
+    # Print 2.5% and 97.5% confidence intervals for Dice and HD
+    print(final_df.quantile([0.025, 0.975]).to_markdown())
+
     hists(final_df, ref_df)
 
 
