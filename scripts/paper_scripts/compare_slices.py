@@ -9,10 +9,8 @@ import argparse
 
 import tifffile
 import numpy as np
-import tqdm
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
-from matplotlib.gridspec import GridSpec
 
 from fishjaw.util import files, util
 from fishjaw.model import model, data
@@ -86,12 +84,29 @@ def _plot_projections(
 
     """
     fig = plt.figure(figsize=(20, 20))
-    gs = GridSpec(4, 2, figure=fig, hspace=0.05, wspace=0.05)
 
-    side_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "1256"]
-    top_axes = [fig.add_subplot(int(f"42{i}"), projection="3d") for i in "3478"]
+    positions = [
+        [
+            [0.05, 0.6, 0.4, 0.35],
+            [0.05, 0.45, 0.4, 0.35],
+        ],
+        [
+            [0.5, 0.6, 0.4, 0.35],
+            [0.5, 0.45, 0.4, 0.35],
+        ],
+        [
+            [0.05, 0.15, 0.4, 0.35],
+            [0.05, 0.0, 0.4, 0.35],
+        ],
+        [
+            [0.5, 0.15, 0.4, 0.35],
+            [0.5, 0.0, 0.4, 0.35],
+        ],
+    ]
 
-    pbar = tqdm.tqdm(total=8, desc="Plotting projections")
+    side_axes = [fig.add_axes(posns[0], projection="3d") for posns in positions]
+    top_axes = [fig.add_axes(posns[1], projection="3d") for posns in positions]
+
     plot_kw = {"cmap": "copper", "alpha": 1, "s": 2, "marker": "s"}
     for i, x in enumerate((felix, harry, tahlia, inference)):
         co_ords = np.argwhere(x > 0.5)
@@ -100,20 +115,16 @@ def _plot_projections(
             co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
         )
         side_axis.view_init(elev=45, azim=-90, roll=-140)
-        pbar.update(1)
 
         top_axis.scatter(
             co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], c=co_ords[:, 2], **plot_kw
         )
         top_axis.view_init(azim=30, elev=180)
-        pbar.update(1)
 
-    # for axis in side_axes + top_axes:
-    #     axis.axis("off")
+    for axis in side_axes + top_axes:
+        axis.axis("off")
 
-    fig.tight_layout()
-
-    fig.savefig(out_dir / "compare_projections.png")
+    fig.savefig(out_dir / "compare_projections.png", transparent=True)
 
 
 def main(model_name: str) -> None:
