@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.ndimage import gaussian_filter
@@ -76,6 +77,14 @@ def main(alpha: float):
         for cube in (cube1, cube2, cube3)
     ]
 
+    scores = pd.DataFrame({
+        "Cube": ["Cube 1", "Cube 2", "Cube 3"],
+        "Dice Score": dice_scores,
+        "Hausdorff Score": hausdorff_scores,
+        "Combined Score": combined_scores
+    })
+    print(scores)
+
     # Visualization
     fig, (cube_axes, table_axes) = plt.subplots(2, 3, figsize=(15, 10), subplot_kw={"projection": "3d"})
     cube_kw = {"edgecolor": "none", "alpha": 0.6}
@@ -88,7 +97,8 @@ def main(alpha: float):
         axis.set_ylim(0, 50)
         axis.set_zlim(0, 50)
     
-
+    # Add tables to the axes
+    
     plt.tight_layout()
 
     image_filename = "3d_cube_comparison_dice_hausdorff.png"
