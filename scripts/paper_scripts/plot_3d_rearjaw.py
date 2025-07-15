@@ -7,8 +7,10 @@ import pathlib
 import argparse
 
 import numpy as np
+from skimage import measure
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from fishjaw.util import files, util
 from fishjaw.model import data
@@ -26,43 +28,33 @@ def _calculate_point_size(axis: plt.Axes, img_size: tuple[int, int, int]) -> flo
 
 
 def _plot_projections(out_dir: pathlib.Path, image: NDArray) -> None:
-    """
-    Plot projection on a figure and save it
+    """Plot using surface mesh for smooth appearance"""
+    fig = plt.figure(figsize=(12, 6))
 
-    """
-    fig = plt.figure(figsize=(10, 10))
-    side_axis = fig.add_subplot(121, projection="3d")
-    top_axis = fig.add_subplot(122, projection="3d")
+    # Generate mesh using marching cubes
+    verts, faces, _, _ = measure.marching_cubes(image, level=0.5)
 
-    plot_kw = {
-        "cmap": "copper",
-        "alpha": 1,
-        "marker": "s",
-        "s": _calculate_point_size(side_axis, image.shape),
-    }
-    co_ords = np.argwhere(image)
+    # Create two views
+    ax1 = fig.add_subplot(121, projection="3d")
+    ax2 = fig.add_subplot(122, projection="3d")
 
-    side_axis.scatter(
-        co_ords[:, 0],
-        co_ords[:, 1],
-        co_ords[:, 2],
-        c=co_ords[:, 2],
-        **plot_kw,
-    )
-    side_axis.view_init(elev=45, azim=-90, roll=-140)
+    for ax in [ax1, ax2]:
+        # Create mesh
+        mesh = Poly3DCollection(verts[faces])
+        # mesh.set_facecolor("copper")
+        mesh.set_alpha(0.8)
+        mesh.set_edgecolor("none")
+        ax.add_collection3d(mesh)
 
-    top_axis.scatter(
-        co_ords[:, 0],
-        co_ords[:, 1],
-        co_ords[:, 2],
-        c=co_ords[:, 2],
-        **plot_kw,
-    )
-    top_axis.view_init(azim=30, elev=180)
+        ax.set_xlim(0, image.shape[0])
+        ax.set_ylim(0, image.shape[1])
+        ax.set_zlim(0, image.shape[2])
+        ax.axis("off")
 
-    for axis in (side_axis, top_axis):
-        axis.axis("off")
+    ax1.view_init(elev=45, azim=-90, roll=-140)
+    ax2.view_init(azim=30, elev=180)
 
+    fig.tight_layout()
     fig.savefig(out_dir / "rear_jaw_3d.png", transparent=True)
 
 
