@@ -3,6 +3,7 @@ Loading, pre-processing, etc. the data for the model
 
 """
 
+import sys
 import pathlib
 import datetime
 from typing import Any
@@ -276,15 +277,22 @@ def _add_dimension(arr: np.ndarray, *, dtype: torch.dtype) -> np.ndarray:
     return torch.as_tensor(arr, dtype=dtype).unsqueeze(0)
 
 
-def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.Subject:
+def cropped_dicom(
+    dicom_path: pathlib.Path, window_size: tuple[int, int, int]
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Create a subject from a DICOM file, cropping according to data/jaw_centres.csv
+    Read a DICOM file and crop it according to the jaw centres spreadsheet.
+
+    Reads n from the filepath, finds the correct crop co-ordinates, reads the
+    image and mask and crops them to the specified window size.
 
     :param dicom_path: Path to the DICOM file
     :param window_size: The size of the window to crop
 
-    :returns: The subject
-
+    :returns: The cropped image and mask as numpy arrays
+    :returns: The image and mask as numpy arrays
+    :raises: CropOutOfBoundsError if the crop co-ordinates are out of bounds
+             for the image or mask
     """
     # Load the image and mask from disk
     image, mask = io.read_dicom(dicom_path)
@@ -298,8 +306,24 @@ def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.
         image = transform.crop(image, crop_coords, window_size, around_centre)
         mask = transform.crop(mask, crop_coords, window_size, around_centre)
     except transform.CropOutOfBoundsError as e:
-        print(f"Error cropping {dicom_path}")
+        print(f"Error cropping {dicom_path}", file=sys.stderr)
         raise e
+
+    return image, mask
+
+
+def subject(dicom_path: pathlib.Path, window_size: tuple[int, int, int]) -> tio.Subject:
+    """
+    Create a subject from a DICOM file, cropping according to data/jaw_centres.csv
+
+    :param dicom_path: Path to the DICOM file
+    :param window_size: The size of the window to crop
+
+    :returns: The subject
+
+    """
+
+    image, mask = cropped_dicom(dicom_path, window_size)
 
     # Convert to a float in [0, 1]
     # Need to copy since torch doesn't support non-writable tensors
