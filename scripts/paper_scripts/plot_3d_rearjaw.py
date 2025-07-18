@@ -46,7 +46,7 @@ def _plot_projections(out_dir: pathlib.Path, image: NDArray) -> None:
         mesh.set_edgecolor("none")
         ax.add_collection3d(mesh)
 
-        ax.set_xlim(0, image.shape[0])
+        ax.set_xlim(image.shape[0], image.shape[0])
         ax.set_ylim(0, image.shape[1])
         ax.set_zlim(0, image.shape[2])
         ax.axis("off")
