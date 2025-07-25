@@ -77,6 +77,41 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
 
     fig.tight_layout()
     fig.savefig(files.script_out_dir() / "repeat_hists.png")
+    plt.close(fig)
+
+    # Plot hte combined score
+    fig, axis = plt.subplots()
+    axis.hist(
+        final_df["Hausdorff_Dice_0.5"],
+        bins=25,
+        label="Models",
+        color="#648FFF",
+    )
+    axis.axvline(
+        ref_df.loc["felix", "Hausdorff_Dice_0.5"],
+        linestyle="--",
+        label="P1",
+        color="#DC267F",
+    )
+    axis.axvline(
+        ref_df.loc["tahlia", "Hausdorff_Dice_0.5"],
+        linestyle="--",
+        label="P2",
+        color="#FE6100",
+    )
+    axis.axvline(
+        ref_df.loc["harry", "Hausdorff_Dice_0.5"],
+        linestyle="--",
+        label="P3",
+        color="#FFB000",
+    )
+    axis.legend()
+    axis.set_xlabel("Hausdorff Dice Score (0.5)")
+    axis.set_yticks(range(3))
+
+    fig.tight_layout()
+    fig.savefig(files.script_out_dir() / "repeat_combined.png")
+    plt.close(fig)
 
 
 def main():
@@ -113,6 +148,15 @@ def main():
     print(final_df.quantile([0.025, 0.975]).to_markdown())
 
     hists(final_df, ref_df)
+
+    # print the rows containing the median and maximum Hausdorff_Dice_0.5
+    # Find the median value
+    median = final_df["Hausdorff_Dice_0.5"].median()
+    closest_to_median_idx = (final_df["Hausdorff_Dice_0.5"] - median).abs().idxmin()
+
+    # Find the row containing it
+    print(f"Closest to median score: {final_df.loc[closest_to_median_idx].name}")
+    print("Max score:", final_df.loc[final_df["Hausdorff_Dice_0.5"].idxmax()].name)
 
 
 if __name__ == "__main__":
