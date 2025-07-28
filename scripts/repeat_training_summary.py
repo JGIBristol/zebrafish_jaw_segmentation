@@ -14,6 +14,19 @@ import matplotlib.pyplot as plt
 from fishjaw.util import files
 
 
+def _dump_repeat_segmentation_metrics():
+    """
+    Compare the segmentations from Felix (and possibly others)
+    to the ground truth segmentations, and dump a pandas dataframe
+    with the metrics for each model to disk.
+    """
+    # Read in the ground truth
+    # Read in the other segmentations
+    # Compare the segmentations and compute the metrics
+    # Create a dataframe
+    # Dump it to disk
+
+
 def extract_table_from_file(filepath: pathlib.Path) -> pd.DataFrame:
     """
     Read a markdown table from file
