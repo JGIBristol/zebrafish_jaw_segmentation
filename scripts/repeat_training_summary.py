@@ -103,20 +103,7 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     for axis, label in zip(axes, ["Dice", "1-Hausdorff_0.5"]):
-        axis.hist(final_df[label], bins=25, label="Models", color="#648FFF")
-
-        axis.axvline(
-            ref_df.loc["tahlia", label],
-            linestyle="--",
-            label="P2",
-            color="#FE6100",
-        )
-        axis.axvline(
-            ref_df.loc["harry", label],
-            linestyle="-.",
-            label="P3",
-            color="#FFB000",
-        )
+        axis.hist(final_df[label], bins=25, label="Models", color="#648FFF", zorder=1)
 
         for i, person in enumerate(["felix", "felix2", "felix3"]):
             axis.axvline(
@@ -124,7 +111,23 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
                 linestyle=":",
                 label=f"P{i+1}" if not i else None,
                 color="#DC267F",
+                zorder=4,
             )
+
+        axis.axvline(
+            ref_df.loc["tahlia", label],
+            linestyle="--",
+            label="P2",
+            color="#FE6100",
+            zorder=2,
+        )
+        axis.axvline(
+            ref_df.loc["harry", label],
+            linestyle="-.",
+            label="P3",
+            color="#FFB000",
+            zorder=3,
+        )
 
         axis.set_yticks(range(3))
 
