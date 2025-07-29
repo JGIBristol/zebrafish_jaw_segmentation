@@ -200,6 +200,10 @@ def main():
     assert repeat_df.loc["felix"].equals(ref_df.loc["felix"])
 
     ref_df = pd.concat([ref_df, repeat_df.loc[["felix2", "felix3"]]])
+    print("Intra-Felix comparison:")
+    print("=" * 12)
+    print(ref_df.loc[["felix", "felix2", "felix3"]].to_markdown())
+    print()
 
     # Create the final combined DataFrame for the different models
     final_df = ref_df.copy()
@@ -209,7 +213,10 @@ def main():
         final_df = pd.concat([final_df, pd.DataFrame([inference_row])])
     final_df.drop(["felix", "harry", "tahlia"], inplace=True)
 
+    print("Inter-model comparison:")
+    print("=" * 12)
     print(final_df.describe().to_markdown())
+    print()
 
     # Print 2.5% and 97.5% confidence intervals for Dice and HD
     print(final_df.quantile([0.025, 0.975]).to_markdown())
