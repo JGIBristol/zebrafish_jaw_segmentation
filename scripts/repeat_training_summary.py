@@ -104,12 +104,7 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
 
     for axis, label in zip(axes, ["Dice", "1-Hausdorff_0.5"]):
         axis.hist(final_df[label], bins=25, label="Models", color="#648FFF")
-        axis.axvline(
-            ref_df.loc["felix", label],
-            linestyle="--",
-            label="P1",
-            color="#DC267F",
-        )
+
         axis.axvline(
             ref_df.loc["tahlia", label],
             linestyle="--",
@@ -118,10 +113,18 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
         )
         axis.axvline(
             ref_df.loc["harry", label],
-            linestyle="--",
+            linestyle="-.",
             label="P3",
             color="#FFB000",
         )
+
+        for i, person in enumerate(["felix", "felix2", "felix3"]):
+            axis.axvline(
+                ref_df.loc[person, label],
+                linestyle=":",
+                label=f"P{i+1}" if not i else None,
+                color="#DC267F",
+            )
 
         axis.set_yticks(range(3))
 
@@ -142,12 +145,14 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
         label="Models",
         color="#648FFF",
     )
-    axis.axvline(
-        ref_df.loc["felix", "Hausdorff_Dice_0.5"],
-        linestyle="--",
-        label="P1",
-        color="#DC267F",
-    )
+    for i, person in enumerate(["felix", "felix2", "felix3"]):
+        axis.axvline(
+            ref_df.loc[person, "Hausdorff_Dice_0.5"],
+            linestyle="--",
+            label=person if not i else None,
+            color="#DC267F",
+        )
+
     axis.axvline(
         ref_df.loc["tahlia", "Hausdorff_Dice_0.5"],
         linestyle="--",
