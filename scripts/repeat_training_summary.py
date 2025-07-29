@@ -8,10 +8,13 @@ Then print some summary stats
 import pathlib
 import argparse
 
+import tifffile
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files
+from fishjaw.inference import read
+from fishjaw.util import files, util
+from fishjaw.images import transform, metrics
 
 
 def _dump_repeat_segmentation_metrics():
@@ -20,11 +23,50 @@ def _dump_repeat_segmentation_metrics():
     to the ground truth segmentations, and dump a pandas dataframe
     with the metrics for each model to disk.
     """
+    config = util.userconf()
+    seg_dir = (
+        files.rdsf_dir(config)
+        / "1Felix and Rich make models"
+        / "Human validation STL and results"
+    )
     # Read in the ground truth
+    felix = tifffile.imread(
+        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+    )
+
     # Read in the other segmentations
+    felix2 = tifffile.imread(
+        seg_dir
+        / "New segmentations all felix"
+        / "segmentation 2"
+        / "ak_97_fbowers_2.labels.tif"
+    )
+    felix3 = tifffile.imread(
+        seg_dir
+        / "New segmentations all felix"
+        / "Segmentation 3"
+        / "ak_97_fbowers_3.labels.tif"
+    )
+
+    felix, felix2, felix3 = (
+        transform.crop(
+            x, read.crop_lookup()[97], transform.window_size(config), centred=True
+        )
+        for x in (felix, felix2, felix3)
+    )
+
     # Compare the segmentations and compute the metrics
-    # Create a dataframe
+    table = metrics.table(
+        [felix] * 3,
+        [felix, felix2, felix3],
+        thresholded_metrics=True,
+    )
+    table["label"] = ["felix", "felix2", "felix3"]
+    table.set_index("label", inplace=True)
+
     # Dump it to disk
+    with open(files.repeat_training_result_table_path(), "wb") as f:
+        table.to_pickle(f)
 
 
 def extract_table_from_file(filepath: pathlib.Path) -> pd.DataFrame:
@@ -146,6 +188,12 @@ def main():
             raise AssertionError(
                 f"Mismatch in felix/harry/tahlia values in file: {files[i]}"
             )
+
+    # Get a df of metrics for felix's repeated segmentations
+    if not files.repeat_training_result_table_path().exists():
+        _dump_repeat_segmentation_metrics()
+    with open(files.repeat_training_result_table_path(), "rb") as f:
+        repeat_df = pd.read_pickle(f)
 
     # Create the final combined DataFrame
     final_df = ref_df.copy()

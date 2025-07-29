@@ -284,3 +284,11 @@ def dicompath_n(dicom_path: pathlib.Path) -> int:
 
     """
     return int(dicom_path.stem.split("_", maxsplit=1)[-1])
+
+
+def repeat_training_result_table_path() -> pathlib.Path:
+    """
+    Get the path to the repeat training result table
+
+    """
+    return pathlib.Path(__file__).parents[2] / "data" / "repeat_training_summary.pkl"
