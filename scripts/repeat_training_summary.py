@@ -8,10 +8,65 @@ Then print some summary stats
 import pathlib
 import argparse
 
+import tifffile
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from fishjaw.util import files
+from fishjaw.inference import read
+from fishjaw.util import files, util
+from fishjaw.images import transform, metrics
+
+
+def _dump_repeat_segmentation_metrics():
+    """
+    Compare the segmentations from Felix (and possibly others)
+    to the ground truth segmentations, and dump a pandas dataframe
+    with the metrics for each model to disk.
+    """
+    config = util.userconf()
+    seg_dir = (
+        files.rdsf_dir(config)
+        / "1Felix and Rich make models"
+        / "Human validation STL and results"
+    )
+    # Read in the ground truth
+    felix = tifffile.imread(
+        seg_dir / "felix take2" / "ak_97-FBowers_complete.labels.tif"
+    )
+
+    # Read in the other segmentations
+    felix2 = tifffile.imread(
+        seg_dir
+        / "New segmentations all felix"
+        / "segmentation 2"
+        / "ak_97_fbowers_2.labels.tif"
+    )
+    felix3 = tifffile.imread(
+        seg_dir
+        / "New segmentations all felix"
+        / "Segmentation 3"
+        / "ak_97_fbowers_3.labels.tif"
+    )
+
+    felix, felix2, felix3 = (
+        transform.crop(
+            x, read.crop_lookup()[97], transform.window_size(config), centred=True
+        )
+        for x in (felix, felix2, felix3)
+    )
+
+    # Compare the segmentations and compute the metrics
+    table = metrics.table(
+        [felix] * 3,
+        [felix, felix2, felix3],
+        thresholded_metrics=True,
+    )
+    table["label"] = ["felix", "felix2", "felix3"]
+    table.set_index("label", inplace=True)
+
+    # Dump it to disk
+    with open(files.repeat_training_result_table_path(), "wb") as f:
+        table.to_pickle(f)
 
 
 def extract_table_from_file(filepath: pathlib.Path) -> pd.DataFrame:
@@ -48,24 +103,30 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     for axis, label in zip(axes, ["Dice", "1-Hausdorff_0.5"]):
-        axis.hist(final_df[label], bins=25, label="Models", color="#648FFF")
-        axis.axvline(
-            ref_df.loc["felix", label],
-            linestyle="--",
-            label="P1",
-            color="#DC267F",
-        )
+        axis.hist(final_df[label], bins=25, label="Models", color="#648FFF", zorder=1)
+
+        for i, person in enumerate(["felix", "felix2", "felix3"]):
+            axis.axvline(
+                ref_df.loc[person, label],
+                linestyle=":",
+                label=f"P{i+1}" if not i else None,
+                color="#DC267F",
+                zorder=4,
+            )
+
         axis.axvline(
             ref_df.loc["tahlia", label],
             linestyle="--",
             label="P2",
             color="#FE6100",
+            zorder=2,
         )
         axis.axvline(
             ref_df.loc["harry", label],
-            linestyle="--",
+            linestyle="-.",
             label="P3",
             color="#FFB000",
+            zorder=3,
         )
 
         axis.set_yticks(range(3))
@@ -87,12 +148,14 @@ def hists(final_df: pd.DataFrame, ref_df: pd.DataFrame) -> None:
         label="Models",
         color="#648FFF",
     )
-    axis.axvline(
-        ref_df.loc["felix", "Hausdorff_Dice_0.5"],
-        linestyle="--",
-        label="P1",
-        color="#DC267F",
-    )
+    for i, person in enumerate(["felix", "felix2", "felix3"]):
+        axis.axvline(
+            ref_df.loc[person, "Hausdorff_Dice_0.5"],
+            linestyle="--",
+            label=person if not i else None,
+            color="#DC267F",
+        )
+
     axis.axvline(
         ref_df.loc["tahlia", "Hausdorff_Dice_0.5"],
         linestyle="--",
@@ -118,6 +181,7 @@ def main():
     """
     Read all the markdown tables, convert them to dataframes, do some checks
     and print a summary table.
+
     """
     log_dir = pathlib.Path("logs/")
 
@@ -129,12 +193,27 @@ def main():
     # Ensure felix, harry, tahlia are the same in all files
     ref_df = dfs[0].loc[["felix", "harry", "tahlia"]]
     for i, df in enumerate(dfs[1:], start=1):
-        if not df.loc[["felix", "harry", "tahlia"]].equals(ref_df):
-            raise AssertionError(
-                f"Mismatch in felix/harry/tahlia values in file: {files[i]}"
-            )
+        assert df.loc[["felix", "harry", "tahlia"]].equals(ref_df)
 
-    # Create the final combined DataFrame
+    # TODO the implementation should be refactored to have a separate dataframe
+    # for each person's segmentations, so we can then compare them and run
+    # stats on them more sensibly
+
+    # Get a df of metrics for felix's repeated segmentations, and stick it on the
+    # end of our reference dataframe
+    if not files.repeat_training_result_table_path().exists():
+        _dump_repeat_segmentation_metrics()
+    with open(files.repeat_training_result_table_path(), "rb") as f:
+        repeat_df = pd.read_pickle(f)
+    assert repeat_df.loc["felix"].equals(ref_df.loc["felix"])
+
+    ref_df = pd.concat([ref_df, repeat_df.loc[["felix2", "felix3"]]])
+    print("Intra-Felix comparison:")
+    print("=" * 12)
+    print(ref_df.loc[["felix", "felix2", "felix3"]].to_markdown())
+    print()
+
+    # Create the final combined DataFrame for the different models
     final_df = ref_df.copy()
     for i, df in enumerate(dfs):
         inference_row = df.loc["inference"].copy()
@@ -142,7 +221,10 @@ def main():
         final_df = pd.concat([final_df, pd.DataFrame([inference_row])])
     final_df.drop(["felix", "harry", "tahlia"], inplace=True)
 
+    print("Inter-model comparison:")
+    print("=" * 12)
     print(final_df.describe().to_markdown())
+    print()
 
     # Print 2.5% and 97.5% confidence intervals for Dice and HD
     print(final_df.quantile([0.025, 0.975]).to_markdown())
