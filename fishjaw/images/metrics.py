@@ -393,6 +393,12 @@ def table(
     Return a table of metrics between a binary mask (truth) and a float array (pred)
     in a nice markdown format
 
+    Weird API where you need to pass lists of truth and pred arrays of the same length,
+    i.e. do something like:
+    ```python
+    table([truth] * 4, [pred1, pred2, pred3, pred4])
+    ```
+
     :param truth: List of binary mask arrays.
     :param pred: List of float prediction arrays.
     :param thresholded_metrics: Whether to add some metrics for thresholded predictions.
