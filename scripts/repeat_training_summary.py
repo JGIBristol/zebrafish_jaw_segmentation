@@ -184,16 +184,14 @@ def main():
     # Ensure felix, harry, tahlia are the same in all files
     ref_df = dfs[0].loc[["felix", "harry", "tahlia"]]
     for i, df in enumerate(dfs[1:], start=1):
-        if not df.loc[["felix", "harry", "tahlia"]].equals(ref_df):
-            raise AssertionError(
-                f"Mismatch in felix/harry/tahlia values in file: {files[i]}"
-            )
+        assert df.loc[["felix", "harry", "tahlia"]].equals(ref_df)
 
     # Get a df of metrics for felix's repeated segmentations
     if not files.repeat_training_result_table_path().exists():
         _dump_repeat_segmentation_metrics()
     with open(files.repeat_training_result_table_path(), "rb") as f:
         repeat_df = pd.read_pickle(f)
+    assert repeat_df.loc["felix"].equals(ref_df.loc["felix"])
 
     # Create the final combined DataFrame
     final_df = ref_df.copy()
