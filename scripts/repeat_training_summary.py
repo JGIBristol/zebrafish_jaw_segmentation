@@ -173,6 +173,7 @@ def main():
     """
     Read all the markdown tables, convert them to dataframes, do some checks
     and print a summary table.
+
     """
     log_dir = pathlib.Path("logs/")
 
@@ -186,14 +187,21 @@ def main():
     for i, df in enumerate(dfs[1:], start=1):
         assert df.loc[["felix", "harry", "tahlia"]].equals(ref_df)
 
-    # Get a df of metrics for felix's repeated segmentations
+    # TODO the implementation should be refactored to have a separate dataframe
+    # for each person's segmentations, so we can then compare them and run
+    # stats on them more sensibly
+
+    # Get a df of metrics for felix's repeated segmentations, and stick it on the
+    # end of our reference dataframe
     if not files.repeat_training_result_table_path().exists():
         _dump_repeat_segmentation_metrics()
     with open(files.repeat_training_result_table_path(), "rb") as f:
         repeat_df = pd.read_pickle(f)
     assert repeat_df.loc["felix"].equals(ref_df.loc["felix"])
 
-    # Create the final combined DataFrame
+    ref_df = pd.concat([ref_df, repeat_df.loc[["felix2", "felix3"]]])
+
+    # Create the final combined DataFrame for the different models
     final_df = ref_df.copy()
     for i, df in enumerate(dfs):
         inference_row = df.loc["inference"].copy()
