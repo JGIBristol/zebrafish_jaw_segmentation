@@ -67,7 +67,19 @@ def main(model_name: str):
     val_imgs, val_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[-4:-1]])
 
     # Set up training data heatmaps
+    train_data = data.HeatmapDataset(
+        images=train_imgs,
+        masks=train_labels,
+        sigma=config["initial_kernel_size"],
+    )
+    val_data = data.HeatmapDataset(
+        images=val_imgs,
+        masks=val_labels,
+        sigma=config["initial_kernel_size"],
+    )
+
     # Plot the first training data heatmap
+
     # Set up the model
     # Train it
     # Plot losses

@@ -6,9 +6,59 @@ Training data for the jaw localisation model.
 import pathlib
 import datetime
 
+import torch
+from torch.utils.data import Dataset
 import pydicom
 import numpy as np
-from scipy.ndimage import zoom
+from scipy.ndimage import zoom, center_of_mass, gaussian_filter
+
+
+class HeatmapDataset(Dataset):
+    """
+    Initialise a dataset for training the model - images and heatmaps.
+
+    Calculates the heatmaps by putting a Gaussian at the centroid of each mask.
+    """
+
+    def __init__(
+        self,
+        images: list[np.ndarray],
+        masks: list[np.ndarray],
+        sigma: float,
+    ):
+        assert all(
+            img.shape == mask.shape for img, mask in zip(images, masks)
+        ), "All images and masks must have the same shape"
+
+        self.data = torch.tensor(
+            np.array(images, dtype=np.float32), dtype=torch.float32
+        ).unsqueeze(1)
+
+        # Find the approx centroids of the masks
+        # (we'll use these to create heatmaps later)
+        centroids = [tuple(map(int, center_of_mass(mask))) for mask in masks]
+
+        # Create heatmaps by placing a Gaussian at each centroid
+        self.heatmaps = []
+        for centroid in centroids:
+            # Put a 1 at the centroid then smooth it
+            gaussian_mask = np.zeros_like(images[0], dtype=np.float32)
+            gaussian_mask[centroid[0], centroid[1], centroid[2]] = 1  # Set the centroid
+            gaussian_mask = gaussian_filter(gaussian_mask, sigma=sigma)
+
+            assert np.allclose(np.sum(gaussian_mask), 1.0), "Heatmap should sum to 1"
+
+            self.heatmaps.append(gaussian_mask)
+
+        self.heatmaps = torch.tensor(
+            np.array(self.heatmaps), dtype=torch.float32
+        ).unsqueeze(1)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx].to("cuda"), self.heatmaps[idx].to("cuda")
 
 
 def downsampled_dicom_path(dicom_path: pathlib.Path) -> pathlib.Path:
