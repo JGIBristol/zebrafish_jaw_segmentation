@@ -7,6 +7,9 @@ use the model trained in `train_model.py` to segment the jaw.
 
 """
 
+import pathlib
+import argparse
+
 
 def main():
     """
@@ -17,6 +20,14 @@ def main():
     the jaw centre from the heatmap by convolving to find its centre.
 
     """
+    dicom_paths = sorted(
+        list((pathlib.Path("dicoms") / "Training set 2").glob("*.dcm"))
+        + list(
+            (
+                pathlib.Path("dicoms") / "Training set 4 (Wahab resegmented by felix)"
+            ).glob("*.dcm")
+        )
+    )
 
 
 if __name__ == "__main__":
