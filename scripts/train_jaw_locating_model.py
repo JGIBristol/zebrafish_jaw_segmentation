@@ -11,11 +11,12 @@ import pathlib
 import argparse
 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 from fishjaw.images import io
-from fishjaw.util import util
-from fishjaw.localisation import data
+from fishjaw.util import util, files
+from fishjaw.localisation import data, plotting
 
 
 def _cache_dicoms(
@@ -51,6 +52,8 @@ def main(model_name: str):
 
     """
     config = util.userconf()["jaw_loc_config"]
+    out_dir = files.script_out_dir() / "jaw_location"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     # TODO config option
     input_dirs = [
@@ -108,6 +111,9 @@ def main(model_name: str):
     )
 
     # Plot the first training data heatmap
+    fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+    fig.savefig(out_dir / "train_heatmap.png")
+    plt.close(fig)
 
     # Set up the model
     # Train it
