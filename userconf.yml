@@ -95,3 +95,6 @@ model_params:
   kernel_size: 3
   stride: 2
   dropout: 0.01
+
+# Settings for the jaw location model
+downsampled_dicom_size: [512, 128, 128]
