@@ -10,6 +10,8 @@ use the model trained in `train_model.py` to segment the jaw.
 import pathlib
 import argparse
 
+from fishjaw.localisation import data
+
 
 def main():
     """
@@ -28,6 +30,8 @@ def main():
             ).glob("*.dcm")
         )
     )
+
+    downsampled_paths = [data.downsampled_dicom_path(p) for p in dicom_paths]
 
 
 if __name__ == "__main__":
