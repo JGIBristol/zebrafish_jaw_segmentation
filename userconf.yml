@@ -97,5 +97,8 @@ model_params:
   dropout: 0.01
 
 # Settings for the jaw location model
-downsampled_dicom_size: [512, 128, 128]
-initial_kernel_size: 10
+jaw_loc_config:
+  downsampled_dicom_size: [512, 128, 128]
+  initial_kernel_size: 10
+  batch_size: 4
+  n_workers: 4

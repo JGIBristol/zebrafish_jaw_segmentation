@@ -11,6 +11,7 @@ import pathlib
 import argparse
 
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 from fishjaw.images import io
 from fishjaw.util import util
@@ -26,7 +27,7 @@ def main(model_name: str):
     the jaw centre from the heatmap by convolving to find its centre.
 
     """
-    config = util.userconf()
+    config = util.userconf()["jaw_loc_config"]
 
     # TODO config option
     input_dirs = [
@@ -76,6 +77,19 @@ def main(model_name: str):
         images=val_imgs,
         masks=val_labels,
         sigma=config["initial_kernel_size"],
+    )
+
+    train_loader = DataLoader(
+        train_data,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=config["n_workers"],
+    )
+    val_loader = DataLoader(
+        val_data,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["n_workers"],
     )
 
     # Plot the first training data heatmap
