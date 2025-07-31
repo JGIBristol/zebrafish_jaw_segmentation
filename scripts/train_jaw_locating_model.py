@@ -18,6 +18,29 @@ from fishjaw.util import util
 from fishjaw.localisation import data
 
 
+def _cache_dicoms(
+    target_size: tuple[int, int, int],
+    dicom_paths: list[pathlib.Path],
+    downsampled_paths: list[pathlib.Path],
+) -> None:
+    """
+    Downsample and and save the dicoms to disk
+    """
+    pbar = tqdm(zip(dicom_paths, downsampled_paths), total=len(dicom_paths))
+
+    for in_path, out_path in zip(dicom_paths, downsampled_paths):
+        if not out_path.exists():
+            pbar.set_description(f"Reading {in_path.name}")
+            img, label = io.read_dicom(in_path)
+
+            pbar.set_description(f"Downsampling {in_path.name}")
+            img, label = data.downsample(img, label, target_size)
+
+            # Create a dicom and save it
+            dicom = data.write_dicom(img, label, out_path)
+        pbar.update(1)
+
+
 def main(model_name: str):
     """
     Read (cached) downsampled dicoms, init a model and train it to localise the jaw.
@@ -43,24 +66,16 @@ def main(model_name: str):
     assert len(parent_dirs) == len(
         input_dirs
     ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
+
     for parent_dir in parent_dirs:
         parent_dir.mkdir(parents=True, exist_ok=True)
 
     if not all(p.exists() for p in downsampled_paths):
-        target_shape = config["downsampled_dicom_size"]
-        pbar = tqdm(zip(dicom_paths, downsampled_paths), total=len(dicom_paths))
-
-        for in_path, out_path in zip(dicom_paths, downsampled_paths):
-            if not out_path.exists():
-                pbar.set_description(f"Reading {in_path.name}")
-                img, label = io.read_dicom(in_path)
-
-                pbar.set_description(f"Downsampling {in_path.name}")
-                img, label = data.downsample(img, label, target_shape)
-
-                # Create a dicom and save it
-                dicom = data.write_dicom(img, label, out_path)
-            pbar.update(1)
+        _cache_dicoms(
+            target_size=config["downsampled_dicom_size"],
+            dicom_paths=dicom_paths,
+            downsampled_paths=downsampled_paths,
+        )
 
     # Read in the downsampled dicoms
     # Leave the last one for testing
