@@ -59,8 +59,26 @@ def main(model_name: str):
 
                 # Create a dicom and save it
                 dicom = data.write_dicom(img, label, out_path)
-
             pbar.update(1)
+
+    # Read in the downsampled dicoms
+    # Leave the last one for testing
+    train_imgs, train_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[:-4]])
+    val_imgs, val_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[-4:-1]])
+
+    # Set up training data heatmaps
+    # Plot the first training data heatmap
+    # Set up the model
+    # Train it
+    # Plot losses
+    # Plot heatmaps for training + val data
+    # Apply the model to the downsampled test data
+    # Plot heatmap
+    # Read in the original test data
+    # Find the scale factor
+    # Scale the prediction back up to original size
+    # Plot the predicted centroid on the original image
+    # Crop using the prediction, save the image
 
 
 if __name__ == "__main__":
