@@ -140,7 +140,8 @@ def main(model_name: str, debug_plots: bool) -> None:
         )
 
         # Plot losses
-        plot_losses(train_losses, val_losses)
+        fig = plot_losses(train_losses, val_losses)
+        fig.savefig(out_dir / "losses.png")
 
         # Plot heatmaps for training + val data
         if debug_plots:
@@ -187,7 +188,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         plt.close(fig)
 
     # Find the predicted centroid
-    predicted_centroid = model.predict_centroid(net, predicted_heatmap)
+    (predicted_centroid,) = model._heatmap_center(predicted_heatmap)
     if debug_plots:
         # Plot the centroid on the downsampled image
         fig, _ = plotting.plot_centroid(
