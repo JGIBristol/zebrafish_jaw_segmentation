@@ -42,7 +42,7 @@ def _cache_dicoms(
         pbar.update(1)
 
 
-def main(model_name: str):
+def main(model_name: str, debug_plots: bool) -> None:
     """
     Read (cached) downsampled dicoms, init a model and train it to localise the jaw.
 
@@ -110,10 +110,11 @@ def main(model_name: str):
         num_workers=config["n_workers"],
     )
 
-    # Plot the first training data heatmap
-    fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-    fig.savefig(out_dir / "train_heatmap.png")
-    plt.close(fig)
+    if debug_plots:
+        # Plot the first training data heatmap
+        fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+        fig.savefig(out_dir / "train_heatmap.png")
+        plt.close(fig)
 
     # Set up the model
     # Train it
@@ -136,6 +137,12 @@ if __name__ == "__main__":
         "--model-name",
         type=str,
         default="locator",
+    )
+    parser.add_argument(
+        "--debug-plots",
+        action="store_true",
+        help="Plot the training data/downsampled testing data/heatmaps for test data."
+        "Upsampled point estimate on test data is always plotted",
     )
 
     main(**vars(parser.parse_args()))
