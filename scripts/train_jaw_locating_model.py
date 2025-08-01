@@ -117,10 +117,10 @@ def main(model_name: str, debug_plots: bool) -> None:
         fig.savefig(out_dir / "train_heatmap.png")
         plt.close(fig)
 
-    net = model.get_model(config["model_name"])
+    net = model.get_model(config["device"])
 
     # Train it
-    net, train_losses, val_losses = train(
+    net, train_losses, val_losses = model.train(
         net,
         train_loader,
         val_loader,

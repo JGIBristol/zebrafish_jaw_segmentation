@@ -44,3 +44,41 @@ def plot_heatmap(
         axis.axis("off")
 
     return fig, axes
+
+
+def _plot_centroid(
+    img: torch.tensor, centroid: tuple[int, int, int]
+) -> tuple[plt.Figure, dict[str, plt.Axes]]:
+    """
+    Plot the predicted centroid on the image.
+
+    """
+    fig, axes = plt.subplot_mosaic(
+        """
+                             AAAB
+                             AAAB
+                             AAAB
+                             CCC.
+                             """,
+        figsize=(6, 6),
+    )
+
+    for axis, permutation in zip(
+        [axes["A"], axes["B"], axes["C"]],
+        [(0, 1, 2, 3, 4), (0, 1, 4, 2, 3), (0, 1, 3, 4, 2)],
+    ):
+        permuted_img = img.permute(permutation)
+
+        # Take the right slice
+        img_slice = permuted_img[0][0][centroid[permutation[2] - 2]].numpy()
+        centroid_x, centroid_y = (
+            centroid[permutation[3] - 2],
+            centroid[permutation[4] - 2],
+        )
+
+        axis.imshow(img_slice, cmap="gray")
+        axis.scatter(centroid_y, centroid_x, color="red", s=10, marker="x")
+
+        axis.axis("off")
+
+    return fig, axes
