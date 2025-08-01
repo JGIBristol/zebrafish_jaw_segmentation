@@ -15,6 +15,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from scipy.ndimage import center_of_mass
 
 from fishjaw.images import io
 from fishjaw.util import util, files
@@ -145,7 +146,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         if debug_plots:
             for loader, name in zip([train_loader, val_loader], ["train", "val"]):
                 img, _ = next(iter(loader))
-                prediction = net(img.to(config["device"])).cpu().detach().numpy()
+                prediction = net(img.to(config["device"])).cpu().detach()
                 fig, _ = plotting.plot_heatmap(img, prediction)
                 fig.savefig(out_dir / f"{name}_heatmap_prediction.png")
                 plt.close(fig)
@@ -167,22 +168,26 @@ def main(model_name: str, debug_plots: bool) -> None:
     downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_paths[-1])
 
     # Plot heatmap
+    predicted_heatmap = (
+        net(
+            torch.tensor(downsampled_test_img.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0)
+            .to(config["device"])
+        )
+        .cpu()
+        .detach()
+    )
     if debug_plots:
         fig, _ = plotting.plot_heatmap(
-            torch.tensor(test_img).unsqueeze(0).unsqueeze(0),
-            torch.tensor(test_label).unsqueeze(0).unsqueeze(0),
+            torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
+            predicted_heatmap,
         )
         fig.savefig(out_dir / "test_heatmap.png")
         plt.close(fig)
 
     # Find the predicted centroid
-    predicted_centroid = model.predict_centroid(
-        net,
-        torch.tensor(downsampled_test_img.astype(np.float32), dtype=torch.float32)
-        .unsqueeze(0)
-        .unsqueeze(0)
-        .to(config["device"]),
-    )
+    predicted_centroid = model.predict_centroid(net, predicted_heatmap)
     if debug_plots:
         # Plot the centroid on the downsampled image
         fig, _ = plotting.plot_centroid(
@@ -191,7 +196,17 @@ def main(model_name: str, debug_plots: bool) -> None:
             .unsqueeze(0),
             predicted_centroid,
         )
-        fig.savefig(out_dir / "predicted_centroid_downsampled.png")
+        fig.savefig(out_dir / "test_centroid_downsampled.png")
+        plt.close(fig)
+
+        # Plot the truth centroid
+        fig, _ = plotting.plot_centroid(
+            torch.tensor(test_img.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0),
+            [int(x) for x in center_of_mass(test_label)],
+        )
+        fig.savefig(out_dir / "test_centroid_truth.png")
         plt.close(fig)
 
     # Find the scale factor
@@ -202,10 +217,10 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     # Plot the predicted centroid on the original image
     plotting.plot_centroid(
-        torch.tensor(test_img).unsqueeze(0).unsqueeze(0),
+        torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
         scaled_predicted_centroid,
     )
-    fig.savefig(out_dir / "predicted_centroid_original.png")
+    fig.savefig(out_dir / "test_centroid.png")
     plt.close(fig)
 
     # Crop using the prediction, save the image

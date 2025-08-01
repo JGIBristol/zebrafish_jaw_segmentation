@@ -106,7 +106,6 @@ def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
     kernel_size, sigma = 5, 1.0
 
     coords = torch.arange(kernel_size, dtype=torch.float32) - (kernel_size - 1) / 2
-    print(coords)
     z, y, x = torch.meshgrid(coords, coords, coords, indexing="ij")
 
     kernel = torch.exp(-(z**2 + y**2 + x**2) / (2 * sigma**2))
@@ -118,9 +117,7 @@ def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
     )
 
     # Find the index of the maximum value in the smoothed heatmap
-    flat_idx = smoothed_heatmap.argmax(
-        smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1
-    )
+    flat_idx = torch.argmax(smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1)
 
     # Convert it to a 3d coord
     batch_size, _, z_size, y_size, x_size = smoothed_heatmap.shape
