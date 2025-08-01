@@ -10,6 +10,7 @@ use the model trained in `train_model.py` to segment the jaw.
 import pathlib
 import argparse
 
+import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -166,7 +167,12 @@ def main(model_name: str, debug_plots: bool) -> None:
     )
     if debug_plots:
         # Plot the centroid on the downsampled image
-        ...
+        fig, _ = plotting.plot_centroid(
+            torch.tensor(downsampled_test_img).unsqueeze(0).unsqueeze(0),
+            predicted_centroid,
+        )
+        fig.savefig(out_dir / "predicted_centroid_downsampled.png")
+        plt.close(fig)
 
     # Find the scale factor
     scaled_predicted_centroid = data.scale_prediction_up(
@@ -175,6 +181,12 @@ def main(model_name: str, debug_plots: bool) -> None:
     )
 
     # Plot the predicted centroid on the original image
+    plotting.plot_centroid(
+        torch.tensor(test_img).unsqueeze(0).unsqueeze(0),
+        scaled_predicted_centroid,
+    )
+    fig.savefig(out_dir / "predicted_centroid_original.png")
+    plt.close(fig)
 
     # Crop using the prediction, save the image
 

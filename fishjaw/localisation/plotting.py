@@ -46,7 +46,7 @@ def plot_heatmap(
     return fig, axes
 
 
-def _plot_centroid(
+def plot_centroid(
     img: torch.tensor, centroid: tuple[int, int, int]
 ) -> tuple[plt.Figure, dict[str, plt.Axes]]:
     """

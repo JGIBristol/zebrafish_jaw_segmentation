@@ -4,6 +4,7 @@ Model arch and training loop
 """
 
 import torch
+import numpy as np
 from tqdm import tqdm
 from monai.networks.nets import AttentionUnet
 
