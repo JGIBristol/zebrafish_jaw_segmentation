@@ -11,6 +11,7 @@ import pathlib
 import argparse
 
 import torch
+import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -67,80 +68,97 @@ def main(model_name: str, debug_plots: bool) -> None:
     )
 
     downsampled_paths = [data.downsampled_dicom_path(p) for p in dicom_paths]
-    parent_dirs = set(p.parent for p in downsampled_paths)
-    assert len(parent_dirs) == len(
-        input_dirs
-    ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
 
-    for parent_dir in parent_dirs:
-        parent_dir.mkdir(parents=True, exist_ok=True)
+    model_path = out_dir / f"{model_name}.pth"
+    if not model_path.exists():
+        parent_dirs = set(p.parent for p in downsampled_paths)
+        assert len(parent_dirs) == len(
+            input_dirs
+        ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
 
-    if not all(p.exists() for p in downsampled_paths):
-        _cache_dicoms(
-            target_size=config["downsampled_dicom_size"],
-            dicom_paths=dicom_paths,
-            downsampled_paths=downsampled_paths,
+        for parent_dir in parent_dirs:
+            parent_dir.mkdir(parents=True, exist_ok=True)
+
+        if not all(p.exists() for p in downsampled_paths):
+            _cache_dicoms(
+                target_size=config["downsampled_dicom_size"],
+                dicom_paths=dicom_paths,
+                downsampled_paths=downsampled_paths,
+            )
+
+        # Read in the downsampled dicoms
+        # Leave the last one for testing
+        train_imgs, train_labels = zip(
+            *[io.read_dicom(p) for p in downsampled_paths[:-4]]
+        )
+        val_imgs, val_labels = zip(
+            *[io.read_dicom(p) for p in downsampled_paths[-4:-1]]
         )
 
-    # Read in the downsampled dicoms
-    # Leave the last one for testing
-    train_imgs, train_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[:-4]])
-    val_imgs, val_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[-4:-1]])
+        # Set up training data heatmaps
+        train_data = data.HeatmapDataset(
+            images=train_imgs,
+            masks=train_labels,
+            sigma=config["initial_kernel_size"],
+        )
+        val_data = data.HeatmapDataset(
+            images=val_imgs,
+            masks=val_labels,
+            sigma=config["initial_kernel_size"],
+        )
 
-    # Set up training data heatmaps
-    train_data = data.HeatmapDataset(
-        images=train_imgs,
-        masks=train_labels,
-        sigma=config["initial_kernel_size"],
-    )
-    val_data = data.HeatmapDataset(
-        images=val_imgs,
-        masks=val_labels,
-        sigma=config["initial_kernel_size"],
-    )
+        train_loader = DataLoader(
+            train_data,
+            batch_size=config["batch_size"],
+            shuffle=True,
+            num_workers=config["n_workers"],
+        )
+        val_loader = DataLoader(
+            val_data,
+            batch_size=config["batch_size"],
+            shuffle=False,
+            num_workers=config["n_workers"],
+        )
 
-    train_loader = DataLoader(
-        train_data,
-        batch_size=config["batch_size"],
-        shuffle=True,
-        num_workers=config["n_workers"],
-    )
-    val_loader = DataLoader(
-        val_data,
-        batch_size=config["batch_size"],
-        shuffle=False,
-        num_workers=config["n_workers"],
-    )
-
-    if debug_plots:
-        # Plot the first training data heatmap
-        fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-        fig.savefig(out_dir / "train_heatmap.png")
-        plt.close(fig)
-
-    net = model.get_model(config["device"])
-
-    # Train it
-    net, train_losses, val_losses = model.train(
-        net,
-        train_loader,
-        val_loader,
-        config["learning_rate"],
-        config["num_epochs"],
-        config["device"],
-    )
-
-    # Plot losses
-    plot_losses(train_losses, val_losses)
-
-    # Plot heatmaps for training + val data
-    if debug_plots:
-        for loader, name in zip([train_loader, val_loader], ["train", "val"]):
-            img, _ = next(iter(loader))
-            prediction = net(img.to(config["device"])).cpu().detach().numpy()
-            fig, _ = plotting.plot_heatmap(img, prediction)
-            fig.savefig(out_dir / f"{name}_heatmap_prediction.png")
+        if debug_plots:
+            # Plot the first training data heatmap
+            fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+            fig.savefig(out_dir / "train_heatmap.png")
             plt.close(fig)
+
+        net = model.get_model(config["device"])
+
+        # Train it
+        net, train_losses, val_losses = model.train(
+            net,
+            train_loader,
+            val_loader,
+            config["learning_rate"],
+            config["num_epochs"],
+            config["device"],
+        )
+
+        # Plot losses
+        plot_losses(train_losses, val_losses)
+
+        # Plot heatmaps for training + val data
+        if debug_plots:
+            for loader, name in zip([train_loader, val_loader], ["train", "val"]):
+                img, _ = next(iter(loader))
+                prediction = net(img.to(config["device"])).cpu().detach().numpy()
+                fig, _ = plotting.plot_heatmap(img, prediction)
+                fig.savefig(out_dir / f"{name}_heatmap_prediction.png")
+                plt.close(fig)
+
+        with open(model_path, "wb") as f:
+            torch.save(net.state_dict(), f)
+
+    else:
+        print(f"Model already exists at {model_path}, skipping training.")
+
+    # Load the model
+    net = model.get_model(config["device"])
+    net.load_state_dict(torch.load(model_path))
 
     # Read in the original and downsampled test data
     # We may want to plot the heatmap on the downsampled data (for debug)
@@ -160,7 +178,7 @@ def main(model_name: str, debug_plots: bool) -> None:
     # Find the predicted centroid
     predicted_centroid = model.predict_centroid(
         net,
-        torch.tensor(downsampled_test_img)
+        torch.tensor(downsampled_test_img.astype(np.float32), dtype=torch.float32)
         .unsqueeze(0)
         .unsqueeze(0)
         .to(config["device"]),
@@ -168,7 +186,9 @@ def main(model_name: str, debug_plots: bool) -> None:
     if debug_plots:
         # Plot the centroid on the downsampled image
         fig, _ = plotting.plot_centroid(
-            torch.tensor(downsampled_test_img).unsqueeze(0).unsqueeze(0),
+            torch.tensor(downsampled_test_img.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0),
             predicted_centroid,
         )
         fig.savefig(out_dir / "predicted_centroid_downsampled.png")

@@ -132,7 +132,7 @@ def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
 
 
 def predict_centroid(
-    model: torch.nn.Module, image: torch.Tensor, device: str
+    model: torch.nn.Module, image: torch.Tensor
 ) -> tuple[int, int, int]:
     """
     Predict the centroid of the jaw from an image using the trained model
@@ -142,6 +142,8 @@ def predict_centroid(
     :param device: "cuda" or "cpu"
     """
     model.eval()
+    # NB this will break if the model is on multiple devices...
+    device = next(model.parameters()).device
     with torch.no_grad():
         output = model(image.to(device)).cpu().detach()
 
