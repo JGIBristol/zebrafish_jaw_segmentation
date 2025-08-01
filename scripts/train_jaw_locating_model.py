@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader
 from fishjaw.images import io
 from fishjaw.util import util, files
 from fishjaw.localisation import data, plotting, model
+from fishjaw.visualisation.training import plot_losses
 
 
 def _cache_dicoms(
@@ -119,7 +120,18 @@ def main(model_name: str, debug_plots: bool) -> None:
     net = model.get_model(config["model_name"])
 
     # Train it
+    net, train_losses, val_losses = train(
+        net,
+        train_loader,
+        val_loader,
+        config["learning_rate"],
+        config["num_epochs"],
+        config["device"],
+    )
+
     # Plot losses
+    plot_losses(train_losses, val_losses)
+
     # Plot heatmaps for training + val data
     # Apply the model to the downsampled test data
     # Plot heatmap
@@ -142,8 +154,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--debug-plots",
         action="store_true",
-        help="Plot the training data/downsampled testing data/heatmaps for test data."
-        "Upsampled point estimate on test data is always plotted",
+        help="Plot the training data and downsampled testing data/heatmaps for test data."
+        "Losses and upsampled point estimate on test data are always plotted",
     )
 
     main(**vars(parser.parse_args()))

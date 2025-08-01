@@ -103,3 +103,5 @@ jaw_loc_config:
   batch_size: 4
   n_workers: 4
   device: "cuda"
+  learning_rate: 0.00001
+  num_epochs: 10
