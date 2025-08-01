@@ -58,7 +58,8 @@ class HeatmapDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        return self.data[idx].to("cuda"), self.heatmaps[idx].to("cuda")
+        """Doesn't send the data to a device"""
+        return self.data[idx], self.heatmaps[idx]
 
 
 def downsampled_dicom_path(dicom_path: pathlib.Path) -> pathlib.Path:

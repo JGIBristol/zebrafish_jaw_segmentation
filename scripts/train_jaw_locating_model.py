@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 
 from fishjaw.images import io
 from fishjaw.util import util, files
-from fishjaw.localisation import data, plotting
+from fishjaw.localisation import data, plotting, model
 
 
 def _cache_dicoms(
@@ -116,7 +116,8 @@ def main(model_name: str, debug_plots: bool) -> None:
         fig.savefig(out_dir / "train_heatmap.png")
         plt.close(fig)
 
-    # Set up the model
+    net = model.get_model(config["model_name"])
+
     # Train it
     # Plot losses
     # Plot heatmaps for training + val data

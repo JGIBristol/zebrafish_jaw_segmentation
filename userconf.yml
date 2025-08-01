@@ -102,3 +102,4 @@ jaw_loc_config:
   initial_kernel_size: 10
   batch_size: 4
   n_workers: 4
+  device: "cuda"
