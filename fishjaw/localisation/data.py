@@ -165,3 +165,11 @@ def write_dicom(image: np.ndarray, mask: np.ndarray, out_path: pathlib.Path) -> 
     )
 
     ds.save_as(out_path, write_like_original=False)
+
+
+def scale_prediction_up(
+    predicted_coords: tuple[int, int, int],
+    sf: tuple[float, float, float],
+) -> tuple[int, int, int]:
+    """Scale the prediction back up"""
+    return tuple(int(coord / _sf) for coord, _sf in zip(predicted_coords, sf))

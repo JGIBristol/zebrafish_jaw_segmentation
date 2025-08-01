@@ -157,11 +157,25 @@ def main(model_name: str, debug_plots: bool) -> None:
         plt.close(fig)
 
     # Find the predicted centroid
+    predicted_centroid = model.predict_centroid(
+        net,
+        torch.tensor(downsampled_test_img)
+        .unsqueeze(0)
+        .unsqueeze(0)
+        .to(config["device"]),
+    )
+    if debug_plots:
+        # Plot the centroid on the downsampled image
+        ...
 
     # Find the scale factor
-    sf = data.scale_factor(test_img.shape, downsampled_test_img.shape)
+    scaled_predicted_centroid = data.scale_prediction_up(
+        predicted_centroid,
+        data.scale_factor(test_img.shape, downsampled_test_img.shape),
+    )
 
     # Plot the predicted centroid on the original image
+
     # Crop using the prediction, save the image
 
 
