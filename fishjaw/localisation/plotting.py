@@ -7,10 +7,12 @@ import matplotlib.pyplot as plt
 
 
 def plot_heatmap(
-    img: torch.tensor, heatmap: torch.tensor
+    img: torch.Tensor, heatmap: torch.Tensor
 ) -> tuple[plt.Figure, dict[str, plt.Axes]]:
     """
     Plot three slices of the heatmap through different slices
+
+    The tensors should be on the CPU
     """
     # Find the index of the Z slice where the centroid has the highest sum
 
@@ -33,8 +35,8 @@ def plot_heatmap(
 
         centre = torch.argmax(permuted_heatmap[0][0].sum(dim=(1, 2))).item()
 
-        img_slice = permuted_img[0][0][centre].cpu().numpy()
-        heatmap_slice = permuted_heatmap[0][0][centre].cpu().numpy()
+        img_slice = permuted_img[0][0][centre].numpy()
+        heatmap_slice = permuted_heatmap[0][0][centre].numpy()
 
         axis.imshow(img_slice, cmap="gray")
         axis.imshow(heatmap_slice, cmap="afmhot_r", alpha=0.3)

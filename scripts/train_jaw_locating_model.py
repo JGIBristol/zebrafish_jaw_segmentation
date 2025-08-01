@@ -133,11 +133,34 @@ def main(model_name: str, debug_plots: bool) -> None:
     plot_losses(train_losses, val_losses)
 
     # Plot heatmaps for training + val data
-    # Apply the model to the downsampled test data
+    if debug_plots:
+        img, _ = next(iter(train_loader))
+        prediction = net(img.to(config["device"])).cpu().detach().numpy()
+        prediction = prediction
+        fig, _ = plotting.plot_heatmap()
+        fig.savefig(out_dir / "train_heatmap_prediction.png")
+        plt.close(fig)
+
+    # Read in the original and downsampled test data
+    # We may want to plot the heatmap on the downsampled data (for debug)
+    # Also plot the actual/predicted centre on the original size image
+    test_img, test_label = io.read_dicom(dicom_paths[-1])
+    downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_paths[-1])
+
     # Plot heatmap
-    # Read in the original test data
+    if debug_plots:
+        fig, _ = plotting.plot_heatmap(
+            torch.tensor(test_img).unsqueeze(0).unsqueeze(0),
+            torch.tensor(test_label).unsqueeze(0).unsqueeze(0),
+        )
+        fig.savefig(out_dir / "test_heatmap.png")
+        plt.close(fig)
+
+    # Find the predicted centroid
+
     # Find the scale factor
-    # Scale the prediction back up to original size
+    sf = data.scale_factor(test_img.shape, downsampled_test_img.shape)
+
     # Plot the predicted centroid on the original image
     # Crop using the prediction, save the image
 
