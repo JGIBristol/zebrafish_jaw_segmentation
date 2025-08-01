@@ -94,3 +94,56 @@ def train(
         pbar.set_postfix(train_loss=np.mean(train_loss), val_loss=np.mean(val_loss))
 
     return model, train_losses, val_losses
+
+
+def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
+    """
+    Find the center of the heatmap(s) by convolving with a Gaussian
+
+    :param heatmap: 5D tensor (batch, channel, z, y, x)
+    """
+    kernel_size, sigma = 5, 1.0
+
+    coords = torch.arange(kernel_size, dtype=torch.float32) - (kernel_size - 1) / 2
+    print(coords)
+    z, y, x = torch.meshgrid(coords, coords, coords, indexing="ij")
+
+    kernel = torch.exp(-(z**2 + y**2 + x**2) / (2 * sigma**2))
+    kernel = kernel / kernel.sum()
+    kernel = kernel.view(1, 1, *kernel.shape)
+
+    smoothed_heatmap = torch.nn.functional.conv3d(
+        heatmap, kernel, padding=kernel_size // 2
+    )
+
+    # Find the index of the maximum value in the smoothed heatmap
+    flat_idx = smoothed_heatmap.argmax(
+        smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1
+    )
+
+    # Convert it to a 3d coord
+    batch_size, _, z_size, y_size, x_size = smoothed_heatmap.shape
+    z = flat_idx // (y_size * x_size)
+    y = (flat_idx % (y_size * x_size)) // x_size
+    x = flat_idx % x_size
+
+    return [(z[i].item(), y[i].item(), x[i].item()) for i in range(batch_size)]
+
+
+def predict_centroid(
+    model: torch.nn.Module, image: torch.Tensor, device: str
+) -> tuple[int, int, int]:
+    """
+    Predict the centroid of the jaw from an image using the trained model
+
+    :param model: trained model
+    :param image: 5D tensor (1, channel, z, y, x) - i.e. one sample
+    :param device: "cuda" or "cpu"
+    """
+    model.eval()
+    with torch.no_grad():
+        output = model(image.to(device)).cpu().detach()
+
+    (centroid,) = _heatmap_center(output)
+
+    return centroid

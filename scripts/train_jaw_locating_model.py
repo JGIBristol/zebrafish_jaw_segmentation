@@ -134,12 +134,12 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     # Plot heatmaps for training + val data
     if debug_plots:
-        img, _ = next(iter(train_loader))
-        prediction = net(img.to(config["device"])).cpu().detach().numpy()
-        prediction = prediction
-        fig, _ = plotting.plot_heatmap()
-        fig.savefig(out_dir / "train_heatmap_prediction.png")
-        plt.close(fig)
+        for loader, name in zip([train_loader, val_loader], ["train", "val"]):
+            img, _ = next(iter(loader))
+            prediction = net(img.to(config["device"])).cpu().detach().numpy()
+            fig, _ = plotting.plot_heatmap(img, prediction)
+            fig.savefig(out_dir / f"{name}_heatmap_prediction.png")
+            plt.close(fig)
 
     # Read in the original and downsampled test data
     # We may want to plot the heatmap on the downsampled data (for debug)
