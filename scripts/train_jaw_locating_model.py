@@ -59,9 +59,20 @@ def _savefig(fig: plt.Figure, path: pathlib.Path, *, verbose: bool) -> None:
     plt.close(fig)
 
 
+def _dicom_paths(config: dict) -> list[pathlib.Path]:
+    """
+    The paths to the training DICOMs
+    """
+    input_dirs = [pathlib.Path(d) for d in config["dicom_dirs"]]
+    return sorted(
+        [path for input_dir in input_dirs for path in input_dir.glob("**/*.dcm")]
+    )
+
+
 def main(model_name: str, debug_plots: bool) -> None:
     """
-    Read (cached) downsampled dicoms, init a model and train it to localise the jaw.
+    Read (cached) downsampled dicoms (caching them first if required),
+    init a model and train it to localise the jaw.
 
     The jaw centre will be the centroid of the segmentation mask; we will use a heatmap
     with a gradually shrinking kernel to train the model. Then we will recover
@@ -70,34 +81,32 @@ def main(model_name: str, debug_plots: bool) -> None:
     """
     config = util.userconf()["jaw_loc_config"]
 
-    out_dir = files.script_out_dir() / "jaw_location"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    input_dirs = [pathlib.Path(d) for d in config["dicom_dirs"]]
-    dicom_paths = sorted(
-        [path for input_dir in input_dirs for path in input_dir.glob("**/*.dcm")]
-    )
-
+    # Find where the inputs are, and if necessary create the downsampled dicoms
+    dicom_paths = _dicom_paths(config)
     downsampled_paths = [data.downsampled_dicom_path(p) for p in dicom_paths]
-
-    model_path = out_dir / f"{model_name}.pth"
-    if model_path.exists():
-        raise FileExistsError(
-            f"Model already exists at {model_path}, please delete it or use a different name."
-        )
-    parent_dirs = set(p.parent for p in downsampled_paths)
-    assert len(parent_dirs) == len(
-        input_dirs
-    ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
-
-    for parent_dir in parent_dirs:
-        parent_dir.mkdir(parents=True, exist_ok=True)
-
     if not all(p.exists() for p in downsampled_paths):
         _cache_dicoms(
             target_size=config["downsampled_dicom_size"],
             dicom_paths=dicom_paths,
             downsampled_paths=downsampled_paths,
+        )
+
+    parent_dirs = set(p.parent for p in downsampled_paths)
+    # This checks that we haven't accidentally messed something up with the paths
+    assert len(parent_dirs) == len(
+        config["dicom_dirs"]
+    ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
+    for parent_dir in parent_dirs:
+        parent_dir.mkdir(parents=True, exist_ok=True)
+
+    # Get where the outputs should go
+    out_dir = files.script_out_dir() / "jaw_location"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    model_path = out_dir / f"{model_name}.pth"
+    if model_path.exists():
+        raise FileExistsError(
+            f"Model already exists at {model_path}, please delete it or use a different name."
         )
 
     # Read in the downsampled dicoms
