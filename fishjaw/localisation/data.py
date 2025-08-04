@@ -104,6 +104,14 @@ def scale_factor(
     )
 
 
+def downsample_img(
+    img: np.ndarray, target_shape: tuple[int, int, int], *, interpolate: bool
+) -> np.ndarray:
+    """Interpolate for the img; do not for the mask"""
+    sf = scale_factor(img.shape, target_shape)
+    return zoom(img, sf, order=3 if interpolate else 0)
+
+
 def downsample(
     image: np.ndarray, mask: np.ndarray, target_shape: tuple[int, int, int]
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -115,11 +123,9 @@ def downsample(
     """
     assert image.shape == mask.shape, "Image and mask must have the same shape"
 
-    sf = scale_factor(image.shape, target_shape)
-
     # Cubic interpolation for images, nearest neighbour for masks
-    resized_image = zoom(image, sf, order=3)
-    resized_mask = zoom(mask, sf, order=0)
+    resized_image = downsample_img(img, target_shape, interpolate=True)
+    resized_mask = downsample_img(mask, target_shape, interpolate=False)
 
     return resized_image, resized_mask
 

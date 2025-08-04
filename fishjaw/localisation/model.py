@@ -9,6 +9,7 @@ from tqdm import tqdm
 from monai.networks.nets import AttentionUnet
 
 from ..images.transform import crop as _crop
+from .data import downsample_img
 
 
 def get_model(device) -> AttentionUnet:
@@ -35,6 +36,7 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     pred = torch.nn.functional.log_softmax(pred.view(pred.size(0), -1), dim=1)
 
     # Ensure target is normalized (if not already)
+    # TODO remove this norm
     target = target.view(pred.size(0), -1)
     target = target / target.sum(dim=1, keepdim=True)
 
@@ -99,37 +101,6 @@ def train(
     return model, train_losses, val_losses
 
 
-def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
-    """
-    Find the center of the heatmap(s) by convolving with a Gaussian
-
-    :param heatmap: 5D tensor (batch, channel, z, y, x)
-    """
-    kernel_size, sigma = 5, 1.0
-
-    coords = torch.arange(kernel_size, dtype=torch.float32) - (kernel_size - 1) / 2
-    z, y, x = torch.meshgrid(coords, coords, coords, indexing="ij")
-
-    kernel = torch.exp(-(z**2 + y**2 + x**2) / (2 * sigma**2))
-    kernel = kernel / kernel.sum()
-    kernel = kernel.view(1, 1, *kernel.shape)
-
-    smoothed_heatmap = torch.nn.functional.conv3d(
-        heatmap, kernel, padding=kernel_size // 2
-    )
-
-    # Find the index of the maximum value in the smoothed heatmap
-    flat_idx = torch.argmax(smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1)
-
-    # Convert it to a 3d coord
-    batch_size, _, z_size, y_size, x_size = smoothed_heatmap.shape
-    z = flat_idx // (y_size * x_size)
-    y = (flat_idx % (y_size * x_size)) // x_size
-    x = flat_idx % x_size
-
-    return [(z[i].item(), y[i].item(), x[i].item()) for i in range(batch_size)]
-
-
 def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
     """
     Get the heatmap prediction for a single image
@@ -165,6 +136,37 @@ def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
         )
 
 
+def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
+    """
+    Find the center of the heatmap(s) by convolving with a Gaussian
+
+    :param heatmap: 5D tensor (batch, channel, z, y, x)
+    """
+    kernel_size, sigma = 5, 1.0
+
+    coords = torch.arange(kernel_size, dtype=torch.float32) - (kernel_size - 1) / 2
+    z, y, x = torch.meshgrid(coords, coords, coords, indexing="ij")
+
+    kernel = torch.exp(-(z**2 + y**2 + x**2) / (2 * sigma**2))
+    kernel = kernel / kernel.sum()
+    kernel = kernel.view(1, 1, *kernel.shape)
+
+    smoothed_heatmap = torch.nn.functional.conv3d(
+        heatmap, kernel, padding=kernel_size // 2
+    )
+
+    # Find the index of the maximum value in the smoothed heatmap
+    flat_idx = torch.argmax(smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1)
+
+    # Convert it to a 3d coord
+    batch_size, _, z_size, y_size, x_size = smoothed_heatmap.shape
+    z = flat_idx // (y_size * x_size)
+    y = (flat_idx % (y_size * x_size)) // x_size
+    x = flat_idx % x_size
+
+    return [(z[i].item(), y[i].item(), x[i].item()) for i in range(batch_size)]
+
+
 def predict_centroid(model: torch.nn.Module, image: np.ndarray) -> tuple[int, int, int]:
     """
     Predict the centroid of the jaw from an image using the trained model
@@ -180,13 +182,18 @@ def predict_centroid(model: torch.nn.Module, image: np.ndarray) -> tuple[int, in
     """
     predicted_heatmap = heatmap(model, image)
 
-    (centroid,) = _heatmap_center(predicted_heatmap)
+    (centroid,) = _heatmap_center(
+        torch.Tensor(predicted_heatmap).unsqueeze(0).unsqueeze(0)
+    )
 
     return centroid
 
 
 def crop(
-    model: torch.nn.Module, image: np.ndarray, window_size: tuple[int, int, int]
+    model: torch.nn.Module,
+    image: np.ndarray,
+    input_size: tuple[int, int, int],
+    window_size: tuple[int, int, int],
 ) -> np.ndarray:
     """
     Crop around the centroid identified by the model
@@ -197,10 +204,8 @@ def crop(
 
     :return: cropped image as a numpy array
     """
+    # Downsample the image to match the input size
+    image = downsample_img(image, input_size, interpolate=True)
+
     centroid = predict_centroid(model, image)
-    return _crop(
-        image,
-        centroid,
-        window_size,
-        centred=True,
-    )
+    return _crop(image, centroid, window_size, centred=True)

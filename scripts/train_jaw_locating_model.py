@@ -147,7 +147,7 @@ def main(model_name: str, debug_plots: bool) -> None:
     if debug_plots:
         # Plot the first training data heatmap
         fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-        _savefig(fig, out_dir / "train_heatmap.png", True)
+        _savefig(fig, out_dir / "train_heatmap.png", verbose=True)
 
     net = model.get_model(config["device"])
     net, train_losses, val_losses = model.train(
@@ -186,12 +186,12 @@ def main(model_name: str, debug_plots: bool) -> None:
         predicted_heatmap = model.heatmap(net, downsampled_test_img)
         fig, _ = plotting.plot_heatmap(
             torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
-            predicted_heatmap,
+            torch.tensor(predicted_heatmap).unsqueeze(0).unsqueeze(0),
         )
         _savefig(fig, out_dir / "test_heatmap.png", verbose=True)
 
     # Find the predicted centroid
-    (predicted_centroid,) = model.predict_centroid(net, downsampled_test_img)
+    predicted_centroid = model.predict_centroid(net, downsampled_test_img)
     if debug_plots:
         # Plot the centroid on the downsampled image
         fig, _ = plotting.plot_centroid(
@@ -225,7 +225,9 @@ def main(model_name: str, debug_plots: bool) -> None:
     _savefig(fig, out_dir / "test_centroid.png", verbose=debug_plots)
 
     # Crop using the prediction, save the image
-    cropped = model.crop(net, test_img, config["crop_size"])
+    cropped = model.crop(
+        net, test_img, config["downsampled_dicom_size"], config["crop_size"]
+    )
 
     # Since we have the mask, we can also crop it and
     # plot it on the same image
