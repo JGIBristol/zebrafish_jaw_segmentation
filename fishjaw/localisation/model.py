@@ -8,6 +8,8 @@ import numpy as np
 from tqdm import tqdm
 from monai.networks.nets import AttentionUnet
 
+from ..images.transform import crop as _crop
+
 
 def get_model(device) -> AttentionUnet:
     """
@@ -181,3 +183,24 @@ def predict_centroid(model: torch.nn.Module, image: np.ndarray) -> tuple[int, in
     (centroid,) = _heatmap_center(predicted_heatmap)
 
     return centroid
+
+
+def crop(
+    model: torch.nn.Module, image: np.ndarray, window_size: tuple[int, int, int]
+) -> np.ndarray:
+    """
+    Crop around the centroid identified by the model
+
+    :param model: trained jaw localisation model
+    :param image: 3D np array (z, y, x) - i.e. one sample
+    :param window_size: size of the crop window (z, y, x)
+
+    :return: cropped image as a numpy array
+    """
+    centroid = predict_centroid(model, image)
+    return _crop(
+        image,
+        centroid,
+        window_size,
+        centred=True,
+    )

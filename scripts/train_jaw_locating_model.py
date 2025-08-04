@@ -225,12 +225,10 @@ def main(model_name: str, debug_plots: bool) -> None:
     _savefig(fig, out_dir / "test_centroid.png", verbose=debug_plots)
 
     # Crop using the prediction, save the image
-    cropped = crop(
-        test_img,
-        scaled_predicted_centroid,
-        config["crop_size"],
-        centred=True,
-    )
+    cropped = model.crop(net, test_img, config["crop_size"])
+
+    # Since we have the mask, we can also crop it and
+    # plot it on the same image
     cropped_mask = crop(
         test_label,
         scaled_predicted_centroid,
