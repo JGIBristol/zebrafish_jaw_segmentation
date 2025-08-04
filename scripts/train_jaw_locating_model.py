@@ -111,26 +111,29 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     # Read in the downsampled dicoms
     # Leave the last one for testing
-    train_imgs, train_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[:-4]])
-    val_imgs, val_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[-4:-1]])
+    train_paths = downsampled_paths[:-4]
+    val_paths = downsampled_paths[-4:-1]
+    test_path = downsampled_paths[-1]
 
     # Set up training data heatmaps
+    train_imgs, train_labels = zip(*[io.read_dicom(p) for p in train_paths])
     train_data = data.HeatmapDataset(
         images=train_imgs,
         masks=train_labels,
         sigma=config["initial_kernel_size"],
     )
-    val_data = data.HeatmapDataset(
-        images=val_imgs,
-        masks=val_labels,
-        sigma=config["initial_kernel_size"],
-    )
-
     train_loader = DataLoader(
         train_data,
         batch_size=config["batch_size"],
         shuffle=True,
         num_workers=config["n_workers"],
+    )
+
+    val_imgs, val_labels = zip(*[io.read_dicom(p) for p in val_paths])
+    val_data = data.HeatmapDataset(
+        images=val_imgs,
+        masks=val_labels,
+        sigma=config["initial_kernel_size"],
     )
     val_loader = DataLoader(
         val_data,
@@ -145,8 +148,6 @@ def main(model_name: str, debug_plots: bool) -> None:
         _savefig(fig, out_dir / "train_heatmap.png", True)
 
     net = model.get_model(config["device"])
-
-    # Train it
     net, train_losses, val_losses = model.train(
         net,
         train_loader,
