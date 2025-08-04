@@ -100,7 +100,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         parent_dir.mkdir(parents=True, exist_ok=True)
 
     # Get where the outputs should go
-    out_dir = files.script_out_dir() / "jaw_location"
+    out_dir = files.script_out_dir() / "jaw_location" / model_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
     model_path = out_dir / f"{model_name}.pth"
