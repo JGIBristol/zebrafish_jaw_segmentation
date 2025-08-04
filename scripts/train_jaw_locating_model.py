@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 from scipy.ndimage import center_of_mass
 
 from fishjaw.images import io
+from fishjaw.images.transform import crop
 from fishjaw.util import util, files
 from fishjaw.localisation import data, plotting, model
 from fishjaw.visualisation.training import plot_losses
@@ -217,7 +218,7 @@ def main(model_name: str, debug_plots: bool) -> None:
             .unsqueeze(0),
             [int(x) for x in center_of_mass(test_label)],
         )
-        fig.savefig(fig, out_dir / "test_centroid_truth.png", verbose=True)
+        _savefig(fig, out_dir / "test_centroid_truth.png", verbose=True)
 
     # Find the scale factor
     scaled_predicted_centroid = data.scale_prediction_up(
@@ -233,6 +234,25 @@ def main(model_name: str, debug_plots: bool) -> None:
     _savefig(fig, out_dir / "test_centroid.png", verbose=debug_plots)
 
     # Crop using the prediction, save the image
+    cropped = crop(
+        test_img,
+        scaled_predicted_centroid,
+        config["crop_size"],
+        centred=True,
+    )
+    cropped_mask = crop(
+        test_label,
+        scaled_predicted_centroid,
+        config["crop_size"],
+        centred=True,
+    )
+    fig, _ = plotting.plot_heatmap(
+        torch.tensor(cropped.astype(np.float32), dtype=torch.float32)
+        .unsqueeze(0)
+        .unsqueeze(0),
+        torch.tensor(cropped_mask).unsqueeze(0).unsqueeze(0),
+    )
+    _savefig(fig, out_dir / "test_cropped.png", verbose=debug_plots)
 
 
 if __name__ == "__main__":

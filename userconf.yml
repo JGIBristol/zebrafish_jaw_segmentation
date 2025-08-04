@@ -97,6 +97,7 @@ model_params:
   dropout: 0.01
 
 # Settings for the jaw location model
+# This should really be its own config file, shouldn't it?
 jaw_loc_config:
   downsampled_dicom_size: [512, 128, 128]
   initial_kernel_size: 10
@@ -105,3 +106,5 @@ jaw_loc_config:
   device: "cuda"
   learning_rate: 0.00001
   num_epochs: 250
+  # Repeated from above ew
+  crop_size: [160, 160, 160]
