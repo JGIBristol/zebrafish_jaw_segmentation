@@ -113,7 +113,9 @@ def main(model_name: str, debug_plots: bool) -> None:
     # Leave the last one for testing
     train_paths = downsampled_paths[:-4]
     val_paths = downsampled_paths[-4:-1]
-    test_path = downsampled_paths[-1]
+
+    test_path = dicom_paths[-1]
+    downsampled_test_path = downsampled_paths[-1]
 
     # Set up training data heatmaps
     train_imgs, train_labels = zip(*[io.read_dicom(p) for p in train_paths])
@@ -176,8 +178,8 @@ def main(model_name: str, debug_plots: bool) -> None:
     # Read in the original and downsampled test data
     # We may want to plot the heatmap on the downsampled data (for debug)
     # Also plot the actual/predicted centre on the original size image
-    test_img, test_label = io.read_dicom(dicom_paths[-1])
-    downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_paths[-1])
+    test_img, test_label = io.read_dicom(test_path)
+    downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_test_path)
 
     # Plot heatmap
     predicted_heatmap = (
