@@ -108,3 +108,6 @@ jaw_loc_config:
   num_epochs: 250
   # Repeated from above ew
   crop_size: [160, 160, 160]
+  dicom_dirs:
+    - "dicoms/Training set 2"
+    - "dicoms/Training set 4 (Wahab resegmented by felix)"

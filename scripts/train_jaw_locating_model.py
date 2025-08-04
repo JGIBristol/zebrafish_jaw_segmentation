@@ -69,14 +69,11 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     """
     config = util.userconf()["jaw_loc_config"]
+
     out_dir = files.script_out_dir() / "jaw_location"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # TODO config option
-    input_dirs = [
-        pathlib.Path("dicoms") / "Training set 2",
-        pathlib.Path("dicoms") / "Training set 4 (Wahab resegmented by felix)",
-    ]
+    input_dirs = [pathlib.Path(d) for d in config["dicom_dirs"]]
     dicom_paths = sorted(
         [path for input_dir in input_dirs for path in input_dir.glob("**/*.dcm")]
     )
