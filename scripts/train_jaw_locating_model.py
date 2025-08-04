@@ -81,95 +81,87 @@ def main(model_name: str, debug_plots: bool) -> None:
     downsampled_paths = [data.downsampled_dicom_path(p) for p in dicom_paths]
 
     model_path = out_dir / f"{model_name}.pth"
-    if not model_path.exists():
-        parent_dirs = set(p.parent for p in downsampled_paths)
-        assert len(parent_dirs) == len(
-            input_dirs
-        ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
-
-        for parent_dir in parent_dirs:
-            parent_dir.mkdir(parents=True, exist_ok=True)
-
-        if not all(p.exists() for p in downsampled_paths):
-            _cache_dicoms(
-                target_size=config["downsampled_dicom_size"],
-                dicom_paths=dicom_paths,
-                downsampled_paths=downsampled_paths,
-            )
-
-        # Read in the downsampled dicoms
-        # Leave the last one for testing
-        train_imgs, train_labels = zip(
-            *[io.read_dicom(p) for p in downsampled_paths[:-4]]
+    if model_path.exists():
+        raise FileExistsError(
+            f"Model already exists at {model_path}, please delete it or use a different name."
         )
-        val_imgs, val_labels = zip(
-            *[io.read_dicom(p) for p in downsampled_paths[-4:-1]]
+    parent_dirs = set(p.parent for p in downsampled_paths)
+    assert len(parent_dirs) == len(
+        input_dirs
+    ), "Should have the same number of downsampled dicom dirs as input dicom dirs"
+
+    for parent_dir in parent_dirs:
+        parent_dir.mkdir(parents=True, exist_ok=True)
+
+    if not all(p.exists() for p in downsampled_paths):
+        _cache_dicoms(
+            target_size=config["downsampled_dicom_size"],
+            dicom_paths=dicom_paths,
+            downsampled_paths=downsampled_paths,
         )
 
-        # Set up training data heatmaps
-        train_data = data.HeatmapDataset(
-            images=train_imgs,
-            masks=train_labels,
-            sigma=config["initial_kernel_size"],
-        )
-        val_data = data.HeatmapDataset(
-            images=val_imgs,
-            masks=val_labels,
-            sigma=config["initial_kernel_size"],
-        )
+    # Read in the downsampled dicoms
+    # Leave the last one for testing
+    train_imgs, train_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[:-4]])
+    val_imgs, val_labels = zip(*[io.read_dicom(p) for p in downsampled_paths[-4:-1]])
 
-        train_loader = DataLoader(
-            train_data,
-            batch_size=config["batch_size"],
-            shuffle=True,
-            num_workers=config["n_workers"],
-        )
-        val_loader = DataLoader(
-            val_data,
-            batch_size=config["batch_size"],
-            shuffle=False,
-            num_workers=config["n_workers"],
-        )
+    # Set up training data heatmaps
+    train_data = data.HeatmapDataset(
+        images=train_imgs,
+        masks=train_labels,
+        sigma=config["initial_kernel_size"],
+    )
+    val_data = data.HeatmapDataset(
+        images=val_imgs,
+        masks=val_labels,
+        sigma=config["initial_kernel_size"],
+    )
 
-        if debug_plots:
-            # Plot the first training data heatmap
-            fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-            _savefig(fig, out_dir / "train_heatmap.png", True)
+    train_loader = DataLoader(
+        train_data,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=config["n_workers"],
+    )
+    val_loader = DataLoader(
+        val_data,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["n_workers"],
+    )
 
-        net = model.get_model(config["device"])
+    if debug_plots:
+        # Plot the first training data heatmap
+        fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+        _savefig(fig, out_dir / "train_heatmap.png", True)
 
-        # Train it
-        net, train_losses, val_losses = model.train(
-            net,
-            train_loader,
-            val_loader,
-            config["learning_rate"],
-            config["num_epochs"],
-            config["device"],
-        )
-
-        # Plot losses
-        fig = plot_losses(train_losses, val_losses)
-        _savefig(fig, out_dir / "losses.png", verbose=debug_plots)
-
-        # Plot heatmaps for training + val data
-        if debug_plots:
-            for loader, name in zip([train_loader, val_loader], ["train", "val"]):
-                img, _ = next(iter(loader))
-                prediction = net(img.to(config["device"])).cpu().detach()
-
-                fig, _ = plotting.plot_heatmap(img, prediction)
-                _savefig(fig, out_dir / f"{name}_heatmap_prediction.png", verbose=True)
-
-        with open(model_path, "wb") as f:
-            torch.save(net.state_dict(), f)
-
-    else:
-        print(f"Model already exists at {model_path}, skipping training.")
-
-    # Load the model
     net = model.get_model(config["device"])
-    net.load_state_dict(torch.load(model_path))
+
+    # Train it
+    net, train_losses, val_losses = model.train(
+        net,
+        train_loader,
+        val_loader,
+        config["learning_rate"],
+        config["num_epochs"],
+        config["device"],
+    )
+
+    # Plot losses
+    fig = plot_losses(train_losses, val_losses)
+    _savefig(fig, out_dir / "losses.png", verbose=debug_plots)
+
+    # Plot heatmaps for training + val data
+    if debug_plots:
+        for loader, name in zip([train_loader, val_loader], ["train", "val"]):
+            img, _ = next(iter(loader))
+            prediction = net(img.to(config["device"])).cpu().detach()
+
+            fig, _ = plotting.plot_heatmap(img, prediction)
+            _savefig(fig, out_dir / f"{name}_heatmap_prediction.png", verbose=True)
+
+    with open(model_path, "wb") as f:
+        torch.save(net.state_dict(), f)
 
     # Read in the original and downsampled test data
     # We may want to plot the heatmap on the downsampled data (for debug)
