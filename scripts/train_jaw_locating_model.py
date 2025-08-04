@@ -46,6 +46,18 @@ def _cache_dicoms(
         pbar.update(1)
 
 
+def _savefig(fig: plt.Figure, path: pathlib.Path, *, verbose: bool) -> None:
+    """
+    Helper function for saving figures
+
+    Also closes the figure
+    """
+    if verbose:
+        print(f"Saving figure to {path}")
+    fig.savefig(path)
+    plt.close(fig)
+
+
 def main(model_name: str, debug_plots: bool) -> None:
     """
     Read (cached) downsampled dicoms, init a model and train it to localise the jaw.
@@ -124,8 +136,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         if debug_plots:
             # Plot the first training data heatmap
             fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-            fig.savefig(out_dir / "train_heatmap.png")
-            plt.close(fig)
+            _savefig(fig, out_dir / "train_heatmap.png", True)
 
         net = model.get_model(config["device"])
 
@@ -141,16 +152,16 @@ def main(model_name: str, debug_plots: bool) -> None:
 
         # Plot losses
         fig = plot_losses(train_losses, val_losses)
-        fig.savefig(out_dir / "losses.png")
+        _savefig(fig, out_dir / "losses.png", verbose=debug_plots)
 
         # Plot heatmaps for training + val data
         if debug_plots:
             for loader, name in zip([train_loader, val_loader], ["train", "val"]):
                 img, _ = next(iter(loader))
                 prediction = net(img.to(config["device"])).cpu().detach()
+
                 fig, _ = plotting.plot_heatmap(img, prediction)
-                fig.savefig(out_dir / f"{name}_heatmap_prediction.png")
-                plt.close(fig)
+                _savefig(fig, out_dir / f"{name}_heatmap_prediction.png", verbose=True)
 
         with open(model_path, "wb") as f:
             torch.save(net.state_dict(), f)
@@ -179,13 +190,13 @@ def main(model_name: str, debug_plots: bool) -> None:
         .cpu()
         .detach()
     )
+
     if debug_plots:
         fig, _ = plotting.plot_heatmap(
             torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
             predicted_heatmap,
         )
-        fig.savefig(out_dir / "test_heatmap.png")
-        plt.close(fig)
+        _savefig(fig, out_dir / "test_heatmap.png", verbose=True)
 
     # Find the predicted centroid
     (predicted_centroid,) = model._heatmap_center(predicted_heatmap)
@@ -197,8 +208,7 @@ def main(model_name: str, debug_plots: bool) -> None:
             .unsqueeze(0),
             predicted_centroid,
         )
-        fig.savefig(out_dir / "test_centroid_downsampled.png")
-        plt.close(fig)
+        _savefig(fig, out_dir / "test_centroid_downsampled.png", verbose=True)
 
         # Plot the truth centroid
         fig, _ = plotting.plot_centroid(
@@ -207,8 +217,7 @@ def main(model_name: str, debug_plots: bool) -> None:
             .unsqueeze(0),
             [int(x) for x in center_of_mass(test_label)],
         )
-        fig.savefig(out_dir / "test_centroid_truth.png")
-        plt.close(fig)
+        fig.savefig(fig, out_dir / "test_centroid_truth.png", verbose=True)
 
     # Find the scale factor
     scaled_predicted_centroid = data.scale_prediction_up(
@@ -217,12 +226,11 @@ def main(model_name: str, debug_plots: bool) -> None:
     )
 
     # Plot the predicted centroid on the original image
-    plotting.plot_centroid(
+    fig, _ = plotting.plot_centroid(
         torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
         scaled_predicted_centroid,
     )
-    fig.savefig(out_dir / "test_centroid.png")
-    plt.close(fig)
+    _savefig(fig, out_dir / "test_centroid.png", verbose=debug_plots)
 
     # Crop using the prediction, save the image
 
