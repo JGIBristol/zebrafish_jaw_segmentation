@@ -182,18 +182,8 @@ def main(model_name: str, debug_plots: bool) -> None:
     downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_test_path)
 
     # Plot heatmap
-    predicted_heatmap = (
-        net(
-            torch.tensor(downsampled_test_img.astype(np.float32), dtype=torch.float32)
-            .unsqueeze(0)
-            .unsqueeze(0)
-            .to(config["device"])
-        )
-        .cpu()
-        .detach()
-    )
-
     if debug_plots:
+        predicted_heatmap = model.heatmap(net, downsampled_test_img)
         fig, _ = plotting.plot_heatmap(
             torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
             predicted_heatmap,
@@ -201,7 +191,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         _savefig(fig, out_dir / "test_heatmap.png", verbose=True)
 
     # Find the predicted centroid
-    (predicted_centroid,) = model._heatmap_center(predicted_heatmap)
+    (predicted_centroid,) = model.predict_centroid(net, downsampled_test_img)
     if debug_plots:
         # Plot the centroid on the downsampled image
         fig, _ = plotting.plot_centroid(

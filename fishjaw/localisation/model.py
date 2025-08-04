@@ -163,9 +163,7 @@ def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
         )
 
 
-def predict_centroid(
-    model: torch.nn.Module, image: torch.Tensor
-) -> tuple[int, int, int]:
+def predict_centroid(model: torch.nn.Module, image: np.ndarray) -> tuple[int, int, int]:
     """
     Predict the centroid of the jaw from an image using the trained model
 
@@ -174,15 +172,12 @@ def predict_centroid(
     is on multiple devices, but what are the chances of that?
 
     :param model: trained model
-    :param image: 5D tensor (1, channel, z, y, x) - i.e. one sample
-    :param device: "cuda" or "cpu"
-    """
-    model.eval()
-    # NB this will break if the model is on multiple devices...
-    device = next(model.parameters()).device
-    with torch.no_grad():
-        output = model(image.to(device)).cpu().detach()
+    :param image: 3D np array (z, y, x) - i.e. one sample
 
-    (centroid,) = _heatmap_center(output)
+    :return: predicted centroid as a tuple (z, y, x)
+    """
+    predicted_heatmap = heatmap(model, image)
+
+    (centroid,) = _heatmap_center(predicted_heatmap)
 
     return centroid
