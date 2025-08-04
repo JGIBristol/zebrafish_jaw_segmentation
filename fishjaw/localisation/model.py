@@ -128,11 +128,50 @@ def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
     return [(z[i].item(), y[i].item(), x[i].item()) for i in range(batch_size)]
 
 
+def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
+    """
+    Get the heatmap prediction for a single image
+
+    This function tries to identify which device the model is on and
+    performs the inference there. This will break if the model
+    is on multiple devices, but what are the chances of that?
+
+    :param model: trained jaw localisation model
+    :param image: image to predict on. Should be on the CPU
+
+    :return: heatmap prediction as a numpy array
+
+    """
+    # NB this will break if the model is on multiple devices...
+    device = next(model.parameters()).device
+
+    model.eval()
+    with torch.no_grad():
+        return (
+            (
+                model(
+                    torch.tensor(image.astype(np.float32), dtype=torch.float32)
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                    .to(device)
+                )
+                .cpu()
+                .detach()
+            )
+            .squeeze()
+            .numpy()
+        )
+
+
 def predict_centroid(
     model: torch.nn.Module, image: torch.Tensor
 ) -> tuple[int, int, int]:
     """
     Predict the centroid of the jaw from an image using the trained model
+
+    This function tries to identify which device the model is on and
+    performs the inference there. This will break if the model
+    is on multiple devices, but what are the chances of that?
 
     :param model: trained model
     :param image: 5D tensor (1, channel, z, y, x) - i.e. one sample
