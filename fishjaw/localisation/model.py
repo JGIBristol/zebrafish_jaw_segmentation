@@ -212,9 +212,7 @@ def crop(
 
     # Scale the centroid back up to the original image size
     centroid = scale_prediction_up(
-        centroid,
-        scale_factor=scale_factor(image.shape, model_input_size),
-        target_shape=image.shape,
+        centroid, scale_factor(image.shape, model_input_size)
     )
 
     return _crop(image, centroid, window_size, centred=True)

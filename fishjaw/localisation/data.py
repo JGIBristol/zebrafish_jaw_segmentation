@@ -34,7 +34,7 @@ class HeatmapDataset(Dataset):
         assert len(images) == len(masks), "Number of images and masks must match"
         assert all(
             img.shape == self.img_shape for img in images
-        ), "All images must have the same shape"
+        ), f"All images must have the same shape, {set(img.shape for img in images)}"
 
         self.data = torch.tensor(
             np.array(images, dtype=np.float32), dtype=torch.float32
