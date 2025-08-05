@@ -3,13 +3,17 @@ Model arch and training loop
 
 """
 
+import pathlib
+
 import torch
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 from monai.networks.nets import AttentionUnet
 
 from ..images.transform import crop as _crop
-from .data import downsample_img, scale_prediction_up, scale_factor
+from .data import downsample_img, scale_prediction_up, scale_factor, HeatmapDataset
+from . import plotting
 
 
 def get_model(device) -> AttentionUnet:
@@ -41,13 +45,28 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     )
 
 
+def _dataloader(
+    dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
+) -> torch.utils.data.DataLoader:
+    """ """
+    return torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=train,
+        num_workers=4,
+        drop_last=train,
+    )
+
+
 def train(
     model: torch.nn.Module,
-    train_loader: torch.utils.data.DataLoader,
-    val_loader: torch.utils.data.DataLoader,
+    train_data: HeatmapDataset,
+    val_data: HeatmapDataset,
     learning_rate: float,
+    batch_size: int,
     num_epochs: int,
     device: str,
+    fig_out_dir: pathlib.Path,
 ) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
     Training loop, with a progress bar
@@ -60,16 +79,41 @@ def train(
     """
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    model.train()
+    train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
+    val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
 
     # List of lists - one for each epoch
     # Each element is a list of batch losses
     train_losses, val_losses = [], []
 
+    model.train()
     pbar = tqdm(range(num_epochs), desc="Training...")
-    for _ in pbar:
-        train_loss, val_loss = [], []
+    for epoch in pbar:
+        # If the average validation loss for the last epoch was < a special value
+        # then we want to shrink the heatmap
+        last_val_loss = np.mean(val_losses[-1]) if val_losses else np.inf
+        if last_val_loss < 1.05:
+            # Reduce heatmap size
+            new_sigma = train_data.get_sigma() * 0.9
+            train_data.set_heatmaps(new_sigma)
+            val_data.set_heatmaps(new_sigma)
 
+            # Recreate loaders
+            train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
+            val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
+
+            # Plot a heatmap, labelling the epoch and sigma
+            fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+            fig.suptitle(f"Epoch {epoch}, sigma {train_data.get_sigma()}")
+            fig.savefig(
+                fig_out_dir
+                / f"heatmap_{epoch=}_sigma_{train_data.get_sigma():.3f}.png".replace(
+                    "=", "_"
+                )
+            )
+            plt.close(fig)
+
+        train_loss, val_loss = [], []
         for image, heatmap in train_loader:
             image, heatmap = image.to(device), heatmap.to(device)
 

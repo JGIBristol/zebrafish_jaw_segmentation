@@ -60,9 +60,7 @@ class HeatmapDataset(Dataset):
         Reset the sigma for the heatmaps and recalculate them.
         """
         self.sigma = sigma
-        heatmaps = [
-            self._create_heatmap(centroid, sigma) for centroid in self._centroids
-        ]
+        heatmaps = [self._create_heatmap(centroid) for centroid in self._centroids]
 
         self.heatmaps = torch.tensor(np.array(heatmaps), dtype=torch.float32).unsqueeze(
             1

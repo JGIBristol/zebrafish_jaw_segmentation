@@ -14,7 +14,6 @@ import torch
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
 from scipy.ndimage import center_of_mass
 
 from fishjaw.images import io
@@ -124,12 +123,6 @@ def main(model_name: str, debug_plots: bool) -> None:
         masks=train_labels,
         sigma=config["initial_kernel_size"],
     )
-    train_loader = DataLoader(
-        train_data,
-        batch_size=config["batch_size"],
-        shuffle=True,
-        num_workers=config["n_workers"],
-    )
 
     val_imgs, val_labels = zip(*[io.read_dicom(p) for p in val_paths])
     val_data = data.HeatmapDataset(
@@ -137,26 +130,17 @@ def main(model_name: str, debug_plots: bool) -> None:
         masks=val_labels,
         sigma=config["initial_kernel_size"],
     )
-    val_loader = DataLoader(
-        val_data,
-        batch_size=config["batch_size"],
-        shuffle=False,
-        num_workers=config["n_workers"],
-    )
-
-    if debug_plots:
-        # Plot the first training data heatmap
-        fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-        _savefig(fig, out_dir / "train_heatmap.png", verbose=True)
 
     net = model.get_model(config["device"])
     net, train_losses, val_losses = model.train(
         net,
-        train_loader,
-        val_loader,
+        train_data,
+        val_data,
         config["learning_rate"],
+        config["batch_size"],
         config["num_epochs"],
         config["device"],
+        out_dir,
     )
 
     # Plot losses
@@ -165,11 +149,11 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     # Plot heatmaps for training + val data
     if debug_plots:
-        for loader, name in zip([train_loader, val_loader], ["train", "val"]):
-            img, _ = next(iter(loader))
-            prediction = net(img.to(config["device"])).cpu().detach()
+        for dataset, name in zip([train_data, val_data], ["train", "val"]):
+            img, _ = dataset[0]
+            prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
 
-            fig, _ = plotting.plot_heatmap(img, prediction)
+            fig, _ = plotting.plot_heatmap(img.unsqueeze(0), prediction)
             _savefig(fig, out_dir / f"{name}_heatmap_prediction.png", verbose=True)
 
     with open(model_path, "wb") as f:
@@ -179,7 +163,7 @@ def main(model_name: str, debug_plots: bool) -> None:
     # We may want to plot the heatmap on the downsampled data (for debug)
     # Also plot the actual/predicted centre on the original size image
     test_img, test_label = io.read_dicom(test_path)
-    downsampled_test_img, downsampled_test_label = io.read_dicom(downsampled_test_path)
+    downsampled_test_img, _ = io.read_dicom(downsampled_test_path)
 
     # Plot heatmap
     if debug_plots:
