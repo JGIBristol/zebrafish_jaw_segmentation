@@ -35,13 +35,10 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     # Apply log-softmax to predictions
     pred = torch.nn.functional.log_softmax(pred.view(pred.size(0), -1), dim=1)
 
-    # Ensure target is normalized (if not already)
-    # TODO remove this norm
-    target = target.view(pred.size(0), -1)
-    target = target / target.sum(dim=1, keepdim=True)
-
     # Compute KL divergence
-    return torch.nn.functional.kl_div(pred, target, reduction="batchmean")
+    return torch.nn.functional.kl_div(
+        pred, target.view(pred.size(0), -1), reduction="batchmean"
+    )
 
 
 def train(
