@@ -169,7 +169,9 @@ def main(model_name: str, debug_plots: bool) -> None:
     if debug_plots:
         predicted_heatmap = model.heatmap(net, downsampled_test_img)
         fig, _ = plotting.plot_heatmap(
-            torch.tensor(test_img.astype(np.float32)).unsqueeze(0).unsqueeze(0),
+            torch.tensor(downsampled_test_img.astype(np.float32))
+            .unsqueeze(0)
+            .unsqueeze(0),
             torch.tensor(predicted_heatmap).unsqueeze(0).unsqueeze(0),
         )
         _savefig(fig, out_dir / "test_heatmap.png", verbose=True)

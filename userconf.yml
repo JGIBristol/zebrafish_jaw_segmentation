@@ -101,11 +101,11 @@ model_params:
 jaw_loc_config:
   downsampled_dicom_size: [512, 128, 128]
   initial_kernel_size: 8
-  batch_size: 16
+  batch_size: 4
   n_workers: 4
   device: "cuda"
   learning_rate: 0.00001
-  num_epochs: 350
+  num_epochs: 500
   # Repeated from above ew
   crop_size: [160, 160, 160]
   dicom_dirs:
