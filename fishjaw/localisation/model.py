@@ -48,13 +48,17 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
 def _dataloader(
     dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
 ) -> torch.utils.data.DataLoader:
-    """ """
+    """
+    Hard-coded options for the dataloader...
+    """
     return torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=train,
         num_workers=4,
         drop_last=train,
+        pin_memory=True,
+        persistent_workers=False,  # Since we modify the dataset during training
     )
 
 
