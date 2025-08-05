@@ -9,7 +9,7 @@ from tqdm import tqdm
 from monai.networks.nets import AttentionUnet
 
 from ..images.transform import crop as _crop
-from .data import downsample_img
+from .data import downsample_img, scale_prediction_up, scale_factor
 
 
 def get_model(device) -> AttentionUnet:
@@ -192,7 +192,7 @@ def predict_centroid(model: torch.nn.Module, image: np.ndarray) -> tuple[int, in
 def crop(
     model: torch.nn.Module,
     image: np.ndarray,
-    input_size: tuple[int, int, int],
+    model_input_size: tuple[int, int, int],
     window_size: tuple[int, int, int],
 ) -> np.ndarray:
     """
@@ -200,12 +200,21 @@ def crop(
 
     :param model: trained jaw localisation model
     :param image: 3D np array (z, y, x) - i.e. one sample
+    :param model_input_size: size of the images the model expects
     :param window_size: size of the crop window (z, y, x)
 
     :return: cropped image as a numpy array
     """
-    # Downsample the image to match the input size
-    image = downsample_img(image, input_size, interpolate=True)
+    # Find the centroid on the downsampled image
+    centroid = predict_centroid(
+        model, downsample_img(image, model_input_size, interpolate=True)
+    )
 
-    centroid = predict_centroid(model, image)
+    # Scale the centroid back up to the original image size
+    centroid = scale_prediction_up(
+        centroid,
+        scale_factor=scale_factor(image.shape, model_input_size),
+        target_shape=image.shape,
+    )
+
     return _crop(image, centroid, window_size, centred=True)
