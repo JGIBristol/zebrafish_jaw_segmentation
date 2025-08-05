@@ -154,7 +154,7 @@ def main(model_name: str, debug_plots: bool) -> None:
             prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
 
             fig, _ = plotting.plot_heatmap(img.unsqueeze(0), prediction)
-            _savefig(fig, out_dir / f"{name}_heatmap_prediction.png", verbose=True)
+            _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
 
     with open(model_path, "wb") as f:
         torch.save(net.state_dict(), f)
