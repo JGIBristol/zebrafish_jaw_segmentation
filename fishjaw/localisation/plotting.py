@@ -3,7 +3,17 @@ Plot stuff
 """
 
 import torch
+from matplotlib import colors
 import matplotlib.pyplot as plt
+
+
+def _transparent_cmap():
+    """
+    Range from transparent black to white
+    """
+    c_black = colors.colorConverter.to_rgba("black", alpha=0)
+    c_red = colors.colorConverter.to_rgba("red", alpha=1)
+    return colors.ListedColormap([c_black, c_red], "heatmap_cmap")
 
 
 def plot_heatmap(
@@ -39,7 +49,7 @@ def plot_heatmap(
         heatmap_slice = permuted_heatmap[0][0][centre].numpy()
 
         axis.imshow(img_slice, cmap="gray")
-        axis.imshow(heatmap_slice, cmap="afmhot_r", alpha=0.3)
+        axis.imshow(heatmap_slice, cmap=_transparent_cmap(), alpha=0.3)
 
         axis.axis("off")
 

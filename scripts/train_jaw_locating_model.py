@@ -187,11 +187,12 @@ def main(model_name: str, debug_plots: bool) -> None:
         _savefig(fig, out_dir / "test_centroid_downsampled.png", verbose=True)
 
         # Plot the truth centroid
+        truth_centroid = [int(x) for x in center_of_mass(test_label)]
         fig, _ = plotting.plot_centroid(
             torch.tensor(test_img.astype(np.float32), dtype=torch.float32)
             .unsqueeze(0)
             .unsqueeze(0),
-            [int(x) for x in center_of_mass(test_label)],
+            truth_centroid,
         )
         _savefig(fig, out_dir / "test_centroid_truth.png", verbose=True)
 
@@ -228,6 +229,22 @@ def main(model_name: str, debug_plots: bool) -> None:
         torch.tensor(cropped_mask).unsqueeze(0).unsqueeze(0),
     )
     _savefig(fig, out_dir / "test_cropped.png", verbose=debug_plots)
+
+    # We can also plot the cropped mask, with the jaw overlaid
+    if debug_plots:
+        true_cropped_img = crop(
+            test_img, truth_centroid, config["crop_size"], centred=True
+        )
+        true_cropped_mask = crop(
+            test_label, truth_centroid, config["crop_size"], centred=True
+        )
+        fig, _ = plotting.plot_heatmap(
+            torch.tensor(true_cropped_img.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0),
+            torch.tensor(true_cropped_mask).unsqueeze(0).unsqueeze(0),
+        )
+        _savefig(fig, out_dir / "truth_cropped.png", verbose=debug_plots)
 
 
 if __name__ == "__main__":
