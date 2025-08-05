@@ -20,12 +20,7 @@ class HeatmapDataset(Dataset):
     Calculates the heatmaps by putting a Gaussian at the centroid of each mask.
     """
 
-    def __init__(
-        self,
-        images: list[np.ndarray],
-        masks: list[np.ndarray],
-        sigma: float,
-    ):
+    def __init__(self, images: list[np.ndarray], masks: list[np.ndarray], sigma: float):
         self.img_shape = images[0].shape
 
         assert all(
@@ -46,19 +41,17 @@ class HeatmapDataset(Dataset):
 
         self.set_heatmaps(sigma)
 
-    def _create_heatmap(
-        self, centroid: tuple[int, int, int], sigma: float
-    ) -> np.ndarray:
+    def _create_heatmap(self, centroid: tuple[int, int, int]) -> np.ndarray:
         """
         Create a heatmap from a centroid by placing a Gaussian at the centroid.
         """
         heatmap = np.zeros(self.img_shape, dtype=np.float32)
         heatmap[centroid] = 1.0
-        heatmap = gaussian_filter(heatmap, sigma=sigma)
+        heatmap = gaussian_filter(heatmap, sigma=self.sigma)
 
         assert np.allclose(
             np.sum(heatmap), 1.0
-        ), f"Heatmap should sum to 1; is the centroid to close to the edge? {centroid=}, {sigma=}, {self.img_shape=}"
+        ), f"Heatmap should sum to 1; is the centroid to close to the edge? {centroid=}, {self.sigma=}, {self.img_shape=}"
 
         return heatmap
 
@@ -66,6 +59,7 @@ class HeatmapDataset(Dataset):
         """
         Reset the sigma for the heatmaps and recalculate them.
         """
+        self.sigma = sigma
         heatmaps = [
             self._create_heatmap(centroid, sigma) for centroid in self._centroids
         ]
@@ -73,6 +67,10 @@ class HeatmapDataset(Dataset):
         self.heatmaps = torch.tensor(np.array(heatmaps), dtype=torch.float32).unsqueeze(
             1
         )
+
+    def get_sigma(self) -> float:
+        """Current heatmap std"""
+        return self.sigma
 
     def __len__(self):
         return len(self.data)
