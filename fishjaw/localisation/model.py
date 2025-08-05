@@ -104,7 +104,9 @@ def train(
                 val_data.set_heatmaps(new_sigma)
 
                 # Recreate loaders
-                train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
+                train_loader = _dataloader(
+                    train_data, batch_size=batch_size, train=True
+                )
                 val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
 
                 # Plot a heatmap, labelling the epoch and sigma
