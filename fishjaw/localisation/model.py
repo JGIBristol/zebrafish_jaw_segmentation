@@ -91,57 +91,60 @@ def train(
     train_losses, val_losses = [], []
 
     model.train()
-    pbar = tqdm(range(num_epochs), desc="Training...")
-    for epoch in pbar:
-        # If the average validation loss for the last epoch was < a special value
-        # then we want to shrink the heatmap
-        last_val_loss = np.mean(val_losses[-1]) if val_losses else np.inf
-        if last_val_loss < 1.05:
-            # Reduce heatmap size
-            new_sigma = train_data.get_sigma() * 0.9
-            train_data.set_heatmaps(new_sigma)
-            val_data.set_heatmaps(new_sigma)
+    try:
+        pbar = tqdm(range(num_epochs), desc="Training...")
+        for epoch in pbar:
+            # If the average validation loss for the last epoch was < a special value
+            # then we want to shrink the heatmap
+            last_val_loss = np.mean(val_losses[-1]) if val_losses else np.inf
+            if last_val_loss < 1.05:
+                # Reduce heatmap size
+                new_sigma = train_data.get_sigma() * 0.9
+                train_data.set_heatmaps(new_sigma)
+                val_data.set_heatmaps(new_sigma)
 
-            # Recreate loaders
-            train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
-            val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
+                # Recreate loaders
+                train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
+                val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
 
-            # Plot a heatmap, labelling the epoch and sigma
-            fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-            fig.suptitle(f"Epoch {epoch}, sigma {train_data.get_sigma()}")
-            fig.savefig(
-                fig_out_dir
-                / f"heatmap_{epoch=}_sigma_{train_data.get_sigma():.3f}.png".replace(
-                    "=", "_"
+                # Plot a heatmap, labelling the epoch and sigma
+                fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+                fig.suptitle(f"Epoch {epoch}, sigma {train_data.get_sigma()}")
+                fig.savefig(
+                    fig_out_dir
+                    / f"heatmap_{epoch=}_sigma_{train_data.get_sigma():.3f}.png".replace(
+                        "=", "_"
+                    )
                 )
-            )
-            plt.close(fig)
+                plt.close(fig)
 
-        train_loss, val_loss = [], []
-        for image, heatmap in train_loader:
-            image, heatmap = image.to(device), heatmap.to(device)
+            train_loss, val_loss = [], []
+            for image, heatmap in train_loader:
+                image, heatmap = image.to(device), heatmap.to(device)
 
-            optimiser.zero_grad()
+                optimiser.zero_grad()
 
-            outputs = model(image)
-            loss = kl_loss(outputs, heatmap)
+                outputs = model(image)
+                loss = kl_loss(outputs, heatmap)
 
-            loss.backward()
-            optimiser.step()
+                loss.backward()
+                optimiser.step()
 
-            train_loss.append(loss.item())
+                train_loss.append(loss.item())
 
-        for image, heatmap in val_loader:
-            image, heatmap = image.to(device), heatmap.to(device)
-            with torch.no_grad():
-                outputs = model(image.to(device))
-                loss = kl_loss(outputs, heatmap.to(device))
-                val_loss.append(loss.item())
+            for image, heatmap in val_loader:
+                image, heatmap = image.to(device), heatmap.to(device)
+                with torch.no_grad():
+                    outputs = model(image.to(device))
+                    loss = kl_loss(outputs, heatmap.to(device))
+                    val_loss.append(loss.item())
 
-        train_losses.append(train_loss)
-        val_losses.append(val_loss)
+            train_losses.append(train_loss)
+            val_losses.append(val_loss)
 
-        pbar.set_postfix(train_loss=np.mean(train_loss), val_loss=np.mean(val_loss))
+            pbar.set_postfix(train_loss=np.mean(train_loss), val_loss=np.mean(val_loss))
+    except KeyboardInterrupt:
+        print("Training interrupted...")
 
     return model, train_losses, val_losses
 
