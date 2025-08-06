@@ -104,10 +104,10 @@ jaw_loc_config:
   batch_size: 4
   n_workers: 4
   device: "cuda"
-  learning_rate: 0.000005
-  num_epochs: 200
+  learning_rate: 0.00001
+  num_epochs: 150
   # Repeated from above ew
-  crop_size: [160, 160, 160]
+  crop_size: [192, 192, 192]
   dicom_dirs:
     - "dicoms/Training set 2"
     - "dicoms/Training set 4 (Wahab resegmented by felix)"

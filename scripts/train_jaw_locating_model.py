@@ -135,8 +135,6 @@ def main(model_name: str, debug_plots: bool) -> None:
     if debug_plots:
         for dataset, name in zip([train_data, val_data], ["train", "val"]):
             img, label = dataset[0]
-            prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
-
             fig, _ = plotting.plot_heatmap(img.unsqueeze(0), label.unsqueeze(0))
             _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
 

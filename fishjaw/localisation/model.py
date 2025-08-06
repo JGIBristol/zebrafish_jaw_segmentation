@@ -28,7 +28,7 @@ def get_model(device) -> AttentionUnet:
         out_channels=1,
         strides=(2, 2, 2, 2),
         channels=(4, 8, 16, 32, 64),
-        dropout=0.00,
+        dropout=0.05,
     ).to(device)
 
 
@@ -97,7 +97,7 @@ def train(
             # If the average validation loss for the last epoch was < a special value
             # then we want to shrink the heatmap
             last_val_loss = np.mean(val_losses[-1]) if val_losses else np.inf
-            if last_val_loss < 1.05:
+            if train_data.get_sigma() > 1.0 and last_val_loss < 1.05:
                 # Reduce heatmap size
                 new_sigma = train_data.get_sigma() * 0.9
                 train_data.set_heatmaps(new_sigma)
