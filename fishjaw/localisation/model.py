@@ -70,6 +70,7 @@ def train(
     batch_size: int,
     num_epochs: int,
     device: str,
+    shrink_heatmap: bool,
     fig_out_dir: pathlib.Path,
 ) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
     """
@@ -94,10 +95,14 @@ def train(
     try:
         pbar = tqdm(range(num_epochs), desc="Training...")
         for epoch in pbar:
-            # If the average validation loss for the last epoch was < a special value
+            # If the loss for the last epoch was < a special value
             # then we want to shrink the heatmap
-            last_train_loss = np.mean(train_losses[-1]) if train_losses else np.inf
-            if train_data.get_sigma() > 1.0 and last_train_loss < 1.0:
+            last_train_loss = np.max(train_losses[-1]) if train_losses else np.inf
+            if (
+                shrink_heatmap
+                and train_data.get_sigma() > 0.1
+                and last_train_loss < 1.0
+            ):
                 # Reduce heatmap size
                 new_sigma = train_data.get_sigma() * 0.9
                 train_data.set_heatmaps(new_sigma)

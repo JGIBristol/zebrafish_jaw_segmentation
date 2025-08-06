@@ -68,7 +68,7 @@ def _dicom_paths(config: dict) -> list[pathlib.Path]:
     )
 
 
-def main(model_name: str, debug_plots: bool) -> None:
+def main(model_name: str, debug_plots: bool, shrink_heatmap: bool) -> None:
     """
     Read (cached) downsampled dicoms (caching them first if required),
     init a model and train it to localise the jaw.
@@ -147,6 +147,7 @@ def main(model_name: str, debug_plots: bool) -> None:
         config["batch_size"],
         config["num_epochs"],
         config["device"],
+        shrink_heatmap,
         out_dir,
     )
 
@@ -270,6 +271,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Plot the training data and downsampled testing data/heatmaps for test data."
         "Losses and upsampled point estimate on test data are always plotted",
+    )
+
+    parser.add_argument(
+        "--shrink-heatmap",
+        action="store_true",
+        help="Shrink the heatmap during training if the loss is low.",
     )
 
     main(**vars(parser.parse_args()))
