@@ -26,9 +26,9 @@ def get_model(device) -> AttentionUnet:
         spatial_dims=3,
         in_channels=1,
         out_channels=1,
-        strides=(2, 2, 2),
-        channels=(4, 8, 16, 32),
-        dropout=0.05,
+        strides=(2, 2, 2, 2),
+        channels=(4, 8, 16, 32, 64),
+        dropout=0.00,
     ).to(device)
 
 

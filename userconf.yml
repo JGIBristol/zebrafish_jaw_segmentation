@@ -104,8 +104,8 @@ jaw_loc_config:
   batch_size: 4
   n_workers: 4
   device: "cuda"
-  learning_rate: 0.00001
-  num_epochs: 500
+  learning_rate: 0.000005
+  num_epochs: 200
   # Repeated from above ew
   crop_size: [160, 160, 160]
   dicom_dirs:

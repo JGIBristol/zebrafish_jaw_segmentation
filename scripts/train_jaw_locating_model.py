@@ -131,6 +131,15 @@ def main(model_name: str, debug_plots: bool) -> None:
         sigma=config["initial_kernel_size"],
     )
 
+    # Plot training and validation heatmaps
+    if debug_plots:
+        for dataset, name in zip([train_data, val_data], ["train", "val"]):
+            img, label = dataset[0]
+            prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
+
+            fig, _ = plotting.plot_heatmap(img.unsqueeze(0), label.unsqueeze(0))
+            _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
+
     net = model.get_model(config["device"])
     net, train_losses, val_losses = model.train(
         net,
@@ -154,7 +163,7 @@ def main(model_name: str, debug_plots: bool) -> None:
             prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
 
             fig, _ = plotting.plot_heatmap(img.unsqueeze(0), prediction)
-            _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
+            _savefig(fig, out_dir / f"{name}_heatmap_pred.png", verbose=True)
 
     with open(model_path, "wb") as f:
         torch.save(net.state_dict(), f)
