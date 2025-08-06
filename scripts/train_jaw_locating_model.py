@@ -110,8 +110,8 @@ def main(model_name: str, debug_plots: bool) -> None:
 
     # Read in the downsampled dicoms
     # Leave the last one for testing
-    train_paths = downsampled_paths[:-4]
-    val_paths = downsampled_paths[-4:-1]
+    train_paths = downsampled_paths[:32]
+    val_paths = downsampled_paths[32:-1]
 
     test_path = dicom_paths[-1]
     downsampled_test_path = downsampled_paths[-1]

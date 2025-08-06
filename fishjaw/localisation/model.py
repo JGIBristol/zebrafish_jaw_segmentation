@@ -96,8 +96,8 @@ def train(
         for epoch in pbar:
             # If the average validation loss for the last epoch was < a special value
             # then we want to shrink the heatmap
-            last_val_loss = np.mean(val_losses[-1]) if val_losses else np.inf
-            if train_data.get_sigma() > 1.0 and last_val_loss < 1.05:
+            last_train_loss = np.mean(train_losses[-1]) if train_losses else np.inf
+            if train_data.get_sigma() > 1.0 and last_train_loss < 1.0:
                 # Reduce heatmap size
                 new_sigma = train_data.get_sigma() * 0.9
                 train_data.set_heatmaps(new_sigma)
