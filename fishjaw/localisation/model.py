@@ -49,8 +49,8 @@ def get_model(device) -> AttentionUnet:
         spatial_dims=3,
         in_channels=1,
         out_channels=1,
-        strides=(2, 2, 2, 2),
-        channels=(8, 16, 32),
+        strides=(2, 2, 2, 2, 2),
+        channels=(8, 16, 32, 64, 128),
         dropout=0.0,
     ).to(device)
 
@@ -59,17 +59,16 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """
     KL Divergence loss
     """
-    # Apply log-softmax to predictions
-    pred = torch.nn.functional.log_softmax(pred.view(pred.size(0), -1), dim=1)
+    B = pred.size(0)
+    pred = pred.view(B, -1)
+    target = target.view(B, -1)
 
-    # normalise to 1
-    target = target.view(target.size(0), -1)
-    target = target / (target.sum(dim=1, keepdim=True) + 1e-8)
+    eps = 1e-8
 
-    pred = pred / (pred.sum(dim=1, keepdim=True) + 1e-8)
+    target = target / (target.sum(dim=1, keepdim=True) + eps)
 
+    pred = torch.nn.functional.log_softmax(pred, dim=1)
 
-    # Compute KL divergence
     return torch.nn.functional.kl_div(
         pred, target, reduction="batchmean"
     )
