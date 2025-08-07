@@ -96,6 +96,35 @@ def _dataloader(
     )
 
 
+def _shrink_heatmaps(
+    train_data: torch.utils.data.Dataset, val_data: torch.utils.data.Dataset, batch_size
+) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    """
+    During training, if we are performing well, we might want to shrink the heatmap
+    to get a better estimate of where the centre is
+    """
+    # Reduce heatmap size
+    new_sigma = train_data.get_sigma() * 0.9
+
+    train_data.set_heatmaps(new_sigma)
+    val_data.set_heatmaps(new_sigma)
+
+    # Recreate loaders
+    train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
+    val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
+
+    # Plot a heatmap, labelling the epoch and sigma
+    fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
+    fig.suptitle(f"Epoch {epoch}, sigma {train_data.get_sigma()}")
+    fig.savefig(
+        fig_out_dir
+        / f"heatmap_{epoch=}_sigma_{train_data.get_sigma():.3f}.png".replace("=", "_")
+    )
+    plt.close(fig)
+
+    return train_loader, val_loader
+
+
 def train(
     model: torch.nn.Module,
     train_data: HeatmapDataset,
@@ -135,33 +164,14 @@ def train(
             last_train_loss = np.max(train_losses[-1]) if train_losses else np.inf
             if (
                 shrink_heatmap
-                and train_data.get_sigma() > 0.1
+                and train_data.get_sigma() > 0.5
                 and last_train_loss < 1.0
             ):
-                # Reduce heatmap size
-                new_sigma = train_data.get_sigma() * 0.9
-                train_data.set_heatmaps(new_sigma)
-                val_data.set_heatmaps(new_sigma)
-
-                # Recreate loaders
-                train_loader = _dataloader(
-                    train_data, batch_size=batch_size, train=True
+                train_loader, val_loader = _shrink_heatmaps(
+                    train_data, val_data, batch_size
                 )
-                val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
-
-                # Plot a heatmap, labelling the epoch and sigma
-                fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
-                fig.suptitle(f"Epoch {epoch}, sigma {train_data.get_sigma()}")
-                fig.savefig(
-                    fig_out_dir
-                    / f"heatmap_{epoch=}_sigma_{train_data.get_sigma():.3f}.png".replace(
-                        "=", "_"
-                    )
-                )
-                plt.close(fig)
 
             train_loss, val_loss = [], []
-            loss_fn = dice_loss
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
 
