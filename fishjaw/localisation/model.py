@@ -55,6 +55,21 @@ def euclidean_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
 
     return torch.nn.functional.mse_loss(pred_flat, target_flat, reduction="sum")
 
+def dice_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """
+    Dice loss for comparing predicted and target heatmaps
+    """
+    # Flatten the tensors to compute the Dice loss
+    pred_flat = pred.view(pred.size(0), -1)
+    target_flat = target.view(target.size(0), -1)
+
+    intersection = (pred_flat * target_flat).sum(dim=1)
+    union = pred_flat.sum(dim=1) + target_flat.sum(dim=1)
+
+    # Avoid division by zero
+    union = torch.clamp(union, min=1e-8)
+
+    return 1 - (2.0 * intersection / union).mean()
 
 def _dataloader(
     dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
@@ -137,7 +152,7 @@ def train(
                 plt.close(fig)
 
             train_loss, val_loss = [], []
-            loss_fn = euclidean_loss
+            loss_fn = dice_loss
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
 
