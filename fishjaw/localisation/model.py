@@ -55,21 +55,29 @@ def euclidean_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
 
     return torch.nn.functional.mse_loss(pred_flat, target_flat, reduction="sum")
 
-def dice_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+
+def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.Tensor:
     """
-    Dice loss for comparing predicted and target heatmaps
+    Dice loss for comparing predicted and target heatmaps.
+    Works with continuous values (not binary masks).
     """
-    # Flatten the tensors to compute the Dice loss
-    pred_flat = pred.view(pred.size(0), -1)
-    target_flat = target.view(target.size(0), -1)
+    pred = torch.sigmoid(pred)
+    B = pred.size(0)
 
-    intersection = (pred_flat * target_flat).sum(dim=1)
-    union = pred_flat.sum(dim=1) + target_flat.sum(dim=1)
+    pred_flat = pred.view(B, -1)
+    target_flat = target.view(B, -1)
 
-    # Avoid division by zero
-    union = torch.clamp(union, min=1e-8)
+    pred_norm = pred_flat / (pred_flat.sum(dim=1, keepdim=True) + epsilon)
+    target_norm = target_flat / (target_flat.sum(dim=1, keepdim=True) + epsilon)
 
-    return 1 - (2.0 * intersection / union).mean()
+    intersection = (pred_norm * target_norm).sum(dim=1)
+    union = pred_norm.pow(2).sum(dim=1) + target_norm.pow(2).sum(dim=1)
+
+    dice_score = (2.0 * intersection + epsilon) / (union + epsilon)
+    loss = 1.0 - dice_score.mean()
+
+    return loss
+
 
 def _dataloader(
     dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
@@ -116,6 +124,7 @@ def train(
     # List of lists - one for each epoch
     # Each element is a list of batch losses
     train_losses, val_losses = [], []
+    loss_fn = dice_loss
 
     model.train()
     try:
