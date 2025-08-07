@@ -141,7 +141,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
             _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
 
     net = model.get_model(config["device"])
-    net, train_losses, val_losses = model.train(
+    train_metrics = model.train(
         net,
         train_data,
         val_data,
@@ -152,6 +152,10 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         shrink_heatmap,
         out_dir,
     )
+
+    net = train_metrics.model
+    train_losses = train_metrics.train_losses
+    val_losses = train_metrics.val_losses
 
     # Plot losses
     fig = plot_losses(train_losses, val_losses)

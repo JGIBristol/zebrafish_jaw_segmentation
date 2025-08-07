@@ -4,6 +4,7 @@ Model arch and training loop
 """
 
 import pathlib
+from dataclasses import dataclass
 
 import torch
 import numpy as np
@@ -14,6 +15,28 @@ from monai.networks.nets import AttentionUnet
 from ..images.transform import crop as _crop
 from .data import downsample_img, scale_prediction_up, scale_factor, HeatmapDataset
 from . import plotting
+
+
+@dataclass
+class TrainMetrics:
+    """
+    Training metrics for the jaw localisation model
+    """
+
+    model: torch.nn.Module
+    """ The trained model """
+
+    train_losses: list[list[float]]
+    val_losses: list[list[float]]
+
+    train_kl: list[list[float]]
+    val_kl: list[list[float]]
+
+    train_dice: list[list[float]]
+    val_dice: list[list[float]]
+
+    train_mse: list[list[float]]
+    val_mse: list[list[float]]
 
 
 def get_model(device) -> AttentionUnet:
@@ -135,7 +158,7 @@ def train(
     device: str,
     shrink_heatmap: bool,
     fig_out_dir: pathlib.Path,
-) -> tuple[torch.nn.Module, list[list[float]], list[list[float]]]:
+) -> TrainMetrics:
     """
     Training loop, with a progress bar
 
@@ -150,10 +173,15 @@ def train(
     train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
     val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
 
-    # List of lists - one for each epoch
-    # Each element is a list of batch losses
-    train_losses, val_losses = [], []
-    loss_fn = dice_loss
+    loss_fn = kl_loss
+
+    retval = TrainMetrics(None, [], [], [], [], [], [], [], [])
+    metrics = [dice_loss, kl_loss, euclidean_loss]
+    non_loss_fns = tuple((f for f in metrics if f != loss_fn))
+
+    # Mapping for function objects onto names that we will use
+    # to assign the right things in the return value
+    mapping = {dice_loss: "dice", kl_loss: "kl", euclidean_loss: "mse"}
 
     model.train()
     try:
@@ -170,7 +198,14 @@ def train(
                     train_data, val_data, batch_size
                 )
 
-            train_loss, val_loss = [], []
+            # Add new empty lists for this epoch
+            retval.train_kl.append([])
+            retval.val_kl.append([])
+            retval.train_dice.append([])
+            retval.val_dice.append([])
+            retval.train_mse.append([])
+            retval.val_mse.append([])
+
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
 
@@ -182,23 +217,37 @@ def train(
                 loss.backward()
                 optimiser.step()
 
-                train_loss.append(loss.item())
+                getattr(retval, f"train_{mapping[loss_fn]}")[-1].append(loss.item())
+
+                # Evaluate the other metrics
+                for fn in non_loss_fns:
+                    getattr(retval, f"train_{mapping[fn]}")[-1].append(
+                        fn(outputs, heatmap).item()
+                    )
 
             for image, heatmap in val_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
                 with torch.no_grad():
                     outputs = model(image.to(device))
-                    loss = loss_fn(outputs, heatmap.to(device))
-                    val_loss.append(loss.item())
+                    for fn in metrics:
+                        getattr(retval, f"val_{mapping[fn]}")[-1].append(
+                            fn(outputs, heatmap).item()
+                        )
 
-            train_losses.append(train_loss)
-            val_losses.append(val_loss)
+            # Assign the losses in the metrics object too
+            retval.train_losses = getattr(retval, f"train_{mapping[loss_fn]}")
+            retval.val_losses = getattr(retval, f"val_{mapping[loss_fn]}")
 
-            pbar.set_postfix(train_loss=np.mean(train_loss), val_loss=np.mean(val_loss))
+            pbar.set_postfix(
+                train_loss=np.mean(retval.train_losses[-1]),
+                val_loss=np.mean(retval.val_losses[-1]),
+            )
     except KeyboardInterrupt:
         print("Training interrupted...")
 
-    return model, train_losses, val_losses
+    retval.model = model
+
+    return retval
 
 
 def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
