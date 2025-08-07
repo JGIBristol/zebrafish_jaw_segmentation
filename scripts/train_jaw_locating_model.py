@@ -68,7 +68,7 @@ def _dicom_paths(config: dict) -> list[pathlib.Path]:
     )
 
 
-def main(model_name: str, debug_plots: bool, shrink_heatmap: bool) -> None:
+def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
     """
     Read (cached) downsampled dicoms (caching them first if required),
     init a model and train it to localise the jaw.
@@ -78,6 +78,8 @@ def main(model_name: str, debug_plots: bool, shrink_heatmap: bool) -> None:
     the jaw centre from the heatmap by convolving to find its centre.
 
     """
+    shrink_heatmap = not no_shrink_heatmap
+
     config = util.userconf()["jaw_loc_config"]
 
     # Find where the inputs are, and if necessary create the downsampled dicoms
@@ -274,9 +276,9 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--shrink-heatmap",
+        "--no-shrink-heatmap",
         action="store_true",
-        help="Shrink the heatmap during training if the loss is low.",
+        help="Don't shrink the heatmap during training if the loss is low.",
     )
 
     main(**vars(parser.parse_args()))
