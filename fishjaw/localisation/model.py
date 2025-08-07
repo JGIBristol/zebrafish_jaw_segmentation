@@ -35,8 +35,8 @@ class TrainMetrics:
     train_dice: list[list[float]]
     val_dice: list[list[float]]
 
-    train_mse: list[list[float]]
-    val_mse: list[list[float]]
+    train_com: list[list[float]]
+    val_com: list[list[float]]
 
 
 def get_model(device) -> AttentionUnet:
@@ -62,21 +62,62 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     # Apply log-softmax to predictions
     pred = torch.nn.functional.log_softmax(pred.view(pred.size(0), -1), dim=1)
 
+    # normalise to 1
+    target = target.view(target.size(0), -1)
+    target = target / (target.sum(dim=1, keepdim=True) + 1e-8)
+
+    pred = pred / (pred.sum(dim=1, keepdim=True) + 1e-8)
+
+
     # Compute KL divergence
     return torch.nn.functional.kl_div(
-        pred, target.view(pred.size(0), -1), reduction="batchmean"
+        pred, target, reduction="batchmean"
     )
 
 
-def euclidean_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def com_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """
-    Euclidean loss (L2 loss) between predicted and target heatmaps
-    """
-    # Flatten the tensors to compute the L2 loss
-    pred_flat = pred.view(pred.size(0), -1)
-    target_flat = target.view(target.size(0), -1)
+    Distance between predicted and target heatmaps
 
-    return torch.nn.functional.mse_loss(pred_flat, target_flat, reduction="sum")
+    """
+    eps = 1e-8
+    pred = torch.sigmoid(pred)
+
+    # Remove channel dim
+    pred = pred[:, 0]
+    target = target[:, 0]
+
+    B, D, H, W = pred.shape
+
+    # Normalize heatmaps so they sum to 1 (probability distributions)
+    pred = pred / (pred.sum(dim=(1, 2, 3), keepdim=True) + eps)
+    target = target / (target.sum(dim=(1, 2, 3), keepdim=True) + eps)
+
+    # Create coordinate grid
+    z = torch.linspace(0, D - 1, D, device=pred.device)
+    y = torch.linspace(0, H - 1, H, device=pred.device)
+    x = torch.linspace(0, W - 1, W, device=pred.device)
+    zz, yy, xx = torch.meshgrid(z, y, x, indexing="ij")  # shape: [D, H, W]
+
+    zz = zz.unsqueeze(0)  # [1, D, H, W]
+    yy = yy.unsqueeze(0)
+    xx = xx.unsqueeze(0)
+
+    # Compute CoM for pred and target (shape: [B, 1])
+    pred_z = (pred * zz).sum(dim=(1, 2, 3))
+    pred_y = (pred * yy).sum(dim=(1, 2, 3))
+    pred_x = (pred * xx).sum(dim=(1, 2, 3))
+
+    target_z = (target * zz).sum(dim=(1, 2, 3))
+    target_y = (target * yy).sum(dim=(1, 2, 3))
+    target_x = (target * xx).sum(dim=(1, 2, 3))
+
+    # Stack into [B, 3] coordinate vectors
+    pred_com = torch.stack([pred_z, pred_y, pred_x], dim=1)
+    target_com = torch.stack([target_z, target_y, target_x], dim=1)
+
+    # Compute L2 distance per sample, then mean over batch
+    return torch.norm(pred_com - target_com, dim=1).mean()
 
 
 def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.Tensor:
@@ -120,7 +161,11 @@ def _dataloader(
 
 
 def _shrink_heatmaps(
-    train_data: torch.utils.data.Dataset, val_data: torch.utils.data.Dataset, batch_size
+    train_data: torch.utils.data.Dataset,
+    val_data: torch.utils.data.Dataset,
+    batch_size: int,
+    epoch: int,
+    fig_out_dir: pathlib.Path,
 ) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     """
     During training, if we are performing well, we might want to shrink the heatmap
@@ -176,12 +221,12 @@ def train(
     loss_fn = kl_loss
 
     retval = TrainMetrics(None, [], [], [], [], [], [], [], [])
-    metrics = [dice_loss, kl_loss, euclidean_loss]
+    metrics = [dice_loss, kl_loss, com_distance]
     non_loss_fns = tuple((f for f in metrics if f != loss_fn))
 
     # Mapping for function objects onto names that we will use
     # to assign the right things in the return value
-    mapping = {dice_loss: "dice", kl_loss: "kl", euclidean_loss: "mse"}
+    mapping = {dice_loss: "dice", kl_loss: "kl", com_distance: "com"}
 
     model.train()
     try:
@@ -192,10 +237,13 @@ def train(
             if (
                 shrink_heatmap
                 and (train_data.get_sigma() > 0.5)
-                and ((np.max(train_losses[-1]) if train_losses else np.inf) < 1.0)
+                and (
+                    (np.max(retval.train_losses[-1]) if retval.train_losses else np.inf)
+                    < 1.0
+                )
             ):
                 train_loader, val_loader = _shrink_heatmaps(
-                    train_data, val_data, batch_size
+                    train_data, val_data, batch_size, epoch, fig_out_dir
                 )
 
             # Add new empty lists for this epoch
@@ -203,8 +251,8 @@ def train(
             retval.val_kl.append([])
             retval.train_dice.append([])
             retval.val_dice.append([])
-            retval.train_mse.append([])
-            retval.val_mse.append([])
+            retval.train_com.append([])
+            retval.val_com.append([])
 
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
@@ -243,6 +291,19 @@ def train(
                 val_loss=np.mean(retval.val_losses[-1]),
             )
     except KeyboardInterrupt:
+        # remove any empty lists
+        for l in [
+            retval.train_kl,
+            retval.val_kl,
+            retval.train_dice,
+            retval.val_dice,
+            retval.train_com,
+            retval.val_com,
+            retval.train_losses,
+            retval.val_losses,
+        ]:
+            if [] in l:
+                l.remove([])
         print("Training interrupted...")
 
     retval.model = model
