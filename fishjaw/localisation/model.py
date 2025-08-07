@@ -161,11 +161,10 @@ def train(
         for epoch in pbar:
             # If the loss for the last epoch was < a special value
             # then we want to shrink the heatmap
-            last_train_loss = np.max(train_losses[-1]) if train_losses else np.inf
             if (
                 shrink_heatmap
-                and train_data.get_sigma() > 0.5
-                and last_train_loss < 1.0
+                and (train_data.get_sigma() > 0.5)
+                and ((np.max(train_losses[-1]) if train_losses else np.inf) < 1.0)
             ):
                 train_loader, val_loader = _shrink_heatmaps(
                     train_data, val_data, batch_size
