@@ -45,6 +45,17 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     )
 
 
+def euclidean_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """
+    Euclidean loss (L2 loss) between predicted and target heatmaps
+    """
+    # Flatten the tensors to compute the L2 loss
+    pred_flat = pred.view(pred.size(0), -1)
+    target_flat = target.view(target.size(0), -1)
+
+    return torch.nn.functional.mse_loss(pred_flat, target_flat, reduction="sum")
+
+
 def _dataloader(
     dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
 ) -> torch.utils.data.DataLoader:
@@ -126,13 +137,14 @@ def train(
                 plt.close(fig)
 
             train_loss, val_loss = [], []
+            loss_fn = euclidean_loss
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
 
                 optimiser.zero_grad()
 
                 outputs = model(image)
-                loss = kl_loss(outputs, heatmap)
+                loss = loss_fn(outputs, heatmap)
 
                 loss.backward()
                 optimiser.step()
@@ -143,7 +155,7 @@ def train(
                 image, heatmap = image.to(device), heatmap.to(device)
                 with torch.no_grad():
                     outputs = model(image.to(device))
-                    loss = kl_loss(outputs, heatmap.to(device))
+                    loss = loss_fn(outputs, heatmap.to(device))
                     val_loss.append(loss.item())
 
             train_losses.append(train_loss)
