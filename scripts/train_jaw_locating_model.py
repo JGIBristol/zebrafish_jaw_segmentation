@@ -20,7 +20,7 @@ from fishjaw.images import io
 from fishjaw.images.transform import crop
 from fishjaw.util import util, files
 from fishjaw.localisation import data, plotting, model
-from fishjaw.visualisation.training import plot_losses
+from fishjaw.visualisation.training import plot_losses, plot_loss_axis
 
 
 def _cache_dicoms(
@@ -113,6 +113,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
     # Read in the downsampled dicoms
     # Leave the last one for testing
     train_paths = downsampled_paths[:32]
+    train_paths = train_paths[:2]
     val_paths = downsampled_paths[32:-1]
 
     test_path = dicom_paths[-1]
@@ -152,6 +153,8 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         shrink_heatmap,
         out_dir,
     )
+    with open(model_path, "wb") as f:
+        torch.save(net.state_dict(), f)
 
     net = train_metrics.model
     train_losses = train_metrics.train_losses
@@ -161,8 +164,8 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
     fig = plot_losses(train_losses, val_losses)
     _savefig(fig, out_dir / "losses.png", verbose=debug_plots)
 
-    # Plot heatmaps for training + val data
     if debug_plots:
+        # Plot heatmaps for training + val data
         for dataset, name in zip([train_data, val_data], ["train", "val"]):
             img, _ = dataset[0]
             prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
@@ -170,8 +173,14 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
             fig, _ = plotting.plot_heatmap(img.unsqueeze(0), prediction)
             _savefig(fig, out_dir / f"{name}_heatmap_pred.png", verbose=True)
 
-    with open(model_path, "wb") as f:
-        torch.save(net.state_dict(), f)
+        # Plot the other metrics
+        fig, axes = plt.subplots(1, 3, figsize=(9, 3))
+        plot_loss_axis(axes[0], train_metrics.train_kl, train_metrics.val_kl)
+        plot_loss_axis(axes[1], train_metrics.train_dice, train_metrics.val_dice)
+        plot_loss_axis(axes[2], train_metrics.train_mse, train_metrics.val_mse)
+        for axis, title in zip(axes, ["KL", "Dice", "MSE"]):
+            axis.set_title(title)
+        _savefig(fig, out_dir / "metrics.png", verbose=True)
 
     # Read in the original and downsampled test data
     # We may want to plot the heatmap on the downsampled data (for debug)

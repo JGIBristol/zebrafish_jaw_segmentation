@@ -14,6 +14,13 @@ def plot_loss_axis(
     """
     Plot on an axis
     """
+    assert len(train_losses) == len(val_losses)
+
+    epochs = np.arange(len(train_losses))
+
+    train_loss = np.array([np.mean(epoch_loss) for epoch_loss in train_losses])
+    val_loss = np.array([np.mean(epoch_loss) for epoch_loss in val_losses])
+
     axis.plot(epochs, train_loss, label="Train")
 
     # Find quartiles - the mean might be outside this, which would be interesting wouldn't it
@@ -41,13 +48,6 @@ def plot_losses(
     :param train_losses: list of lists of floats, the training losses for each epoch
 
     """
-    assert len(train_losses) == len(val_losses)
-
-    epochs = np.arange(len(train_losses))
-
-    train_loss = np.array([np.mean(epoch_loss) for epoch_loss in train_losses])
-    val_loss = np.array([np.mean(epoch_loss) for epoch_loss in val_losses])
-
     fig, axis = plt.subplots()
 
     plot_loss_axis(axis, train_losses, val_losses)
