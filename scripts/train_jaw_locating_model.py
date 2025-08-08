@@ -9,6 +9,7 @@ use the model trained in `train_model.py` to segment the jaw.
 
 import pathlib
 import argparse
+import warnings
 
 import torch
 import numpy as np
@@ -179,8 +180,8 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         fig, axes = plt.subplots(1, 3, figsize=(9, 3))
         plot_loss_axis(axes[0], train_metrics.train_kl, train_metrics.val_kl)
         plot_loss_axis(axes[1], train_metrics.train_dice, train_metrics.val_dice)
-        plot_loss_axis(axes[2], train_metrics.train_com, train_metrics.val_com)
-        for axis, title in zip(axes, ["KL", "Dice", "CoM Distance"]):
+        plot_loss_axis(axes[2], train_metrics.train_mse, train_metrics.val_mse)
+        for axis, title in zip(axes, ["KL", "Dice", "MSE"]):
             axis.set_title(title)
         _savefig(fig, out_dir / "metrics.png", verbose=True)
 
@@ -249,13 +250,16 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         config["crop_size"],
         centred=True,
     )
-    fig, _ = plotting.plot_heatmap(
-        torch.tensor(cropped.astype(np.float32), dtype=torch.float32)
-        .unsqueeze(0)
-        .unsqueeze(0),
-        torch.tensor(cropped_mask).unsqueeze(0).unsqueeze(0),
-    )
-    _savefig(fig, out_dir / "test_cropped.png", verbose=debug_plots)
+    if cropped_mask.sum() > 1e-6:
+        fig, _ = plotting.plot_heatmap(
+            torch.tensor(cropped.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0),
+            torch.tensor(cropped_mask).unsqueeze(0).unsqueeze(0),
+        )
+        _savefig(fig, out_dir / "test_cropped.png", verbose=debug_plots)
+    else:
+        warnings.warn("Cropped mask is empty, not plotting test_cropped.png")
 
     # We can also plot the cropped mask, with the jaw overlaid
     if debug_plots:

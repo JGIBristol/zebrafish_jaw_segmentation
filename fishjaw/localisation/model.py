@@ -35,8 +35,8 @@ class TrainMetrics:
     train_dice: list[list[float]]
     val_dice: list[list[float]]
 
-    train_com: list[list[float]]
-    val_com: list[list[float]]
+    train_mse: list[list[float]]
+    val_mse: list[list[float]]
 
 
 def get_model(device) -> AttentionUnet:
@@ -72,52 +72,15 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     return torch.nn.functional.kl_div(pred, target, reduction="batchmean")
 
 
-def com_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def mse_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """
     Distance between predicted and target heatmaps
 
     """
-    eps = 1e-8
-    pred = torch.sigmoid(pred)
+    # Apply activation fcn to pred to convert to probability distribution
+    pred = torch.nn.functional.softmax(pred.view(pred.size(0), -1), dim=1).view_as(pred)
 
-    # Remove channel dim
-    pred = pred[:, 0]
-    target = target[:, 0]
-
-    B, D, H, W = pred.shape
-
-    # Normalize heatmaps so they sum to 1 (probability distributions)
-    target = target / (target.sum(dim=(1, 2, 3), keepdim=True) + eps)
-
-    # Apply softmax to prediction to convert logits to probabilities
-    B = pred.size(0)
-    pred = torch.nn.functional.softmax(pred.view(B, -1), dim=1).view_as(pred)
-
-    # Create coordinate grid
-    z = torch.linspace(0, D - 1, D, device=pred.device)
-    y = torch.linspace(0, H - 1, H, device=pred.device)
-    x = torch.linspace(0, W - 1, W, device=pred.device)
-    zz, yy, xx = torch.meshgrid(z, y, x, indexing="ij")  # shape: [D, H, W]
-
-    zz = zz.unsqueeze(0)  # [1, D, H, W]
-    yy = yy.unsqueeze(0)
-    xx = xx.unsqueeze(0)
-
-    # Compute CoM for pred and target (shape: [B, 1])
-    pred_z = (pred * zz).sum(dim=(1, 2, 3))
-    pred_y = (pred * yy).sum(dim=(1, 2, 3))
-    pred_x = (pred * xx).sum(dim=(1, 2, 3))
-
-    target_z = (target * zz).sum(dim=(1, 2, 3))
-    target_y = (target * yy).sum(dim=(1, 2, 3))
-    target_x = (target * xx).sum(dim=(1, 2, 3))
-
-    # Stack into [B, 3] coordinate vectors
-    pred_com = torch.stack([pred_z, pred_y, pred_x], dim=1)
-    target_com = torch.stack([target_z, target_y, target_x], dim=1)
-
-    # Compute L2 distance per sample, then mean over batch
-    return torch.norm(pred_com - target_com, dim=1).mean()
+    return torch.nn.functional.mse_loss(pred, target, reduction="sum")
 
 
 def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.Tensor:
@@ -221,12 +184,12 @@ def train(
     loss_fn = kl_loss
 
     retval = TrainMetrics(None, [], [], [], [], [], [], [], [])
-    metrics = [dice_loss, kl_loss, com_distance]
+    metrics = [dice_loss, kl_loss, mse_loss]
     non_loss_fns = tuple((f for f in metrics if f != loss_fn))
 
     # Mapping for function objects onto names that we will use
     # to assign the right things in the return value
-    mapping = {dice_loss: "dice", kl_loss: "kl", com_distance: "com"}
+    mapping = {dice_loss: "dice", kl_loss: "kl", mse_loss: "mse"}
 
     model.train()
     try:
@@ -251,8 +214,8 @@ def train(
             retval.val_kl.append([])
             retval.train_dice.append([])
             retval.val_dice.append([])
-            retval.train_com.append([])
-            retval.val_com.append([])
+            retval.train_mse.append([])
+            retval.val_mse.append([])
 
             for image, heatmap in train_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
@@ -297,8 +260,8 @@ def train(
             retval.val_kl,
             retval.train_dice,
             retval.val_dice,
-            retval.train_com,
-            retval.val_com,
+            retval.train_mse,
+            retval.val_mse,
             retval.train_losses,
             retval.val_losses,
         ]:
