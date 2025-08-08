@@ -51,9 +51,7 @@ def plot_heatmap(
         heatmap_slice = permuted_heatmap[0][0][centre].numpy()
 
         axis.imshow(img_slice, cmap="gray")
-        im = axis.imshow(
-            heatmap_slice, cmap=_transparent_cmap(), alpha=0.3, norm=colors.LogNorm()
-        )
+        im = axis.imshow(heatmap_slice, cmap=_transparent_cmap())
 
         axis.axis("off")
 
