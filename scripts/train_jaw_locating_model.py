@@ -168,8 +168,10 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         # Plot heatmaps for training + val data
         for dataset, name in zip([train_data, val_data], ["train", "val"]):
             img, _ = dataset[0]
-            prediction = net(img.unsqueeze(0).to(config["device"])).cpu().detach()
+            prediction = model.predict(net, img.squeeze().numpy())
 
+            # Convert to tensor for plotting
+            prediction = torch.tensor(prediction).unsqueeze(0).unsqueeze(0)
             fig, _ = plotting.plot_heatmap(img.unsqueeze(0), prediction)
             _savefig(fig, out_dir / f"{name}_heatmap_pred.png", verbose=True)
 

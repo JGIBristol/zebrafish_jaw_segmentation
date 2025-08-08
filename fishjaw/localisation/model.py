@@ -87,8 +87,11 @@ def com_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     B, D, H, W = pred.shape
 
     # Normalize heatmaps so they sum to 1 (probability distributions)
-    pred = pred / (pred.sum(dim=(1, 2, 3), keepdim=True) + eps)
     target = target / (target.sum(dim=(1, 2, 3), keepdim=True) + eps)
+
+    # Apply softmax to prediction to convert logits to probabilities
+    B = pred.size(0)
+    pred = torch.nn.functional.softmax(pred.view(B, -1), dim=1).view_as(pred)
 
     # Create coordinate grid
     z = torch.linspace(0, D - 1, D, device=pred.device)
@@ -122,8 +125,8 @@ def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.T
     Dice loss for comparing predicted and target heatmaps.
     Works with continuous values (not binary masks).
     """
-    pred = torch.sigmoid(pred)
     B = pred.size(0)
+    pred = torch.nn.functional.softmax(pred.view(B, -1), dim=1).view_as(pred)
 
     pred_flat = pred.view(B, -1)
     target_flat = target.view(B, -1)
@@ -438,11 +441,13 @@ def predict(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
 
     # Forward pass through the model
     with torch.no_grad():
-        heatmap = model(image_tensor)
+        heatmap_ = model(image_tensor)
 
     # Apply activation
     # Use softmax instead of sigmoid since we trained with KL divergence
-    B = heatmap.size(0)
-    heatmap = torch.nn.functional.softmax(heatmap.view(B, -1), dim=1).view_as(heatmap)
+    B = heatmap_.size(0)
+    heatmap_ = torch.nn.functional.softmax(heatmap_.view(B, -1), dim=1).view_as(
+        heatmap_
+    )
 
-    return heatmap.squeeze().cpu().numpy()
+    return heatmap_.squeeze().cpu().numpy()
