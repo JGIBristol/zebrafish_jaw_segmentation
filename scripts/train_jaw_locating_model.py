@@ -114,11 +114,15 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
     # Read in the downsampled dicoms
     # Leave the last one for testing
     train_paths = downsampled_paths[:32]
-    train_paths = train_paths[:2]
     val_paths = downsampled_paths[32:-1]
+    print(len(train_paths), len(val_paths))
 
     test_path = dicom_paths[-1]
     downsampled_test_path = downsampled_paths[-1]
+
+    # For now test on the train data
+    test_path = dicom_paths[0]
+    downsampled_test_path = downsampled_paths[0]
 
     # Set up training data heatmaps
     train_imgs, train_labels = zip(*[io.read_dicom(p) for p in train_paths])
