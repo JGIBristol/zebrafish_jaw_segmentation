@@ -330,20 +330,22 @@ def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
 
     model.eval()
     with torch.no_grad():
-        return (
-            (
-                model(
-                    torch.tensor(image.astype(np.float32), dtype=torch.float32)
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                    .to(device)
-                )
-                .cpu()
-                .detach()
-            )
-            .squeeze()
-            .numpy()
+        heatmap_ = model(
+            torch.tensor(image.astype(np.float32), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0)
+            .to(device)
         )
+
+    # Apply activation
+    # Use softmax instead of sigmoid since the model returns logits and we
+    # want to convert them to probabilities
+    B = heatmap_.size(0)
+    heatmap_ = torch.nn.functional.softmax(heatmap_.view(B, -1), dim=1).view_as(
+        heatmap_
+    )
+
+    return heatmap_.squeeze().cpu().numpy()
 
 
 def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
@@ -426,28 +428,3 @@ def crop(
     )
 
     return _crop(image, centroid, window_size, centred=True)
-
-
-def predict(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
-    """
-    Predict the heatmap for a given input image
-    """
-    # Preprocess the image
-    image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-
-    # breaks if on multiple devices yada yada
-    device = next(model.parameters()).device
-    image_tensor = image_tensor.to(device)
-
-    # Forward pass through the model
-    with torch.no_grad():
-        heatmap_ = model(image_tensor)
-
-    # Apply activation
-    # Use softmax instead of sigmoid since we trained with KL divergence
-    B = heatmap_.size(0)
-    heatmap_ = torch.nn.functional.softmax(heatmap_.view(B, -1), dim=1).view_as(
-        heatmap_
-    )
-
-    return heatmap_.squeeze().cpu().numpy()
