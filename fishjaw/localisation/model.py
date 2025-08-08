@@ -69,9 +69,7 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
 
     pred = torch.nn.functional.log_softmax(pred, dim=1)
 
-    return torch.nn.functional.kl_div(
-        pred, target, reduction="batchmean"
-    )
+    return torch.nn.functional.kl_div(pred, target, reduction="batchmean")
 
 
 def com_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -425,3 +423,26 @@ def crop(
     )
 
     return _crop(image, centroid, window_size, centred=True)
+
+
+def predict(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
+    """
+    Predict the heatmap for a given input image
+    """
+    # Preprocess the image
+    image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+
+    # breaks if on multiple devices yada yada
+    device = next(model.parameters()).device
+    image_tensor = image_tensor.to(device)
+
+    # Forward pass through the model
+    with torch.no_grad():
+        heatmap = model(image_tensor)
+
+    # Apply activation
+    # Use softmax instead of sigmoid since we trained with KL divergence
+    B = heatmap.size(0)
+    heatmap = torch.nn.functional.softmax(heatmap.view(B, -1), dim=1).view_as(heatmap)
+
+    return heatmap.squeeze().cpu().numpy()
