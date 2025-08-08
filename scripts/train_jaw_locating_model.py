@@ -154,6 +154,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         config["learning_rate"],
         config["batch_size"],
         config["num_epochs"],
+        config["n_workers"],
         config["device"],
         shrink_heatmap,
         out_dir,

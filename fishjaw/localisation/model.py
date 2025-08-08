@@ -107,7 +107,7 @@ def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.T
 
 
 def _dataloader(
-    dataset: torch.utils.data.Dataset, batch_size: int, *, train: bool
+    dataset: torch.utils.data.Dataset, *, num_workers: int, batch_size: int, train: bool
 ) -> torch.utils.data.DataLoader:
     """
     Hard-coded options for the dataloader...
@@ -116,10 +116,10 @@ def _dataloader(
         dataset,
         batch_size=batch_size,
         shuffle=train,
-        num_workers=4,
+        num_workers=num_workers,
         drop_last=train,
         pin_memory=True,
-        persistent_workers=False,  # Since we modify the dataset during training
+        persistent_workers=False,  # Since we might modify the dataset during training
     )
 
 
@@ -128,6 +128,7 @@ def _shrink_heatmaps(
     val_data: torch.utils.data.Dataset,
     batch_size: int,
     epoch: int,
+    num_workers: int,
     fig_out_dir: pathlib.Path,
 ) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     """
@@ -141,8 +142,12 @@ def _shrink_heatmaps(
     val_data.set_heatmaps(new_sigma)
 
     # Recreate loaders
-    train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
-    val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
+    train_loader = _dataloader(
+        train_data, num_workers=num_workers, batch_size=batch_size, train=True
+    )
+    val_loader = _dataloader(
+        val_data, num_workers=num_workers, batch_size=batch_size, train=False
+    )
 
     # Plot a heatmap, labelling the epoch and sigma
     fig, _ = plotting.plot_heatmap(*next(iter(train_loader)))
@@ -163,6 +168,7 @@ def train(
     learning_rate: float,
     batch_size: int,
     num_epochs: int,
+    num_workers: int,
     device: str,
     shrink_heatmap: bool,
     fig_out_dir: pathlib.Path,
@@ -178,8 +184,12 @@ def train(
     """
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    train_loader = _dataloader(train_data, batch_size=batch_size, train=True)
-    val_loader = _dataloader(val_data, batch_size=batch_size, train=False)
+    train_loader = _dataloader(
+        train_data, num_workers=num_workers, batch_size=batch_size, train=True
+    )
+    val_loader = _dataloader(
+        val_data, num_workers=num_workers, batch_size=batch_size, train=False
+    )
 
     loss_fn = kl_loss
 
@@ -206,7 +216,7 @@ def train(
                 )
             ):
                 train_loader, val_loader = _shrink_heatmaps(
-                    train_data, val_data, batch_size, epoch, fig_out_dir
+                    train_data, val_data, batch_size, epoch, num_workers, fig_out_dir
                 )
 
             # Add new empty lists for this epoch
