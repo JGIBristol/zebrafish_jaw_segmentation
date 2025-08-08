@@ -13,7 +13,9 @@ def _transparent_cmap():
     """
     c_black = colors.colorConverter.to_rgba("black", alpha=0)
     c_red = colors.colorConverter.to_rgba("red", alpha=1)
-    return colors.ListedColormap([c_black, c_red], "heatmap_cmap")
+    return colors.LinearSegmentedColormap.from_list(
+        "heatmap_cmap", [c_black, c_red], N=256
+    )
 
 
 def plot_heatmap(
@@ -49,9 +51,11 @@ def plot_heatmap(
         heatmap_slice = permuted_heatmap[0][0][centre].numpy()
 
         axis.imshow(img_slice, cmap="gray")
-        axis.imshow(heatmap_slice, cmap=_transparent_cmap(), alpha=0.3)
+        im = axis.imshow(heatmap_slice, cmap=_transparent_cmap(), alpha=0.3)
 
         axis.axis("off")
+
+    fig.colorbar(im, ax=axes["C"], orientation="vertical", fraction=0.046, pad=0.04)
 
     return fig, axes
 
