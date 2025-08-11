@@ -49,10 +49,10 @@ def get_model(device) -> AttentionUnet:
         spatial_dims=3,
         in_channels=1,
         out_channels=1,
-        strides=(2, 2, 2, 2),
-        channels=(8, 16, 32, 64),
+        strides=(2, 2, 2, 2, 1),
+        channels=(8, 12, 16, 24, 32),
         dropout=0.1,
-        kernel_size=5,
+        kernel_size=(5, 5, 5, 3, 3),
     ).to(device)
 
 
