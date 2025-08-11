@@ -115,7 +115,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
     # Leave the last one for testing
     train_paths = downsampled_paths[:32]
     val_paths = downsampled_paths[32:-1]
-    print(len(train_paths), len(val_paths))
+    print(len(train_paths), "train, ", len(val_paths), "val")
 
     test_path = dicom_paths[-1]
     downsampled_test_path = downsampled_paths[-1]
@@ -143,6 +143,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
             _savefig(fig, out_dir / f"{name}_heatmap_example.png", verbose=True)
 
     net = model.get_model(config["device"])
+    print(sum(p.numel() for p in net.parameters() if p.requires_grad), "params")
     train_metrics = model.train(
         net,
         train_data,
