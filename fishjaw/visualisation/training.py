@@ -8,14 +8,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
-def plot_losses(
-    train_losses: list[list[float]], val_losses: list[list[float]]
-) -> matplotlib.figure.Figure:
+def plot_loss_axis(
+    axis: plt.Axes, train_losses: list[list[float]], val_losses: list[list[float]]
+) -> None:
     """
-    Plot the training and validation losses against epoch
-
-    :param train_losses: list of lists of floats, the training losses for each epoch
-
+    Plot on an axis
     """
     assert len(train_losses) == len(val_losses)
 
@@ -23,8 +20,6 @@ def plot_losses(
 
     train_loss = np.array([np.mean(epoch_loss) for epoch_loss in train_losses])
     val_loss = np.array([np.mean(epoch_loss) for epoch_loss in val_losses])
-
-    fig, axis = plt.subplots()
 
     axis.plot(epochs, train_loss, label="Train")
 
@@ -42,6 +37,20 @@ def plot_losses(
     axis.set_title("Loss")
     axis.set_xlabel("Epoch")
     axis.legend()
+
+
+def plot_losses(
+    train_losses: list[list[float]], val_losses: list[list[float]]
+) -> matplotlib.figure.Figure:
+    """
+    Plot the training and validation losses against epoch
+
+    :param train_losses: list of lists of floats, the training losses for each epoch
+
+    """
+    fig, axis = plt.subplots()
+
+    plot_loss_axis(axis, train_losses, val_losses)
 
     fig.tight_layout()
     return fig

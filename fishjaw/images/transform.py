@@ -163,7 +163,7 @@ def crop(
         bounds[2][0] : bounds[2][1],
     ]
 
-    if retval.shape != crop_size:
+    if retval.shape != tuple(crop_size):
         raise UnexpectedCropError(
             f"Expected cropped image to be {crop_size}, got {retval.shape}"
         )

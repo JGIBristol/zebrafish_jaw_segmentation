@@ -95,3 +95,19 @@ model_params:
   kernel_size: 3
   stride: 2
   dropout: 0.01
+
+# Settings for the jaw location model
+# This should really be its own config file, shouldn't it?
+jaw_loc_config:
+  downsampled_dicom_size: [512, 128, 128]
+  initial_kernel_size: 8
+  batch_size: 8
+  n_workers: 10
+  device: "cuda"
+  learning_rate: 0.0001
+  num_epochs: 50
+  # Repeated from above ew
+  crop_size: [192, 192, 192]
+  dicom_dirs:
+    - "dicoms/Training set 2"
+    - "dicoms/Training set 4 (Wahab resegmented by felix)"
