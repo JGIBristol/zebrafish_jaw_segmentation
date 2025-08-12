@@ -57,7 +57,7 @@ def _visualize_mesh(
         mesh.vertices[:, 1],
         mesh.vertices[:, 2],
         triangles=mesh.faces,
-        **plot_kw
+        **plot_kw,
     )
     ax1.view_init(elev=0, azim=0)
 
@@ -67,7 +67,7 @@ def _visualize_mesh(
         mesh.vertices[:, 1],
         mesh.vertices[:, 2],
         triangles=mesh.faces,
-        **plot_kw
+        **plot_kw,
     )
     ax2.view_init(elev=90, azim=0)
 
@@ -77,7 +77,7 @@ def _visualize_mesh(
         mesh.vertices[:, 1],
         mesh.vertices[:, 2],
         triangles=mesh.faces,
-        **plot_kw
+        **plot_kw,
     )
     ax3.view_init(elev=0, azim=90)
 
