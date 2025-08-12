@@ -17,4 +17,5 @@ jobs:
 
     - name: Run Black
       run: |
+        uv sync --dev
         uv run black --check --diff .
