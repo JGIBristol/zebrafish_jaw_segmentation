@@ -239,6 +239,7 @@ def train(
                 loss.backward()
                 optimiser.step()
 
+                # Append the loss to the right list of lists
                 getattr(retval, f"train_{mapping[loss_fn]}")[-1].append(loss.item())
 
                 # Evaluate the other metrics
@@ -250,7 +251,7 @@ def train(
             for image, heatmap in val_loader:
                 image, heatmap = image.to(device), heatmap.to(device)
                 with torch.no_grad():
-                    outputs = model(image.to(device))
+                    outputs = model(image)
                     for fn in metrics:
                         getattr(retval, f"val_{mapping[fn]}")[-1].append(
                             fn(outputs, heatmap).item()
