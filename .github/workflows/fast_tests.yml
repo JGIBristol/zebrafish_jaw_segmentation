@@ -10,21 +10,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # NB I kept having mamba issues so this is how i'm doing it
     - name: Set up environment
-      run: |
-        ./install_env.sh
-        source "${HOME}/fishconda/etc/profile.d/conda.sh"
-        conda update -n base -c conda-forge conda
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: "latest"
+        run: uv sync
 
     - name: Run Unit Tests
       run: |
-        source "${HOME}/fishconda/etc/profile.d/conda.sh"
-        conda activate zebrafish_jaw_segmentation
-        python -m pytest fishjaw/test/test_unit
+        uv run pytest fishjaw/test/test_unit
 
     - name: Run Integration Tests
       run: |
-        source "${HOME}/fishconda/etc/profile.d/conda.sh"
-        conda activate zebrafish_jaw_segmentation
-        python -m pytest fishjaw/test/test_integration
+        uv run pytest fishjaw/test/test_integration
