@@ -11,19 +11,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v6
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint
+      run: uv sync --dev
+
     - name: Run Pylint
       id: pylint
       run:
-        # ignore import errors because I don't want to spend ages installing dependencies here
+        # ignore import errors
+        # It would be better if this didnt install all the dependencies
         |
-        pylint $(git ls-files '*.py') --disable=E0401 > pylint_report.txt 2>&1 || true
+        uv run pylint $(git ls-files '*.py') --disable=E0401 > pylint_report.txt 2>&1 || true
         cat pylint_report.txt
     - name: Check Pylint score
       id: check_score
