@@ -20,7 +20,7 @@ jobs:
       id: pylint
       run:
         # ignore import errors
-        # It would be better if this didnt install all the dependencies
+        # It would be better if this didn't install all the dependencies
         |
         uv run pylint $(git ls-files '*.py') --disable=E0401 > pylint_report.txt 2>&1 || true
         cat pylint_report.txt
