@@ -51,7 +51,7 @@ def get_model(device) -> AttentionUnet:
         out_channels=1,
         strides=(2, 2, 2, 2, 1),
         channels=(8, 12, 16, 24, 32),
-        dropout=0.1,
+        dropout=0.15,
         kernel_size=5,
     ).to(device)
 
