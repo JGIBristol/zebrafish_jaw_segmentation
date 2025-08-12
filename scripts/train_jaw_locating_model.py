@@ -126,6 +126,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         images=train_imgs,
         masks=train_labels,
         sigma=config["initial_kernel_size"],
+        augment=True,
     )
 
     val_imgs, val_labels = zip(*[io.read_dicom(p) for p in val_paths])
@@ -133,6 +134,7 @@ def main(model_name: str, debug_plots: bool, no_shrink_heatmap: bool) -> None:
         images=val_imgs,
         masks=val_labels,
         sigma=config["initial_kernel_size"],
+        augment=False,
     )
 
     # Plot training and validation heatmaps

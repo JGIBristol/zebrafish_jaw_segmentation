@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 import pydicom
 import numpy as np
+import torchio as tio
 from scipy.ndimage import zoom, center_of_mass, gaussian_filter
 
 
@@ -20,9 +21,14 @@ class HeatmapDataset(Dataset):
     Calculates the heatmaps by putting a Gaussian at the centroid of each mask.
     """
 
-    def __init__(self, images: list[np.ndarray], masks: list[np.ndarray], sigma: float):
+    def __init__(
+        self,
+        images: list[np.ndarray],
+        masks: list[np.ndarray],
+        sigma: float,
+        augment: bool,
+    ):
         self.img_shape = images[0].shape
-
         assert all(
             img.shape == mask.shape for img, mask in zip(images, masks)
         ), "All images and masks must have the same shape"
@@ -30,6 +36,17 @@ class HeatmapDataset(Dataset):
         assert all(
             img.shape == self.img_shape for img in images
         ), f"All images must have the same shape, {set(img.shape for img in images)}"
+
+        self.augment = augment
+        if self.augment:
+            self.transforms = tio.Compose(
+                [
+                    tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),
+                    tio.RandomAffine(
+                        scales=1, degrees=(0, 0, 90), translation=0, p=0.5
+                    ),
+                ]
+            )
 
         self.data = torch.tensor(
             np.array(images, dtype=np.float32), dtype=torch.float32
@@ -75,7 +92,17 @@ class HeatmapDataset(Dataset):
 
     def __getitem__(self, idx):
         """Doesn't send the data to a device"""
-        return self.data[idx], self.heatmaps[idx]
+        img, heatmap = self.data[idx], self.heatmaps[idx]
+
+        if self.augment:
+            subject = tio.Subject(
+                image=tio.ScalarImage(tensor=img),
+                heatmap=tio.ScalarImage(tensor=heatmap),
+            )
+            augmented = self.transforms(subject)
+            return augmented["image"].data, augmented["heatmap"].data
+        else:
+            return img, heatmap
 
 
 def downsampled_dicom_path(dicom_path: pathlib.Path) -> pathlib.Path:
