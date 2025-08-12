@@ -1,5 +1,5 @@
 # zebrafish_jaw_segmentation
-Segmentation of Zebrafish Jawbones from uCT scans using a U-Net
+Segmentation of Zebrafish Jawbones from uCT scans
 
 ![UT/IT](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/fast_tests.yml/badge.svg?branch=main)
 ![Tests](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/system_tests.yml/badge.svg?branch=main)
@@ -16,49 +16,36 @@ Manual segmentation takes a long time - even an imperfect automated segmentation
 (e.g. it's pretty easy to manually erode bits that aren't right) and let us do some more analyses, like
 statistical analyses on the morphology and finite element analysis.
 
-It's heavily based on the work performed by Wahab Kawafi in his PhD thesis[^1].
+The jaw segmentation is heavily based on the work performed by Wahab Kawafi in his PhD thesis[^1].
 
 The segmentation model is implemented in `pytorch`, using the `monai` `AttentionUnet` architecture.
 
 ## Usage
-In the below examples, shell commands are in `bash` on Linux.
-If you're not using linux, things might not work but also they might be fine.
+### Hardware
+You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA. The right libraries should be installed by `uv`.
 
-Also, becuase `python` environments are a huge mess, I've elected to prepend each python command with
-`PYTHONPATH=$(pwd)` which basically tells the python interpreter to look in the current directory for modules
-to import.
-You'll need to do this so it can import the `fishjaw` module, which is where all the code for this project lives.
-This means that I run scripts by typing e.g.
-
-```
-PYTHONPATH=$(pwd) python my_cool_script.py
-```
-on the command line.
-
-This isn't a perfect solution, but it's passable. Long-term, we might want to publish `fishjaw` as a package on pypi
-but we're not quite there yet.
-
-If you're on Windows and need to type something else, probably google it idk
+If you don't have cuda installed at all, you'll need to do that first-- on linux, this will be something like
+`sudo apt install nvidia-cuda-toolkit`.
 
 
 ### Environment
-The code here is written in Python.
-
-I use `conda` to manage my python environment.
+The python environment here is managed using `uv`; run scripts with e.g.:
 
 ```
-conda env create -f environment.yml
+uv run python my_cool_script.py
 ```
 
-You'll need an nvidia GPU to make this code work; a lot of it relies on CUDA.
-You might need to change the versions of CUDA etc. that this environment file looks for - see [here](https://pytorch.org/get-started/locally/)
-for a guide on which versions to use. If you don't have cuda installed at all, you'll need to do that first-- on linux, this will be something like
-`sudo apt install nvidia-cuda-toolkit`.
+To create the python environment:
+```
+uv sync
+```
+> [!IMPORTANT]
+> If you haven't done so already, you will need to [install `uv`](https://docs.astral.sh/uv/getting-started/installation/) first
 
-Old versions of conda are painfully, unusably slow, but modern `conda` versions are fast at solving
-the environment so are useful for rapidly getting stuff done.
-If it is taking you a long time to create an environment or install things in your `conda` environment,
-try updating or creating a fresh install of `conda` (consider using miniconda).
+If you're making any changes, you may want to additionally install the dev dependencies (for linting, testing etc.)
+```
+uv sync --dev
+```
 
 ### Setting up the data
 The first thing to do is convert the labelled data to DICOM files.
@@ -137,7 +124,7 @@ If you're running this code on your own computer, you'll want to change certain 
 i am the developer
 
 ### CI
-I've used GitHub Actions to run the CI.
+I've used GitHub Actions to run the CI. It doesn't do all that much.
 
 ### Linting, formatting and typing
 This is the main QA type stuff that I've set up-- linting with `pylint`, format checking with `black`.

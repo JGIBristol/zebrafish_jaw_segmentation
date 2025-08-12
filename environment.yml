@@ -1,3 +1,4 @@
+# This is deprecated - use uv and the dependencies in pyproject.toml
 name: zebrafish_jaw_segmentation
 channels:
   - pytorch
