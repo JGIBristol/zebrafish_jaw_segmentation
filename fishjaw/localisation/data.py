@@ -39,14 +39,7 @@ class HeatmapDataset(Dataset):
 
         self.augment = augment
         if self.augment:
-            self.transforms = tio.Compose(
-                [
-                    tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),
-                    tio.RandomAffine(
-                        scales=1, degrees=(0, 0, 90), translation=0, p=0.5
-                    ),
-                ]
-            )
+            self.transform = tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5)
 
         self.data = torch.tensor(
             np.array(images, dtype=np.float32), dtype=torch.float32
@@ -99,7 +92,7 @@ class HeatmapDataset(Dataset):
                 image=tio.ScalarImage(tensor=img),
                 heatmap=tio.ScalarImage(tensor=heatmap),
             )
-            augmented = self.transforms(subject)
+            augmented = self.transform(subject)
             return augmented["image"].data, augmented["heatmap"].data
         else:
             return img, heatmap
