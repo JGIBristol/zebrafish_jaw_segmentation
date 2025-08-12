@@ -60,9 +60,9 @@ def kl_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """
     KL Divergence loss
     """
-    B = pred.size(0)
-    pred = pred.view(B, -1)
-    target = target.view(B, -1)
+    batch_size = pred.size(0)
+    pred = pred.view(batch_size, -1)
+    target = target.view(batch_size, -1)
 
     eps = 1e-8
 
@@ -89,11 +89,11 @@ def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.T
     Dice loss for comparing predicted and target heatmaps.
     Works with continuous values (not binary masks).
     """
-    B = pred.size(0)
-    pred = torch.nn.functional.softmax(pred.view(B, -1), dim=1).view_as(pred)
+    batch_size = pred.size(0)
+    pred = torch.nn.functional.softmax(pred.view(batch_size, -1), dim=1).view_as(pred)
 
-    pred_flat = pred.view(B, -1)
-    target_flat = target.view(B, -1)
+    pred_flat = pred.view(batch_size, -1)
+    target_flat = target.view(batch_size, -1)
 
     pred_norm = pred_flat / (pred_flat.sum(dim=1, keepdim=True) + epsilon)
     target_norm = target_flat / (target_flat.sum(dim=1, keepdim=True) + epsilon)
@@ -108,7 +108,11 @@ def dice_loss(pred: torch.Tensor, target: torch.Tensor, epsilon=1e-6) -> torch.T
 
 
 def _dataloader(
-    dataset: torch.utils.data.Dataset, *, num_workers: int, batch_size: int, train: bool
+    dataset: torch.utils.data.Dataset,
+    *,
+    num_workers: int,
+    batch_size: int,
+    is_training: bool,
 ) -> torch.utils.data.DataLoader:
     """
     Hard-coded options for the dataloader...
@@ -116,9 +120,9 @@ def _dataloader(
     return torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
-        shuffle=train,
+        shuffle=is_training,
         num_workers=num_workers,
-        drop_last=train,
+        drop_last=is_training,
         pin_memory=True,
         persistent_workers=False,  # Since we might modify the dataset during training
     )
@@ -144,10 +148,10 @@ def _shrink_heatmaps(
 
     # Recreate loaders
     train_loader = _dataloader(
-        train_data, num_workers=num_workers, batch_size=batch_size, train=True
+        train_data, num_workers=num_workers, batch_size=batch_size, is_training=True
     )
     val_loader = _dataloader(
-        val_data, num_workers=num_workers, batch_size=batch_size, train=False
+        val_data, num_workers=num_workers, batch_size=batch_size, is_training=False
     )
 
     # Plot a heatmap, labelling the epoch and sigma
@@ -186,17 +190,17 @@ def train(
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     train_loader = _dataloader(
-        train_data, num_workers=num_workers, batch_size=batch_size, train=True
+        train_data, num_workers=num_workers, batch_size=batch_size, is_training=True
     )
     val_loader = _dataloader(
-        val_data, num_workers=num_workers, batch_size=batch_size, train=False
+        val_data, num_workers=num_workers, batch_size=batch_size, is_training=False
     )
 
     loss_fn = kl_loss
 
     retval = TrainMetrics(None, [], [], [], [], [], [], [], [])
     metrics = [dice_loss, kl_loss, mse_loss]
-    non_loss_fns = tuple((f for f in metrics if f != loss_fn))
+    non_loss_fns = tuple((f for f in metrics if f is not loss_fn))
 
     # Mapping for function objects onto names that we will use
     # to assign the right things in the return value
@@ -228,13 +232,13 @@ def train(
             retval.train_mse.append([])
             retval.val_mse.append([])
 
-            for image, heatmap in train_loader:
-                image, heatmap = image.to(device), heatmap.to(device)
+            for image, heatmap_ in train_loader:
+                image, heatmap_ = image.to(device), heatmap_.to(device)
 
                 optimiser.zero_grad()
 
                 outputs = model(image)
-                loss = loss_fn(outputs, heatmap)
+                loss = loss_fn(outputs, heatmap_)
 
                 loss.backward()
                 optimiser.step()
@@ -245,16 +249,16 @@ def train(
                 # Evaluate the other metrics
                 for fn in non_loss_fns:
                     getattr(retval, f"train_{mapping[fn]}")[-1].append(
-                        fn(outputs, heatmap).item()
+                        fn(outputs, heatmap_).item()
                     )
 
-            for image, heatmap in val_loader:
-                image, heatmap = image.to(device), heatmap.to(device)
+            for image, heatmap_ in val_loader:
+                image, heatmap_ = image.to(device), heatmap_.to(device)
                 with torch.no_grad():
                     outputs = model(image)
                     for fn in metrics:
                         getattr(retval, f"val_{mapping[fn]}")[-1].append(
-                            fn(outputs, heatmap).item()
+                            fn(outputs, heatmap_).item()
                         )
 
             # Assign the losses in the metrics object too
@@ -315,15 +319,15 @@ def heatmap(model: torch.nn.Module, image: np.ndarray) -> np.ndarray:
     # Apply activation
     # Use softmax instead of sigmoid since the model returns logits and we
     # want to convert them to probabilities
-    B = heatmap_.size(0)
-    heatmap_ = torch.nn.functional.softmax(heatmap_.view(B, -1), dim=1).view_as(
-        heatmap_
-    )
+    batch_size = heatmap_.size(0)
+    heatmap_ = torch.nn.functional.softmax(
+        heatmap_.view(batch_size, -1), dim=1
+    ).view_as(heatmap_)
 
     return heatmap_.squeeze().cpu().numpy()
 
 
-def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
+def _heatmap_center(heatmap_: torch.Tensor) -> list[tuple[int, int, int]]:
     """
     Find the center of the heatmap(s) by convolving with a Gaussian
 
@@ -339,14 +343,14 @@ def _heatmap_center(heatmap: torch.Tensor) -> list[tuple[int, int, int]]:
     kernel = kernel.view(1, 1, *kernel.shape)
 
     smoothed_heatmap = torch.nn.functional.conv3d(
-        heatmap, kernel, padding=kernel_size // 2
+        heatmap_, kernel, padding=kernel_size // 2
     )
 
     # Find the index of the maximum value in the smoothed heatmap
     flat_idx = torch.argmax(smoothed_heatmap.view(smoothed_heatmap.size(0), -1), dim=1)
 
     # Convert it to a 3d coord
-    batch_size, _, z_size, y_size, x_size = smoothed_heatmap.shape
+    batch_size, _, _, y_size, x_size = smoothed_heatmap.shape
     z = flat_idx // (y_size * x_size)
     y = (flat_idx % (y_size * x_size)) // x_size
     x = flat_idx % x_size

@@ -13,7 +13,8 @@ import pydicom
 import tifffile
 import numpy as np
 import torchio as tio
-import torch, torch.utils
+import torch
+import torch.utils
 from tqdm import tqdm
 
 from ..images import io, transform
