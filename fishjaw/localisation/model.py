@@ -214,9 +214,13 @@ def train(
             # then we want to shrink the heatmap
             if (
                 shrink_heatmap
-                and (train_data.get_sigma() > 0.5)
+                and (train_data.get_sigma() > 1.0)
                 and (
-                    (np.max(retval.train_losses[-1]) if retval.train_losses else np.inf)
+                    (
+                        np.mean(retval.train_losses[-1])
+                        if retval.train_losses
+                        else np.inf
+                    )
                     < 1.0
                 )
             ):
