@@ -71,24 +71,14 @@ def _create_boxplot(data, labels, out_dir, plot_number):
     bp = ax.boxplot(data, labels=labels, patch_artist=True)
 
     # Customize appearance
-    ax.set_title(f"Greyscale Value Distribution - Batch {plot_number}")
-    ax.set_xlabel("Sample")
-    ax.set_ylabel("Greyscale Value")
+    ax.set_title(f"Greyscale Values")
     ax.tick_params(axis="x", rotation=45)
 
-    # Color the boxes
-    colors = plt.cm.Set3(range(len(data)))
-    for patch, color in zip(bp["boxes"], colors):
-        patch.set_facecolor(color)
+    fig.tight_layout()
 
-    plt.tight_layout()
-
-    # Save the plot
     output_path = out_dir / f"boxplot_{plot_number}.png"
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
-
-    print(f"Saved boxplot to {output_path}")
 
 
 if __name__ == "__main__":
