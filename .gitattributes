@@ -1,1 +1,2 @@
 model/paper_model.pkl filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
