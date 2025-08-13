@@ -20,7 +20,6 @@ def main():
     """
     mastersheet = files._mastersheet()
     mastersheet.set_index("n")
-    print(mastersheet.to_markdown())
 
     in_dir = files.script_out_dir() / "jaw_segmentations"
     img_in_dir = in_dir / "imgs"
@@ -32,11 +31,64 @@ def main():
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
+    # Storage for current batch
+    batch_data = []
+    batch_labels = []
+    batch_count = 0
+    plot_number = 1
+
     for img, mask in tqdm(zip(in_imgs, in_masks, strict=True), total=len(in_imgs)):
         i = tifffile.imread(img)
         m = tifffile.imread(mask)
 
         greyscale_vals = i[m]
+
+        # Add to current batch
+        batch_data.append(greyscale_vals)
+        batch_labels.append(img.stem)  # Use filename without extension as label
+        batch_count += 1
+
+        # Create plot every 10 iterations
+        if batch_count == 10:
+            _create_boxplot(batch_data, batch_labels, out_dir, plot_number)
+
+            # Reset for next batch
+            batch_data = []
+            batch_labels = []
+            batch_count = 0
+            plot_number += 1
+
+    # Handle remaining data (if not exactly divisible by 10)
+    if batch_data:
+        _create_boxplot(batch_data, batch_labels, out_dir, plot_number)
+
+
+def _create_boxplot(data, labels, out_dir, plot_number):
+    """Create and save a boxplot for the current batch"""
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Create boxplot
+    bp = ax.boxplot(data, labels=labels, patch_artist=True)
+
+    # Customize appearance
+    ax.set_title(f"Greyscale Value Distribution - Batch {plot_number}")
+    ax.set_xlabel("Sample")
+    ax.set_ylabel("Greyscale Value")
+    ax.tick_params(axis="x", rotation=45)
+
+    # Color the boxes
+    colors = plt.cm.Set3(range(len(data)))
+    for patch, color in zip(bp["boxes"], colors):
+        patch.set_facecolor(color)
+
+    plt.tight_layout()
+
+    # Save the plot
+    output_path = out_dir / f"boxplot_{plot_number}.png"
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"Saved boxplot to {output_path}")
 
 
 if __name__ == "__main__":
