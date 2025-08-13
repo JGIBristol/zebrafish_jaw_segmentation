@@ -37,17 +37,32 @@ def main():
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
-    plot_kw = {"marker": "s"}
+    plot_kw = {"marker": "s", "cmap": "inferno", "vmin": 0, "vmax": 2**15}
     for img, mask in tqdm(zip(in_imgs, in_masks, strict=True), total=len(in_imgs)):
         i = tifffile.imread(img)
         m = tifffile.imread(mask)
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": "3d"})
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, subplot_kw={"projection": "3d"}, figsize=(12, 5)
+        )
+
+        if "s" not in plot_kw:
+            # Calculate point size so each point is roughly 1 pixel
+            # Assumes all the images are the same size, which they probably
+            # are
+            img_size = tifffile.imread(img).shape
+            plot_kw["s"] = _calculate_point_size(plt.gca(), img_size)
 
         co_ords = np.argwhere(m)
+        greyscale_vals = i[co_ords[:, 0], co_ords[:, 1], co_ords[:, 2]]
 
         for a in (ax1, ax2):
-            a.scatter(co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], **plot_kw)
+            scatter = a.scatter(
+                co_ords[:, 0], co_ords[:, 1], co_ords[:, 2], **plot_kw, c=greyscale_vals
+            )
+            a.axis("off")
+
+        fig.colorbar(scatter, ax=[ax1, ax2], shrink=0.5, aspect=20)
 
         ax1.view_init(elev=45, azim=-90, roll=-140)
         ax2.view_init(elev=180, azim=30)
