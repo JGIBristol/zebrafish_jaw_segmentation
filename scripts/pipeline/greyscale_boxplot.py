@@ -45,7 +45,7 @@ def main():
 
         # Add to current batch
         batch_data.append(greyscale_vals)
-        batch_labels.append(img.stem)  # Use filename without extension as label
+        batch_labels.append(img.stem)
         batch_count += 1
 
         # Create plot every 10 iterations
@@ -67,12 +67,12 @@ def _create_boxplot(data, labels, out_dir, plot_number):
     """Create and save a boxplot for the current batch"""
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Create boxplot
-    bp = ax.boxplot(data, labels=labels, patch_artist=True)
+    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True)
 
     # Customize appearance
     ax.set_title(f"Greyscale Values")
     ax.tick_params(axis="x", rotation=45)
+    ax.set_ylim(0, 2**16)
 
     fig.tight_layout()
 
