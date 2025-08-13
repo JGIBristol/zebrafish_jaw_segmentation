@@ -11,8 +11,18 @@ import functools
 
 import torch
 import numpy as np
+import torchio as tio
 
 from ..localisation.model import get_model, crop
+from ..model import data
+from ..model.model import load_model, predict
+from ..images.metrics import largest_connected_component
+
+
+class InferenceError(Exception):
+    """
+    Something went wrong
+    """
 
 
 @functools.cache
@@ -38,11 +48,14 @@ def get_jaw_loc_model(*, device: str) -> torch.nn.Module:
 
 
 @functools.cache
-def get_jaw_segment_model() -> torch.nn.Module:
+def get_jaw_segment_model(device: str) -> torch.nn.Module:
     """
     Get the network used to segment the jaw from a cropped CT scan
 
+    :param device: either "cuda" to run on GPU or "cpu"
+    :returns: trained jaw segmentation model
     """
+    return load_model("paper_model.pkl").load_model(set_eval=True).to(device)
 
 
 def crop_jaw(
@@ -78,8 +91,47 @@ def crop_jaw(
 
 
 def segment_jaw(
-    cropped_ct_scan: np.ndarray, jaw_segment_model: torch.nn.Module
+    cropped_ct_scan: np.ndarray,
+    jaw_segment_model: torch.nn.Module,
+    *,
+    threshold: float | None = 0.5,
+    largest_component: bool = True,
 ) -> np.ndarray:
     """
     Segment the jaw from a cropped CT scan
+
+    Thresholds the model's output at 0.5, and takes the largest connected component
+
+    :param cropped_ct_scan: 3D CT scan to perform inference on
+    :param jaw_segment_model: trained model for performing jaw segmentation
+    :param threshold: either a float, in which case the output is thresholded
     """
+    if largest_component and threshold is None:
+        raise InferenceError(
+            "Cannot take the largest connected component unless model output is thresholded"
+        )
+
+    # These are hard-coded because they are the settings we trained the
+    # model with
+    patch_size = (160, 160, 160)
+    patch_overlap = (4, 4, 4)
+    activation = "sigmoid"
+
+    scaled = data.ints2float(cropped_ct_scan)
+    tensor = torch.as_tensor(scaled, dtype=torch.float32).unsqueeze(0)
+    subject = tio.Subject(image=tio.Image(tensor=tensor, type=tio.INTENSITY))
+    prediction = predict(
+        jaw_segment_model,
+        subject,
+        patch_size=patch_size,
+        patch_overlap=patch_overlap,
+        activation=activation,
+    )
+
+    if threshold is not None:
+        prediction = prediction > threshold
+
+    if largest_component:
+        prediction = largest_connected_component(prediction)
+
+    return prediction
