@@ -47,6 +47,10 @@ def main(crop_size: int):
 
     for img_path in tqdm(sorted(list(input_dir.glob("*.tif")))):
         name = img_path.name
+        if (img_out_dir / name).exists() and (mask_out_dir / name).exists():
+            print(f"Skipping {name}")
+            continue
+
         scan = tifffile.imread(img_path)
 
         # Crop the image
