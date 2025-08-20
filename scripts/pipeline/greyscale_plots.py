@@ -10,24 +10,24 @@ This script will:
    currently isn't very useful for presentation of analysis
 """
 
+import pathlib
 import argparse
 import tifffile
 
+import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
-from fishjaw.visualisation import images_3d
 
 
 def _create_boxplot(data, labels, out_dir, plot_number):
     """Create and save a boxplot for the current batch"""
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True)
+    ax.boxplot(data, tick_labels=labels, patch_artist=True)
 
-    # Customize appearance
-    ax.set_title(f"Greyscale Values")
+    ax.set_title("Greyscale Values")
     ax.tick_params(axis="x", rotation=45)
     ax.set_ylim(0, 2**16)
 
@@ -35,6 +35,21 @@ def _create_boxplot(data, labels, out_dir, plot_number):
 
     output_path = out_dir / f"boxplot_{plot_number}.png"
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _hist(vals: np.ndarray, path: pathlib.Path) -> None:
+    """
+    Plot a hist of greyscale vals and save it to the specified path
+    """
+    fig, axis = plt.subplots(figsize=(8, 6))
+
+    axis.hist(vals, bins=np.linspace(0, 2**15, 100), histtype="stepfilled")
+    axis.set_title(path.stem)
+
+    fig.tight_layout()
+    fig.savefig(path)
+
     plt.close(fig)
 
 
@@ -54,10 +69,13 @@ def main():
     out_dir = in_dir / "boxplot"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    hist_out_dir = in_dir / "hists"
+    hist_out_dir.mkdir(parents=True, exist_ok=True)
+
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
-    # Storage for current batch
+    # Storage for current batch of boxplots
     batch_data = []
     batch_labels = []
     batch_count = 0
@@ -68,6 +86,9 @@ def main():
         m = tifffile.imread(mask)
 
         greyscale_vals = i[m]
+
+        # Plot and save a histogram
+        _hist(greyscale_vals, hist_out_dir / img.name.replace(".tif", ".png"))
 
         # Add to current batch
         batch_data.append(greyscale_vals)
