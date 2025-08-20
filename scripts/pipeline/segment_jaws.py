@@ -53,7 +53,15 @@ def main(crop_size: int):
             print(f"Skipping {name}")
             continue
 
-        scan = tifffile.imread(img_path)
+        try:
+            scan = tifffile.imread(img_path)
+        except ValueError as e:
+            print(
+                f"Error reading {name}; is the tiff file incomplete?\n{str(e)}",
+                file=sys.stderr,
+            )
+            continue
+
 
         # Crop the image
         try:
