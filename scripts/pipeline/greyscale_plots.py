@@ -53,7 +53,7 @@ def _hist(vals: np.ndarray, path: pathlib.Path) -> None:
     plt.close(fig)
 
 
-def main():
+def main(boxplot: bool):
     """
     Read in the mastersheet to get metadata from the different segmentations
 
@@ -90,7 +90,11 @@ def main():
         # Plot and save a histogram
         _hist(greyscale_vals, hist_out_dir / img.name.replace(".tif", ".png"))
 
-        # Add to current batch
+        # For speed i've added an option to skip the boxplot, which is relatively slow
+        if not boxplot:
+            continue
+
+        # Add a boxplot to the current batch
         batch_data.append(greyscale_vals)
         batch_labels.append(img.stem)
         batch_count += 1
@@ -112,6 +116,8 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--boxplot", action="store_true", help="Also make boxplots")
+
     args = parser.parse_args()
 
     main(**vars(args))
