@@ -1,5 +1,13 @@
 """
-Plot boxplots of the greyscale distribution of the jaws
+Simple analysis of the greyscale content of the segmentations.
+
+This is interesting because it tells us about the bone density at each voxel.
+
+This script will:
+ - Plot histograms of the greyscale distribution of each jaw
+ - Plot boxplots of the greyscale distribution of the jaws, grouped to have
+   10 per plot. This part of the script is just a quick prototype, it
+   currently isn't very useful for presentation of analysis
 """
 
 import argparse
