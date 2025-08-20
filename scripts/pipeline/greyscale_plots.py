@@ -57,7 +57,10 @@ def main(boxplot: bool):
     """
     Read in the mastersheet to get metadata from the different segmentations
 
-    Then read in pairs of images and masks
+    Then read in pairs of images and masks, and extract the jaw voxels for each segmentation.
+
+    Then make the plots - 1d histograms of each, and optionally boxplots.
+    Will check if the 1d histograms exist, and if so will skip that file (for speed)
     """
     mastersheet = files._mastersheet()
     mastersheet.set_index("n")
@@ -82,13 +85,18 @@ def main(boxplot: bool):
     plot_number = 1
 
     for img, mask in tqdm(zip(in_imgs, in_masks, strict=True), total=len(in_imgs)):
+        hist_out_path = hist_out_dir / img.name.replace(".tif", ".png")
+        if hist_out_path.is_file():
+            print(f"Skipping {hist_out_path.stem}")
+            continue
+
         i = tifffile.imread(img)
         m = tifffile.imread(mask)
 
         greyscale_vals = i[m]
 
         # Plot and save a histogram
-        _hist(greyscale_vals, hist_out_dir / img.name.replace(".tif", ".png"))
+        _hist(greyscale_vals, hist_out_path)
 
         # For speed i've added an option to skip the boxplot, which is relatively slow
         if not boxplot:
