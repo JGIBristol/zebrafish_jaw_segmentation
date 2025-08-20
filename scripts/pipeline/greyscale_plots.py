@@ -20,6 +20,24 @@ from fishjaw.util import files
 from fishjaw.visualisation import images_3d
 
 
+def _create_boxplot(data, labels, out_dir, plot_number):
+    """Create and save a boxplot for the current batch"""
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True)
+
+    # Customize appearance
+    ax.set_title(f"Greyscale Values")
+    ax.tick_params(axis="x", rotation=45)
+    ax.set_ylim(0, 2**16)
+
+    fig.tight_layout()
+
+    output_path = out_dir / f"boxplot_{plot_number}.png"
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     """
     Read in the mastersheet to get metadata from the different segmentations
@@ -69,24 +87,6 @@ def main():
     # Handle remaining data (if not exactly divisible by 10)
     if batch_data:
         _create_boxplot(batch_data, batch_labels, out_dir, plot_number)
-
-
-def _create_boxplot(data, labels, out_dir, plot_number):
-    """Create and save a boxplot for the current batch"""
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True)
-
-    # Customize appearance
-    ax.set_title(f"Greyscale Values")
-    ax.tick_params(axis="x", rotation=45)
-    ax.set_ylim(0, 2**16)
-
-    fig.tight_layout()
-
-    output_path = out_dir / f"boxplot_{plot_number}.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.close(fig)
 
 
 if __name__ == "__main__":
