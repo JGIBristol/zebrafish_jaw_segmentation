@@ -5,6 +5,7 @@ jaw and segment it out
 Saves the cropped jaw TIF and segmentation mask
 """
 
+import sys
 import pathlib
 import argparse
 import tifffile
@@ -13,6 +14,7 @@ from tqdm import tqdm
 
 from fishjaw.util import files, util
 from fishjaw.inference import models
+from fishjaw.images.transform import CropOutOfBoundsError
 
 
 def main(crop_size: int):
@@ -51,10 +53,26 @@ def main(crop_size: int):
             print(f"Skipping {name}")
             continue
 
-        scan = tifffile.imread(img_path)
+        try:
+            scan = tifffile.imread(img_path)
+        except ValueError as e:
+            print(
+                f"Error reading {name}; is the tiff file incomplete?\n{str(e)}",
+                file=sys.stderr,
+            )
+            continue
 
         # Crop the image
-        cropped = models.crop_jaw(loc_model, scan, window_size=tuple([crop_size] * 3))
+        try:
+            cropped = models.crop_jaw(
+                loc_model, scan, window_size=tuple([crop_size] * 3)
+            )
+        except CropOutOfBoundsError as e:
+            print(
+                f"Error cropping {name}; likely an issue with the jaw localising model\n{str(e)}",
+                file=sys.stderr,
+            )
+            continue
 
         # Run inference
         prediction = models.segment_jaw(cropped, seg_model)
