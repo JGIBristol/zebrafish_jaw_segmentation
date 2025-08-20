@@ -62,7 +62,6 @@ def main(crop_size: int):
             )
             continue
 
-
         # Crop the image
         try:
             cropped = models.crop_jaw(
