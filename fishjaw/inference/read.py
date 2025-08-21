@@ -5,12 +5,14 @@ Functions to read in our data in a format that can be used for inference
 
 import pickle
 import pathlib
+from functools import cache
 from dataclasses import dataclass
 
 import torch
 import pydicom
 import tifffile
 import numpy as np
+import pandas as pd
 import torchio as tio
 
 from fishjaw.util import files
@@ -40,7 +42,7 @@ class Metadata:
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
     def __str__(self):
-        return f"{genotype} {strain} {name} ({age} months)\n{comments}".strip()
+        return f"{self.genotype} {self.strain} {self.name} ({self.age} months)\n{self.comments}".strip()
 
 
 def crop_lookup() -> dict[int, tuple[int, int, int]]:
@@ -160,3 +162,62 @@ def test_subject(model_name: str) -> tio.Subject:
         "rb",
     ) as f:
         return pickle.load(f)
+
+
+@cache
+def mastersheet() -> pd.DataFrame:
+    """
+    Metadata mastersheet, in a more useful format
+    """
+    retval = files._mastersheet()
+
+    retval = retval[
+        [
+            "n",
+            "age",
+            "genotype",
+            "strain",
+            "name",
+            "VoxelSizeX",
+            "VoxelSizeY",
+            "VoxelSizeZ",
+            "length",
+            "Comments",
+        ]
+    ]
+
+    # Convert datatypes
+    retval = retval.astype(
+        {
+            "n": int,
+            "age": int,
+            "length": float,
+            **{col: float for col in ["VoxelSizeX", "VoxelSizeY", "VoxelSizeZ"]},
+        }
+    )
+
+    retval.set_index("n", inplace=True)
+    return retval
+
+
+def metadata(fish_n: int) -> Metadata:
+    """
+    Get the metadata for one fish
+
+    :param fish_n: fish number, using the "n" (i.e. new, not "old_n") convention
+    :returns: Metadata
+
+    """
+    # Get a pd.Series representing the right stuff
+    df = mastersheet().loc[fish_n]
+
+    # Turn it into a metadata object
+    return Metadata(
+        age=df["age"],
+        genotype=df["genotype"],
+        strain=df["strain"],
+        name=df["name"],
+        voxel_volume=df["VoxelSizeX"] * df["VoxelSizeY"] * df["VoxelSizeZ"],
+        length=df["length"],
+        comments=df["Comments"],
+    )
