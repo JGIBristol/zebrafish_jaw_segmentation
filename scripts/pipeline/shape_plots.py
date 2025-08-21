@@ -19,6 +19,31 @@ from fishjaw.util import files
 from fishjaw.inference import read
 
 
+def _plot_vol_vs_age(ages: list[int], volumes: list[float], out_path: pathlib.Path):
+    """
+    Plot volume vs age
+    """
+    # Perform a simple linear fit to get the trendline
+    z, cov = np.polyfit(ages, volumes, 1, cov=True)
+    p = np.poly1d(z)
+
+    fig, axis = plt.subplots(figsize=(8, 6))
+    axis.scatter(ages, volumes, alpha=0.5)
+    axis.set_xlabel("Age (months)")
+    axis.set_ylabel(r"Volume $\left(mm^3\right)$")
+
+    unique_ages = list(set(ages))
+    axis.plot(unique_ages, p(unique_ages), color="red", linestyle="--")
+
+    axis.set_title(
+        f"Average increase: {z[0]:.3f}$\pm${np.sqrt(cov[0, 0]):.3f} $mm^3$/month\nN={len(ages)}"
+    )
+
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
 def main():
     """
     Read in the mastersheet to get metadata from the different segmentations, so
@@ -51,25 +76,7 @@ def main():
         ages.append(metadata.age)
         volumes.append(vol)
 
-    # Perform a simple linear fit to get the trendline
-    z, cov = np.polyfit(ages, volumes, 1, cov=True)
-    p = np.poly1d(z)
-
-    fig, axis = plt.subplots(figsize=(8, 6))
-    axis.scatter(ages, volumes, alpha=0.5)
-    axis.set_xlabel("Age (months)")
-    axis.set_ylabel(r"Volume $\left(mm^3\right)$")
-
-    unique_ages = list(set(ages))
-    axis.plot(unique_ages, p(unique_ages), color="red", linestyle="--")
-
-    axis.set_title(
-        f"Average increase: {z[0]:.3f}$\pm${np.sqrt(cov[0, 0]):.3f} $mm^3$/month\nN={len(ages)}"
-    )
-
-    fig.tight_layout()
-    fig.savefig(out_path)
-    plt.close(fig)
+    _plot_vol_vs_age(ages, volumes, out_path)
 
 
 if __name__ == "__main__":
