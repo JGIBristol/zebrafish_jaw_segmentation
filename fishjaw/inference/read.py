@@ -45,9 +45,10 @@ class Metadata:
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
     def __str__(self):
+        age = f"{self.age} months" if self.age >= 0 else "unknown age"
         return (
             f"N={self.n}: {self.genotype} {self.strain} {self.name} "
-            f"({self.age} months)\n{textwrap.fill(self.comments)}".strip()
+            f"({age})\n{textwrap.fill(self.comments)}".strip()
         )
 
 
