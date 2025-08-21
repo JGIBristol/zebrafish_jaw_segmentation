@@ -19,6 +19,31 @@ from fishjaw.util import files
 from fishjaw.inference import read
 
 
+def _all_plots(
+    ages: list[int], volumes: list[float], lengths: list[float], out_path: pathlib.Path
+):
+    """
+    Create all plots for the given ages, volumes, and lengths.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(8, 6))
+
+    axes[0].scatter(ages, volumes, alpha=0.5)
+    axes[0].set_xlabel("Age")
+    axes[0].set_ylabel("Vol")
+
+    axes[1].scatter(ages, lengths, alpha=0.5)
+    axes[1].set_xlabel("Age")
+    axes[1].set_ylabel("Length")
+
+    axes[2].scatter(volumes, lengths, alpha=0.5)
+    axes[2].set_xlabel("Vol")
+    axes[2].set_ylabel("Length")
+
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
 def _plot_vol_vs_age(ages: list[int], volumes: list[float], out_path: pathlib.Path):
     """
     Plot volume vs age
@@ -60,6 +85,7 @@ def main():
 
     ages = []
     volumes = []
+    lengths = []
 
     for mask_path in tqdm(in_masks, total=len(in_masks)):
         fish_n = read.fish_number(mask_path)
@@ -75,8 +101,10 @@ def main():
 
         ages.append(metadata.age)
         volumes.append(vol)
+        lengths.append(metadata.length)
 
     _plot_vol_vs_age(ages, volumes, out_path)
+    _all_plots(ages, volumes, lengths, out_path.with_name("all_plots.png"))
 
 
 if __name__ == "__main__":
