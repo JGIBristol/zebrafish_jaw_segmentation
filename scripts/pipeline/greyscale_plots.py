@@ -16,9 +16,10 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from fishjaw.util import files
+from fishjaw.inference import read
 
 
-def _hist(vals: np.ndarray, path: pathlib.Path) -> None:
+def _hist(vals: np.ndarray, path: pathlib.Path, metadata: read.Metadata) -> None:
     """
     Plot a hist of greyscale vals and save it to the specified path
     """
@@ -27,7 +28,7 @@ def _hist(vals: np.ndarray, path: pathlib.Path) -> None:
     axis.hist(vals, bins=np.linspace(0, 2**16, 100), histtype="stepfilled")
 
     axis.set_ylim(0, max(4000, axis.get_ylim()[1]))
-    axis.set_title(path.stem)
+    axis.set_title(str(metadata))
 
     fig.tight_layout()
     fig.savefig(path)
@@ -53,16 +54,21 @@ def main():
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
-    for img, mask in tqdm(zip(in_imgs, in_masks, strict=True), total=len(in_imgs)):
-        hist_out_path = hist_out_dir / img.name.replace(".tif", ".png")
+    for img_path, mask_path in tqdm(
+        zip(in_imgs, in_masks, strict=True), total=len(in_imgs)
+    ):
+        # Get the metadata
+        metadata: read.Metadata = read.metadata(read.fish_number(img_path))
 
-        i = tifffile.imread(img)
-        m = tifffile.imread(mask)
+        hist_out_path = hist_out_dir / img_path.name.replace(".tif", ".png")
+
+        i = tifffile.imread(img_path)
+        m = tifffile.imread(mask_path)
 
         greyscale_vals = i[m]
 
         # Plot and save a histogram
-        _hist(greyscale_vals, hist_out_path)
+        _hist(greyscale_vals, hist_out_path, metadata)
 
 
 if __name__ == "__main__":

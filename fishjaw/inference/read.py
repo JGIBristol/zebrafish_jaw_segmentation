@@ -5,16 +5,51 @@ Functions to read in our data in a format that can be used for inference
 
 import pickle
 import pathlib
+import textwrap
+from functools import cache
+from dataclasses import dataclass
 
 import torch
 import pydicom
 import tifffile
 import numpy as np
+import pandas as pd
 import torchio as tio
 
 from fishjaw.util import files
 from fishjaw.images import transform
 from fishjaw.model import data
+
+
+@dataclass
+class Metadata:
+    """
+    The interesting/important metadata for a fish sample
+    """
+
+    n: int
+    """ Fish number, using the new n (i.e. n not old_n) convention """
+    age: int
+    """ Age in months """
+    genotype: str
+    """ Genotype, e.g. wt/hom/het"""
+    strain: str
+    """ e.g. chst11, runx2, wt"""
+    name: str
+    """ e.g. fli:gfp, wt, dot1 +/-"""
+    length: float
+    """ Not sure what this is: possibly fish length in mm"""
+    voxel_volume: float
+    """ Volume of each voxel; not sure of the units, possibly mm^3"""
+    comments: str
+    """Any other comments - importantly sometimes contains info about contrast enhancement"""
+
+    def __str__(self):
+        age = f"{self.age} months" if self.age >= 0 else "unknown age"
+        return (
+            f"N={self.n}: {self.genotype} {self.strain} {self.name} "
+            f"({age})\n{textwrap.fill(self.comments)}".strip()
+        )
 
 
 def crop_lookup() -> dict[int, tuple[int, int, int]]:
@@ -134,3 +169,79 @@ def test_subject(model_name: str) -> tio.Subject:
         "rb",
     ) as f:
         return pickle.load(f)
+
+
+@cache
+def mastersheet() -> pd.DataFrame:
+    """
+    Metadata mastersheet, in a more useful format
+    """
+    retval = files._mastersheet()
+
+    retval = retval[
+        [
+            "n",
+            "age",
+            "genotype",
+            "strain",
+            "name",
+            "VoxelSizeX",
+            "VoxelSizeY",
+            "VoxelSizeZ",
+            "length",
+            "Comments",
+        ]
+    ]
+
+    # Fill NaN ages with -1 and empty comments with empty str
+    retval.loc[:, "age"] = retval["age"].fillna(-1)
+    retval.loc[:, "Comments"] = retval["Comments"].fillna("")
+
+    # Convert datatypes
+    retval = retval.astype(
+        {
+            "n": int,
+            "age": int,
+            "length": float,
+            **{col: float for col in ["VoxelSizeX", "VoxelSizeY", "VoxelSizeZ"]},
+        }
+    )
+
+    retval.set_index("n", inplace=True)
+    return retval
+
+
+def fish_number(path: pathlib.Path) -> int:
+    """
+    Get the fish number from a filename, assuming the file follows the
+    "ak_<n>.<ext>" pattern
+
+    :param path: the path to the file
+
+    :returns: the fish number
+    """
+    return int(path.stem.split("_")[1])
+
+
+def metadata(fish_n: int) -> Metadata:
+    """
+    Get the metadata for one fish
+
+    :param fish_n: fish number, using the "n" (i.e. new, not "old_n") convention
+    :returns: Metadata
+
+    """
+    # Get a pd.Series representing the right stuff
+    df = mastersheet().loc[fish_n]
+
+    # Turn it into a metadata object
+    return Metadata(
+        n=fish_n,
+        age=df["age"],
+        genotype=df["genotype"],
+        strain=df["strain"],
+        name=df["name"],
+        voxel_volume=df["VoxelSizeX"] * df["VoxelSizeY"] * df["VoxelSizeZ"],
+        length=df["length"],
+        comments=df["Comments"],
+    )
