@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from fishjaw.util import files
+from fishjaw.inference import read
 from fishjaw.visualisation import images_3d
 
 
@@ -37,8 +38,10 @@ def main():
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
-    plot_kw = {"marker": "s", "cmap": "inferno", "vmin": 0, "vmax": 2**15}
+    plot_kw = {"marker": "s", "cmap": "inferno", "vmin": 0, "vmax": 2**16}
     for img, mask in tqdm(zip(in_imgs, in_masks, strict=True), total=len(in_imgs)):
+        metadata = read.metadata(read.fish_number(img))
+
         i = tifffile.imread(img)
         m = tifffile.imread(mask)
 
@@ -66,6 +69,8 @@ def main():
 
         ax1.view_init(elev=45, azim=-90, roll=-140)
         ax2.view_init(elev=180, azim=30)
+
+        fig.suptitle(str(metadata))
 
         fig.savefig(out_dir / img.name.replace(".tif", ".png"))
         plt.close(fig)
