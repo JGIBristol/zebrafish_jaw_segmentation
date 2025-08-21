@@ -42,7 +42,6 @@ def main():
 
         # Check the metadata for inclusion - we might want to skip it, in which case print
         if read.is_excluded(fish_n, exclude_train_data=False, exclude_unknown_age=True):
-            print(f"Excluding fish {fish_n}: {metadata}")
             continue
 
         # Calculate the volume of the mask
