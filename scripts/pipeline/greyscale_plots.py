@@ -26,32 +26,13 @@ def _hist(vals: np.ndarray, path: pathlib.Path) -> None:
 
     axis.hist(vals, bins=np.linspace(0, 2**16, 100), histtype="stepfilled")
 
-    axis.set_ylim(0, max(2500, axis.get_ylim()[1]))
+    axis.set_ylim(0, max(4000, axis.get_ylim()[1]))
     axis.set_title(path.stem)
 
     fig.tight_layout()
     fig.savefig(path)
 
     plt.close(fig)
-
-
-def _process_pair(img: pathlib.Path, mask: pathlib.Path, hist_out_dir: pathlib.Path):
-    """
-    Read the images + masks, get the greyscale pixels and plot a histogram
-
-    """
-    hist_out_path = hist_out_dir / img.name.replace(".tif", ".png")
-    if hist_out_path.is_file():
-        return f"Skipping {hist_out_path.stem}"
-
-    i = tifffile.imread(img)
-    m = tifffile.imread(mask)
-
-    greyscale_vals = i[m]
-
-    # Plot and save a histogram
-    _hist(greyscale_vals, hist_out_path)
-    return f"Done {hist_out_path.stem}"
 
 
 def main():
