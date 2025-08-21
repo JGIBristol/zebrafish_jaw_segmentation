@@ -5,6 +5,7 @@ Functions to read in our data in a format that can be used for inference
 
 import pickle
 import pathlib
+import textwrap
 from functools import cache
 from dataclasses import dataclass
 
@@ -44,7 +45,10 @@ class Metadata:
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
     def __str__(self):
-        return f"{self.genotype} {self.strain} {self.name} ({self.age} months)\n{self.comments}".strip()
+        return (
+            f"N={self.n}: {self.genotype} {self.strain} {self.name} "
+            f"({self.age} months)\n{textwrap.fill(self.comments)}".strip()
+        )
 
 
 def crop_lookup() -> dict[int, tuple[int, int, int]]:
@@ -187,6 +191,10 @@ def mastersheet() -> pd.DataFrame:
             "Comments",
         ]
     ]
+
+    # Fill NaN ages with -1 and empty comments with empty str
+    retval.loc[:, "age"] = retval["age"].fillna(-1)
+    retval.loc[:, "Comments"] = retval["Comments"].fillna("")
 
     # Convert datatypes
     retval = retval.astype(
