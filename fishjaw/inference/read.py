@@ -26,6 +26,8 @@ class Metadata:
     The interesting/important metadata for a fish sample
     """
 
+    n: int
+    """ Fish number, using the new n (i.e. n not old_n) convention """
     age: int
     """ Age in months """
     genotype: str
@@ -200,6 +202,18 @@ def mastersheet() -> pd.DataFrame:
     return retval
 
 
+def fish_number(path: pathlib.Path) -> int:
+    """
+    Get the fish number from a filename, assuming the file follows the
+    "ak_<n>.<ext>" pattern
+
+    :param path: the path to the file
+
+    :returns: the fish number
+    """
+    return int(path.stem.split("_")[1])
+
+
 def metadata(fish_n: int) -> Metadata:
     """
     Get the metadata for one fish
@@ -213,6 +227,7 @@ def metadata(fish_n: int) -> Metadata:
 
     # Turn it into a metadata object
     return Metadata(
+        n=fish_n,
         age=df["age"],
         genotype=df["genotype"],
         strain=df["strain"],
