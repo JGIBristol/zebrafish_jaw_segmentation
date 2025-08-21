@@ -40,7 +40,7 @@ class Metadata:
     length: float
     """ Not sure what this is: possibly fish length in mm"""
     voxel_volume: float
-    """ Volume of each voxel; not sure of the units, possibly mm^3"""
+    """ Volume of each voxel; not sure of the units; possibly mm^3 """
     comments: str
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
@@ -49,6 +49,18 @@ class Metadata:
         return (
             f"N={self.n}: {self.genotype} {self.strain} {self.name} "
             f"({age})\n{textwrap.fill(self.comments)}".strip()
+        )
+
+    def is_contrast_enhanced(self) -> bool:
+        """
+        Check the comments and name for contrast enhanced
+        """
+        # These ones aren't labelled contrast enhanced but they look like it
+        extra_enhanced = {200, 201, 202, 207, 209, 211, 212, 214, 216, 217, 227, 228}
+        return (
+            "contrast" in self.name.lower()
+            or "contrast" in self.comments.lower()
+            or self.n in extra_enhanced
         )
 
 
@@ -245,3 +257,74 @@ def metadata(fish_n: int) -> Metadata:
         length=df["length"],
         comments=df["Comments"],
     )
+
+
+@cache
+def _wrong_centre() -> set:
+    """
+    The fish for which the model found the wrong centre, breaking the segmentation, which i found by just looking through all the plots
+    """
+    return {
+        53,
+        55,
+        121,
+        122,
+        164,
+        238,
+        239,
+        245,
+        255,
+        256,
+        274,
+        275,
+        282,
+        283,
+        293,
+        299,
+    }
+
+
+def is_excluded(
+    fish_n: int, *, exclude_train_data: bool, exclude_unknown_age: bool
+) -> bool:
+    """
+    Whether a fish should be excluded from the summary plots, and the reason if applicable.
+
+    Prints the reason for exclusion
+
+    We may want to exclude a fish if the segmentation is broken, e.g. if it is contrast
+    enhanced (we don't expect the model to work for these fish), or if the model failed
+    to find the jaw centre properly.
+
+    We may additionally want to exclude the training data for some analyses, or
+    fish of unknown age if we are e.g. performing an analysis using their ages
+
+    :param fish_n: fish number
+    :param exclude_train_data: whether to exclude the train data also
+    :param exclude_unknown_age: whether to exclude fish with unknown age
+
+    :returns: whether the fish is excluded
+
+    """
+    # Get the contrast enhanced from the metadata
+    mdata = metadata(fish_n)
+    if mdata.is_contrast_enhanced():
+        print(mdata, " --- contrast enhanced")
+        return True
+
+    # Get the other broken ones (and possibly the reasons)
+    if mdata.n in _wrong_centre():
+        print(mdata, " --- wrong centre")
+        return True
+
+    if exclude_train_data:
+        raise NotImplementedError(
+            "Need to go through and find the numbers for training data"
+        )
+
+    if exclude_unknown_age and mdata.age == -1:
+        print(mdata, "--- unknown age")
+        return True
+
+    # Fallthrough - we have not excluded the fish, so it is included
+    return False
