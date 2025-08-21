@@ -40,7 +40,7 @@ class Metadata:
     length: float
     """ Not sure what this is: possibly fish length in mm"""
     voxel_volume: float
-    """ Volume of each voxel; not sure of the units, possibly mm^3"""
+    """ Volume of each voxel; not sure of the units; possibly um^3 """
     comments: str
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
@@ -206,6 +206,9 @@ def mastersheet() -> pd.DataFrame:
             **{col: float for col in ["VoxelSizeX", "VoxelSizeY", "VoxelSizeZ"]},
         }
     )
+
+    # Convert voxelsize from mm (i think) to um (i think)
+    retval[["VoxelSizeX", "VoxelSizeY", "VoxelSizeZ"]] *= 1000
 
     retval.set_index("n", inplace=True)
     return retval
