@@ -41,7 +41,7 @@ def main():
         metadata: read.Metadata = read.metadata(fish_n)
 
         # Check the metadata for inclusion - we might want to skip it, in which case print
-        if read.is_excluded(fish_n, exclude_train_data=False):
+        if read.is_excluded(fish_n, exclude_train_data=False, exclude_unknown_age=True):
             print(f"Excluding fish {fish_n}: {metadata}")
             continue
 
@@ -52,10 +52,21 @@ def main():
         ages.append(metadata.age)
         volumes.append(vol)
 
+    # Perform a simple linear fit to get the trendline
+    z, cov = np.polyfit(ages, volumes, 1, cov=True)
+    p = np.poly1d(z)
+
     fig, axis = plt.subplots(figsize=(8, 6))
     axis.scatter(ages, volumes, alpha=0.5)
     axis.set_xlabel("Age (months)")
-    axis.set_ylabel(r"Volume $(\mum^3)$")
+    axis.set_ylabel(r"Volume $\left(mm^3\right)$")
+
+    unique_ages = list(set(ages))
+    axis.plot(unique_ages, p(unique_ages), color="red", linestyle="--")
+
+    axis.set_title(
+        f"Average increase: {z[0]:.3f}$\pm${np.sqrt(cov[0, 0]):.3f} $mm^3$/month\nN={len(ages)}"
+    )
 
     fig.tight_layout()
     fig.savefig(out_path)

@@ -40,7 +40,7 @@ class Metadata:
     length: float
     """ Not sure what this is: possibly fish length in mm"""
     voxel_volume: float
-    """ Volume of each voxel; not sure of the units; possibly um^3 """
+    """ Volume of each voxel; not sure of the units; possibly mm^3 """
     comments: str
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
@@ -50,6 +50,12 @@ class Metadata:
             f"N={self.n}: {self.genotype} {self.strain} {self.name} "
             f"({age})\n{textwrap.fill(self.comments)}".strip()
         )
+
+    def is_contrast_enhanced(self) -> bool:
+        """
+        Check the comments and name for contrast enhanced
+        """
+        return "contrast" in self.name.lower() or "contrast" in self.comments.lower()
 
 
 def crop_lookup() -> dict[int, tuple[int, int, int]]:
@@ -207,9 +213,6 @@ def mastersheet() -> pd.DataFrame:
         }
     )
 
-    # Convert voxelsize from mm (i think) to um (i think)
-    retval[["VoxelSizeX", "VoxelSizeY", "VoxelSizeZ"]] *= 1000
-
     retval.set_index("n", inplace=True)
     return retval
 
@@ -248,3 +251,47 @@ def metadata(fish_n: int) -> Metadata:
         length=df["length"],
         comments=df["Comments"],
     )
+
+
+@cache
+def _broken_fish() -> set:
+    """
+    The numbers of broken fish (other than contrast enhanced), which i found by just looking through all the plots
+    """
+
+
+def is_excluded(
+    fish_n: int, *, exclude_train_data: bool, exclude_unknown_age: bool
+) -> bool:
+    """
+    Whether a fish should be excluded from the summary plots.
+
+    We may want to exclude a fish if the segmentation is broken, e.g. if it is contrast
+    enhanced (we don't expect the model to work for these fish), or if the model failed
+    to find the jaw centre properly.
+
+    We may additionally want to exclude the training data for some analyses, or
+    fish of unknown age if we are e.g. performing an analysis using their ages
+
+    :param fish_n: fish number
+    :param exclude_train_data: whether to exclude the train data also
+    :param exclude_unknown_age: whether to exclude fish with unknown age
+
+    """
+    # Get the contrast enhanced from the metadata
+    mdata = metadata(fish_n)
+    if mdata.is_contrast_enhanced():
+        return True
+
+    # Get the other broken ones (and possibly the reasons)
+
+    if exclude_train_data:
+        raise NotImplementedError(
+            "Need to go through and find the numbers for training data"
+        )
+
+    if exclude_unknown_age and mdata.age == -1:
+        return True
+
+    # Fallthrough - we have not excluded the fish, so it is included
+    return False
