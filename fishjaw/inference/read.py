@@ -5,6 +5,7 @@ Functions to read in our data in a format that can be used for inference
 
 import pickle
 import pathlib
+from dataclasses import dataclass
 
 import torch
 import pydicom
@@ -15,6 +16,31 @@ import torchio as tio
 from fishjaw.util import files
 from fishjaw.images import transform
 from fishjaw.model import data
+
+
+@dataclass
+class Metadata:
+    """
+    The interesting/important metadata for a fish sample
+    """
+
+    age: int
+    """ Age in months """
+    genotype: str
+    """ Genotype, e.g. wt/hom/het"""
+    strain: str
+    """ e.g. chst11, runx2, wt"""
+    name: str
+    """ e.g. fli:gfp, wt, dot1 +/-"""
+    length: float
+    """ Not sure what this is: possibly fish length in mm"""
+    voxel_volume: float
+    """ Volume of each voxel; not sure of the units, possibly mm^3"""
+    comments: str
+    """Any other comments - importantly sometimes contains info about contrast enhancement"""
+
+    def __str__(self):
+        return f"{genotype} {strain} {name} ({age} months)\n{comments}".strip()
 
 
 def crop_lookup() -> dict[int, tuple[int, int, int]]:
