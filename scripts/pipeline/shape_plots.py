@@ -1,9 +1,12 @@
 """
 Simple analysis of the segmentations' shape.
 
-This script just plots the age vs volume of the segmentation mask,
+This script plots the age vs volume of the segmentation mask,
 excluding segmentations that are obviously broken (e.g. contrast enhanced,
 or where we've failed to find the jaw centre)
+
+It also plots pairs of age/volume/length, since we might expect a bigger (longer)
+fish to have a bigger jaw
 
 """
 
