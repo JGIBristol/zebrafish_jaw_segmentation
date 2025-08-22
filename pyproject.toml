@@ -7,7 +7,7 @@ name = "fishjaw"
 version = "0.1.0"
 description = "Zebrafish jaw segmentation toolkit"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.9.*"
 license = {text = "MIT"}
 authors = [
     {name = "Richard Lane", email = "richard.lane@bristol.ac.uk"},
@@ -23,7 +23,7 @@ dependencies = [
     "torch>=2.2.0",
     "torchvision>=0.17.0",
     "monai>=1.3.0",
-    "numpy>=1.24.0",
+    "numpy>=1.24.0,<2.0.0",
     "pandas>=2.0.0",
     "scikit-learn>=1.3.0",
     "scikit-image>=0.21.0",
@@ -40,6 +40,8 @@ dependencies = [
     "opencv-python>=4.8.0",
     "pickle-mixin>=1.0.2",
     "jupyter>=1.0.0",
+    "pyradiomics>=3.1.0",
+    "seaborn>=0.13.2",
 ]
 
 [dependency-groups]
