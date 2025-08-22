@@ -3,8 +3,7 @@ Simple analysis of the greyscale content of the segmentations.
 
 This is interesting because it tells us about the bone density at each voxel.
 
-This script will:
- - Plot histograms of the greyscale distribution of each jaw
+Use the command line flags to choose which kinds of plot to make
 """
 
 import pathlib
@@ -36,7 +35,7 @@ def _hist(vals: np.ndarray, path: pathlib.Path, metadata: read.Metadata) -> None
     plt.close(fig)
 
 
-def main():
+def main(hists: bool):
     """
     Read in the mastersheet to get metadata from the different segmentations
 
@@ -67,12 +66,16 @@ def main():
 
         greyscale_vals = i[m]
 
-        # Plot and save a histogram
-        _hist(greyscale_vals, hist_out_path, metadata)
+        if hists:
+            # Plot and save histograms
+            _hist(greyscale_vals, hist_out_path, metadata)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--hists", action="store_true", help="Plot 1d histograms of greyscale intensity"
+    )
 
     args = parser.parse_args()
 
