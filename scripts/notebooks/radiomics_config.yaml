@@ -1,0 +1,43 @@
+setting:
+  binWidth: 25
+  interpolator: sitkBSpline
+
+imageType:
+  Original: {}
+
+featureClass:
+  shape:
+    - Sphericity
+    - SurfaceVolumeRatio
+    - MajorAxisLength
+    - MinorAxisLength
+    - Elongation
+    - Flatness
+  firstorder:
+    - Mean
+    - Median
+    - Skewness
+    - Kurtosis
+    - Entropy
+    - InterquartileRange
+    - RobustMeanAbsoluteDeviation
+    - Energy
+  glcm:
+    - Contrast
+    - Correlation
+    - JointEntropy
+  glrlm:
+    - ShortRunEmphasis
+    - LongRunEmphasis
+    - RunLengthNonUniformity
+  glszm:
+    - SmallAreaEmphasis
+    - LargeAreaEmphasis
+    - ZoneEntropy
+  ngtdm:
+    - Coarseness
+    - Busyness
+  gldm:
+    - DependenceEntropy
+    - SmallDependenceEmphasis
+    - LargeDependenceEmphasis
