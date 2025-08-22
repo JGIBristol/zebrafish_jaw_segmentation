@@ -35,7 +35,7 @@ def _hist(vals: np.ndarray, path: pathlib.Path, metadata: read.Metadata) -> None
     plt.close(fig)
 
 
-def main(hists: bool):
+def main(hists: bool, length: bool, age: bool):
     """
     Read in the mastersheet to get metadata from the different segmentations
 
@@ -53,11 +53,18 @@ def main(hists: bool):
     in_imgs = sorted(list(img_in_dir.glob("*.tif")))
     in_masks = sorted(list(mask_in_dir.glob("*.tif")))
 
-    for img_path, mask_path in tqdm(
-        zip(in_imgs, in_masks, strict=True), total=len(in_imgs)
+    data = {
+        k: np.empty(len(in_imgs))
+        for k in ("length", "age", "median", "q25", "q75", "mean", "std")
+    }
+
+    for i, (img_path, mask_path) in tqdm(
+        enumerate(zip(in_imgs, in_masks, strict=True)), total=len(in_imgs)
     ):
         # Get the metadata
         metadata: read.Metadata = read.metadata(read.fish_number(img_path))
+        data["length"][i] = metadata.length
+        data["age"][i] = metadata.age
 
         hist_out_path = hist_out_dir / img_path.name.replace(".tif", ".png")
 
@@ -70,11 +77,30 @@ def main(hists: bool):
             # Plot and save histograms
             _hist(greyscale_vals, hist_out_path, metadata)
 
+        if length or age:
+            data["medians"][i] = np.median(greyscale_vals)
+            data["q25"][i] = np.percentile(greyscale_vals, 25)
+            data["q75"][i] = np.percentile(greyscale_vals, 75)
+            data["means"][i] = np.mean(greyscale_vals)
+            data["std"][i] = np.std(greyscale_vals)
+
+    if length:
+        ...
+
+    if age:
+        ...
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--hists", action="store_true", help="Plot 1d histograms of greyscale intensity"
+    )
+    parser.add_argument(
+        "--length", action="store_true", help="Plot greyscale intensity vs length"
+    )
+    parser.add_argument(
+        "--age", action="store_true", help="Plot greyscale intensity vs age"
     )
 
     args = parser.parse_args()
