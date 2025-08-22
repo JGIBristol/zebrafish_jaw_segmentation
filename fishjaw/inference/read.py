@@ -39,8 +39,10 @@ class Metadata:
     """ e.g. fli:gfp, wt, dot1 +/-"""
     length: float
     """ Not sure what this is: possibly fish length in mm"""
+    voxel_size: tuple[float, float, float]
+    """ Size of each voxel """
     voxel_volume: float
-    """ Volume of each voxel; not sure of the units; possibly mm^3 """
+    """ Volume of each voxel; not sure of the units; possibly mm^3. TODO should be a method"""
     comments: str
     """Any other comments - importantly sometimes contains info about contrast enhancement"""
 
@@ -253,6 +255,7 @@ def metadata(fish_n: int) -> Metadata:
         genotype=df["genotype"],
         strain=df["strain"],
         name=df["name"],
+        voxel_size=(df["VoxelSizeX"], df["VoxelSizeY"], df["VoxelSizeZ"]),
         voxel_volume=df["VoxelSizeX"] * df["VoxelSizeY"] * df["VoxelSizeZ"],
         length=df["length"],
         comments=df["Comments"],
