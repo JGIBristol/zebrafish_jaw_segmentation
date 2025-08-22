@@ -113,7 +113,7 @@ def _hist(vals: np.ndarray, path: pathlib.Path, metadata: read.Metadata) -> None
     plt.close(fig)
 
 
-def main(hists: bool, length: bool, age: bool):
+def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
     """
     Read in the mastersheet to get metadata from the different segmentations
 
@@ -139,6 +139,7 @@ def main(hists: bool, length: bool, age: bool):
         for k in ("length", "age", "median", "q25", "q75", "mean", "std")
     }
 
+    genotype = np.empty(len(in_imgs), dtype=object)
     for i, (img_path, mask_path) in tqdm(
         enumerate(zip(in_imgs, in_masks, strict=True)), total=len(in_imgs)
     ):
@@ -146,6 +147,7 @@ def main(hists: bool, length: bool, age: bool):
         metadata: read.Metadata = read.metadata(read.fish_number(img_path))
         data["length"][i] = metadata.length
         data["age"][i] = metadata.age
+        genotype[i] = metadata.genotype
 
         im = tifffile.imread(img_path)
         m = tifffile.imread(mask_path)
@@ -166,6 +168,15 @@ def main(hists: bool, length: bool, age: bool):
             data["q75"][i] = np.percentile(greyscale_vals, 75)
             data["mean"][i] = np.mean(greyscale_vals)
             data["std"][i] = np.std(greyscale_vals)
+
+    if wildtype_only:
+        data["age"] = data["age"][genotype == "wt"]
+        data["length"] = data["length"][genotype == "wt"]
+        data["median"] = data["median"][genotype == "wt"]
+        data["q25"] = data["q25"][genotype == "wt"]
+        data["q75"] = data["q75"][genotype == "wt"]
+        data["mean"] = data["mean"][genotype == "wt"]
+        data["std"] = data["std"][genotype == "wt"]
 
     if length:
         _lenplot(
@@ -198,6 +209,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--age", action="store_true", help="Plot greyscale intensity vs age"
+    )
+    parser.add_argument(
+        "--wildtype-only", action="store_true", help="Only include wildtype samples"
     )
 
     args = parser.parse_args()
