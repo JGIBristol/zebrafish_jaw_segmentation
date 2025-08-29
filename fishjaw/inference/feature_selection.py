@@ -1,9 +1,11 @@
 """
 Tools for performing feature selection once we've segmented the jaws
 """
+
 import pandas as pd
 
 from . import read
+
 
 def add_metadata_cols(feature_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -17,3 +19,14 @@ def add_metadata_cols(feature_df: pd.DataFrame) -> pd.DataFrame:
               of existing columns
 
     """
+    fish_ns = feature_df.index
+
+    metadata_df = pd.DataFrame(columns=["age", "length", "genotype"], index=fish_ns)
+
+    for n in fish_ns:
+        meta = read.metadata(n)
+        metadata_df.loc[n, "age"] = meta.age
+        metadata_df.loc[n, "length"] = meta.length
+        metadata_df.loc[n, "genotype"] = meta.genotype
+
+    return pd.concat([feature_df, metadata_df], axis=1)
