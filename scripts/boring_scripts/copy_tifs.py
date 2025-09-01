@@ -13,7 +13,7 @@ This script:
 import argparse
 import pathlib
 
-import tqdm
+from tqdm import tqdm
 import tifffile
 import numpy as np
 
@@ -53,9 +53,20 @@ if __name__ == "__main__":
     # Read the metadata mastersheet so we can map from old_n to new n
     metadata = _mastersheet()["old_n"]
 
+    rdsf_dir_ = rdsf_dir(userconf())
+    out_dir = rdsf_dir_ / "1Felix and Rich make models" / "wahabs_scans"
+
     # For all the 3D tiffs, in the mastersheet copy 3D tifs over
-    database_dir = rdsf_dir(userconf()) / "DATABASE" / "uCT" / "Wahab_clean_dataset"
+    database_dir =  rdsf_dir_ / "DATABASE" / "uCT" / "Wahab_clean_dataset"
     wahab_3d_tif_dir = database_dir / "TIFS/"
+
+    for img_path in tqdm(list(wahab_3d_tif_dir.glob("ak_*.tif"))):
+        n = int(img_path.stem.split("ak_")[1])
+
+        output_img = out_dir / f"{n}.tif"
+        if output_img.exists():
+            continue
+        print(f"copying {n}")
 
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
 
