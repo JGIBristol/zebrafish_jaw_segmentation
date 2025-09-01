@@ -17,7 +17,7 @@ import tqdm
 import tifffile
 import numpy as np
 
-from fishjaw.util import util
+from fishjaw.util.files import _mastersheet
 
 
 def create_3d_tiff(input_dir: pathlib.Path, output_file: pathlib.Path):
@@ -46,10 +46,12 @@ def create_3d_tiff(input_dir: pathlib.Path, output_file: pathlib.Path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(help=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
 
     # Read the metadata mastersheet so we can map from old_n to new n
+    metadata = _mastersheet()["old_n"]
+
     # For all the 3D tiffs, in the mastersheet copy 3D tifs over
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
 
