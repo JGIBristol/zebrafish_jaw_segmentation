@@ -17,7 +17,8 @@ import tqdm
 import tifffile
 import numpy as np
 
-from fishjaw.util.files import _mastersheet
+from fishjaw.util.files import _mastersheet, rdsf_dir
+from fishjaw.util.util import userconf
 
 
 def create_3d_tiff(input_dir: pathlib.Path, output_file: pathlib.Path):
@@ -53,5 +54,8 @@ if __name__ == "__main__":
     metadata = _mastersheet()["old_n"]
 
     # For all the 3D tiffs, in the mastersheet copy 3D tifs over
+    database_dir = rdsf_dir(userconf()) / "DATABASE" / "uCT" / "Wahab_clean_dataset"
+    wahab_3d_tif_dir = database_dir / "TIFS/"
+
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
 
