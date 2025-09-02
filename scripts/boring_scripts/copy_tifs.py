@@ -10,8 +10,11 @@ This script:
 
 """
 
-import argparse
+import os
+import shutil
 import pathlib
+import warnings
+import argparse
 
 from tqdm import tqdm
 import tifffile
@@ -57,16 +60,26 @@ if __name__ == "__main__":
     out_dir = rdsf_dir_ / "1Felix and Rich make models" / "wahabs_scans"
 
     # For all the 3D tiffs, in the mastersheet copy 3D tifs over
-    database_dir =  rdsf_dir_ / "DATABASE" / "uCT" / "Wahab_clean_dataset"
+    database_dir = rdsf_dir_ / "DATABASE" / "uCT" / "Wahab_clean_dataset"
     wahab_3d_tif_dir = database_dir / "TIFS/"
 
-    for img_path in tqdm(list(wahab_3d_tif_dir.glob("ak_*.tif"))):
+    pbar = tqdm(list(wahab_3d_tif_dir.glob("ak_*.tif")))
+    for img_path in pbar:
         n = int(img_path.stem.split("ak_")[1])
 
         output_img = out_dir / f"{n}.tif"
         if output_img.exists():
             continue
-        print(f"copying {n}")
+
+        pbar.set_description(f"Copying to {output_img.name}")
+        try:
+            shutil.copy(img_path, output_img)
+        except KeyboardInterrupt as e:
+            warnings.warn(
+                f"removing partially copied {output_img}, {os.path.getsize(output_img) // (1024 * 1024)} MB"
+            )
+            os.remove(output_img)
+            raise e
 
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
 
