@@ -40,6 +40,9 @@ dependencies = [
     "opencv-python>=4.8.0",
     "pickle-mixin>=1.0.2",
     "jupyter>=1.0.0",
+    "seaborn>=0.13.2",
+    "statsmodels>=0.14.5",
+    "nbdime>=4.0.2",
 ]
 
 [dependency-groups]

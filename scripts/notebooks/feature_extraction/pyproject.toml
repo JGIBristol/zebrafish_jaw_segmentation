@@ -1,0 +1,24 @@
+[project]
+name = "feature-extraction"
+version = "0.0.0"
+description = "Isolated env for pyradiomics feature extraction"
+requires-python = "-=3.9.*"
+dependencies = [
+  "numpy",
+  "pandas",
+  "pyradiomics",
+  "tifffile",
+  "tqdm",
+  "SimpleITK",
+  "fishjaw",
+  "tqdm",
+]
+
+[tool.uv]
+python = "3.9"
+
+[tool.uv.sources]
+# This will break if we try to use some of the utilities from the fishjaw library,
+# since they rely on some imports that we don't have in this small environment (e.g.
+# pytorch), but we can still use some things like the filepaths and utiltiies
+fishjaw = { path = "../../../", editable = true }
