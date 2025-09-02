@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
         pbar.set_description(f"Copying to {output_img.name}")
         try:
-            shutil.copy(img_path, output_img)
+            shutil.copyfile(img_path, output_img)
         except KeyboardInterrupt as e:
             warnings.warn(
                 f"removing partially copied {output_img}, {os.path.getsize(output_img) // (1024 * 1024)} MB"
