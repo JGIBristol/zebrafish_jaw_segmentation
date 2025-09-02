@@ -54,7 +54,8 @@ if __name__ == "__main__":
     parser.parse_args()
 
     # Read the metadata mastersheet so we can map from old_n to new n
-    metadata = _mastersheet()["old_n"]
+    metadata = _mastersheet()[["n", "old_n"]]
+    mapping = {int(row.old_n): int(row.n) for _, row in metadata.iterrows()}
 
     rdsf_dir_ = rdsf_dir(userconf())
     out_dir = rdsf_dir_ / "1Felix and Rich make models" / "wahabs_scans"
