@@ -11,6 +11,7 @@ This script:
 """
 
 import os
+import sys
 import shutil
 import pathlib
 import warnings
@@ -83,4 +84,19 @@ if __name__ == "__main__":
             raise e
 
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
+    wahab_2d_tif_dir = database_dir / "low_res_clean_v3"
+    pbar = tqdm(list(wahab_2d_tif_dir.glob(r"[0-9][0-9][0-9]")))
+    for dir_ in pbar:
+        old_n = int(dir_.name)
+        try:
+            new_n = mapping[old_n]
+        except KeyError:
+            print(f"No metadata found for old_n {old_n}, skipping", file=sys.stderr)
+            continue
 
+        output_img = out_dir / f"{new_n}.tif"
+        if output_img.exists():
+            continue
+
+        pbar.set_description(f"Creating {output_img.name} from {old_n}")
+        create_3d_tiff(dir_, output_img)
