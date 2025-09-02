@@ -43,6 +43,7 @@ dependencies = [
     "pyradiomics>=3.1.0",
     "seaborn>=0.13.2",
     "statsmodels>=0.14.5",
+    "nbdime>=4.0.2",
 ]
 
 [dependency-groups]
