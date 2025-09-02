@@ -82,6 +82,8 @@ if __name__ == "__main__":
             )
             os.remove(output_img)
             raise e
+        except OSError as e:
+            print(f"Problem for {n}, skipping: {str(e)}", file=sys.stderr)
 
     # For all the 2D tiffs that don't already exist, convert 2D tifs to 3D and save them
     wahab_2d_tif_dir = database_dir / "low_res_clean_v3"
