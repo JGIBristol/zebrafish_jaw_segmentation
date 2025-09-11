@@ -144,6 +144,7 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
     }
 
     genotype = np.empty(len(in_imgs), dtype=object)
+    # Build the data
     for i, (img_path, mask_path) in tqdm(
         enumerate(zip(in_imgs, in_masks, strict=True)), total=len(in_imgs)
     ):
@@ -152,6 +153,15 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
         data["length"][i] = metadata.length
         data["age"][i] = metadata.age
         genotype[i] = metadata.genotype
+
+        # Exclude broken ones by marking them as NaN
+        if read.is_excluded(
+            metadata.n, exclude_train_data=False, exclude_unknown_age=True
+        ):
+            data["length"][i] = np.nan
+            data["age"][i] = np.nan
+            genotype[i] = np.nan
+            continue
 
         im = tifffile.imread(img_path)
         m = tifffile.imread(mask_path)
@@ -172,6 +182,11 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
             data["q75"][i] = np.percentile(greyscale_vals, 75)
             data["mean"][i] = np.mean(greyscale_vals)
             data["std"][i] = np.std(greyscale_vals)
+
+    # Drop NaNs - these indicate broken fish
+    drop = np.isnan(data["length"])
+    data = {k: v[~drop] for k, v in data.items()}
+    genotype = genotype[~drop]
 
     if wildtype_only:
         data["age"] = data["age"][genotype == "wt"]
