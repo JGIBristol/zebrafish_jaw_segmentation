@@ -76,11 +76,15 @@ def _lenplot(
 
     median, mean = averages
 
-    axes[0].plot(length, median, color="C0")
-    axes[0].fill_between(length, quartiles[0], quartiles[1], color="C0", alpha=0.2)
-
-    axes[1].plot(length, mean, color="C1")
-    axes[1].fill_between(length, mean - std, mean + std, color="C1", alpha=0.2)
+    axes[0].errorbar(
+        length,
+        median,
+        yerr=[abs(median - a) for a in quartiles],
+        fmt=".",
+        color="C0",
+        alpha=0.5,
+    )
+    axes[1].errorbar(length, mean, yerr=std, fmt=".", color="C1", alpha=0.5)
 
     axes[0].set_ylabel("Greyscale Intensity")
     for axis in axes:
