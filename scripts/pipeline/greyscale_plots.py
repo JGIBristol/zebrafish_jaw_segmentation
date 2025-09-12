@@ -24,6 +24,7 @@ def _ageplot(
     quartiles: tuple[np.ndarray, np.ndarray],
     std: np.ndarray,
     path: pathlib.Path,
+    title: str,
 ):
     """
     Plot as points with errorbars
@@ -38,18 +39,63 @@ def _ageplot(
     std = std[sort_indices]
 
     median, mean = averages
-
-    plot_kw = {"fmt": "o", "alpha": 0.5}
     axes[0].set_title("Median (IQR)")
-    axes[0].errorbar(age, median, yerr=quartiles, color="C0", **plot_kw)
-
     axes[1].set_title("Mean ($\sigma$)")
-    axes[1].errorbar(age, mean, yerr=std, color="C1", **plot_kw)
+
+    ages = np.unique(age)
+    median_groups = [median[age == a] for a in ages]
+    mean_groups = [mean[age == a] for a in ages]
+
+    viol_kw = {
+        "widths": 2,
+        "showmeans": False,
+        "showmedians": True,
+        "showextrema": True,
+    }
+    median_viols = axes[0].violinplot(median_groups, positions=ages, **viol_kw)
+    mean_viols = axes[1].violinplot(mean_groups, positions=ages, **viol_kw)
+
+    q1_groups = [quartiles[0][age == a] for a in ages]
+    q3_groups = [quartiles[1][age == a] for a in ages]
+    axes[0].plot(ages, [np.median(x) for x in q1_groups], "C0:")
+    axes[0].plot(ages, [np.median(x) for x in q3_groups], "C0:")
+
+    std_groups = [std[age == a] for a in ages]
+    axes[1].plot(
+        ages,
+        [np.median(mean - std) for mean, std in zip(mean_groups, std_groups)],
+        "C1:",
+    )
+    axes[1].plot(
+        ages,
+        [np.median(mean + std) for mean, std in zip(mean_groups, std_groups)],
+        "C1:",
+    )
+
+    for viols, color in zip((median_viols, mean_viols), ("C0", "C1")):
+        for pc in viols["bodies"]:
+            pc.set_facecolor(color)
+            pc.set_alpha(0.8)
+        for line in ["cmedians", "cmins", "cmaxes", "cbars"]:
+            viols[line].set_color("black")
+
+    axes[0].legend(
+        [median_viols["bodies"][0], axes[0].lines[0]],
+        ["Median greyscale of each jaw", "Median of quartiles"],
+        loc="upper left",
+    )
+    axes[1].legend(
+        [mean_viols["bodies"][0], axes[1].lines[0]],
+        ["Mean Greyscale of each jaw", "Median of mean $\pm$ std"],
+        loc="upper left",
+    )
 
     axes[0].set_ylabel("Greyscale Intensity")
     for axis in axes:
         axis.set_xlabel("Age (months)")
         axis.set_ylim(0, 85000)
+
+    fig.suptitle(title)
 
     fig.tight_layout()
     fig.savefig(path)
@@ -63,6 +109,7 @@ def _lenplot(
     quartiles: tuple[np.ndarray, np.ndarray],
     std: np.ndarray,
     path: pathlib.Path,
+    title: str,
 ) -> None:
     """ """
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
@@ -93,6 +140,8 @@ def _lenplot(
 
     axes[0].set_title("Median (IQR)")
     axes[1].set_title("Mean ($\sigma$)")
+
+    fig.suptitle(title)
 
     fig.tight_layout()
     fig.savefig(path)
@@ -197,6 +246,8 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
         data["mean"] = data["mean"][genotype == "wt"]
         data["std"] = data["std"][genotype == "wt"]
 
+    title = "Wildtype Only" if wildtype_only else "All Genotypes"
+
     if length:
         _lenplot(
             data["length"],
@@ -204,17 +255,17 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
             (data["q25"], data["q75"]),
             data["std"],
             out_dir / "length.png",
+            title,
         )
 
     if age:
-        # Add a random jitter to age so that the plots look sensible
-        data["age"] = data["age"] + np.random.uniform(-0.2, 0.2, size=len(data["age"]))
         _ageplot(
             data["age"],
             (data["median"], data["mean"]),
             (data["q25"], data["q75"]),
             data["std"],
             out_dir / "age.png",
+            title,
         )
 
 
