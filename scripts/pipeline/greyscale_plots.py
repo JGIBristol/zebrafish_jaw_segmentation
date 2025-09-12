@@ -55,6 +55,23 @@ def _ageplot(
     median_viols = axes[0].violinplot(median_groups, positions=ages, **viol_kw)
     mean_viols = axes[1].violinplot(mean_groups, positions=ages, **viol_kw)
 
+    q1_groups = [quartiles[0][age == a] for a in ages]
+    q3_groups = [quartiles[1][age == a] for a in ages]
+    axes[0].plot(ages, [np.median(x) for x in q1_groups], "C0:")
+    axes[0].plot(ages, [np.median(x) for x in q3_groups], "C0:")
+
+    std_groups = [std[age == a] for a in ages]
+    axes[1].plot(
+        ages,
+        [np.median(mean - std) for mean, std in zip(mean_groups, std_groups)],
+        "C1:",
+    )
+    axes[1].plot(
+        ages,
+        [np.median(mean + std) for mean, std in zip(mean_groups, std_groups)],
+        "C1:",
+    )
+
     for viols, color in zip((median_viols, mean_viols), ("C0", "C1")):
         for pc in viols["bodies"]:
             pc.set_facecolor(color)
@@ -63,10 +80,14 @@ def _ageplot(
             viols[line].set_color("black")
 
     axes[0].legend(
-        [median_viols["bodies"][0]], ["Median greyscale of each jaw"], loc="upper left"
+        [median_viols["bodies"][0], axes[0].lines[0]],
+        ["Median greyscale of each jaw", "Median of quartiles"],
+        loc="upper left",
     )
     axes[1].legend(
-        [mean_viols["bodies"][0]], ["Mean Greyscale of each jaw"], loc="upper left"
+        [mean_viols["bodies"][0], axes[1].lines[0]],
+        ["Mean Greyscale of each jaw", "Median of mean $\pm$ std"],
+        loc="upper left",
     )
 
     axes[0].set_ylabel("Greyscale Intensity")
