@@ -31,6 +31,13 @@ def _ageplot(
     """
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharey=True, sharex=True)
 
+    # sort averages
+    sort_indices = np.argsort(age)
+    age = age[sort_indices]
+    averages = (averages[0][sort_indices], averages[1][sort_indices])
+    quartiles = (quartiles[0][sort_indices], quartiles[1][sort_indices])
+    std = std[sort_indices]
+
     median, mean = averages
     axes[0].set_title("Median (IQR)")
     axes[1].set_title("Mean ($\sigma$)")
