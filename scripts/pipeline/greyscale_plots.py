@@ -24,6 +24,7 @@ def _ageplot(
     quartiles: tuple[np.ndarray, np.ndarray],
     std: np.ndarray,
     path: pathlib.Path,
+    title: str,
 ):
     """
     Plot as points with errorbars
@@ -51,6 +52,8 @@ def _ageplot(
         axis.set_xlabel("Age (months)")
         axis.set_ylim(0, 85000)
 
+    fig.suptitle(title)
+
     fig.tight_layout()
     fig.savefig(path)
 
@@ -63,6 +66,7 @@ def _lenplot(
     quartiles: tuple[np.ndarray, np.ndarray],
     std: np.ndarray,
     path: pathlib.Path,
+    title: str,
 ) -> None:
     """ """
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
@@ -93,6 +97,8 @@ def _lenplot(
 
     axes[0].set_title("Median (IQR)")
     axes[1].set_title("Mean ($\sigma$)")
+
+    fig.suptitle(title)
 
     fig.tight_layout()
     fig.savefig(path)
@@ -197,6 +203,8 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
         data["mean"] = data["mean"][genotype == "wt"]
         data["std"] = data["std"][genotype == "wt"]
 
+    title = "Wildtype Only" if wildtype_only else "All Genotypes"
+
     if length:
         _lenplot(
             data["length"],
@@ -204,6 +212,7 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
             (data["q25"], data["q75"]),
             data["std"],
             out_dir / "length.png",
+            title,
         )
 
     if age:
@@ -215,6 +224,7 @@ def main(hists: bool, length: bool, age: bool, wildtype_only: bool):
             (data["q25"], data["q75"]),
             data["std"],
             out_dir / "age.png",
+            title,
         )
 
 
