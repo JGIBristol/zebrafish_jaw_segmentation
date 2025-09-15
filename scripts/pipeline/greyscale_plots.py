@@ -13,9 +13,30 @@ import tifffile
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 from fishjaw.util import files
 from fishjaw.inference import read
+
+
+def _kinked_line(x: np.ndarray, a, b, c, k):
+    return a + b * x + c * np.clip(x - k, 0, None)
+
+
+def _fit_kinked_line(
+    ages: np.ndarray, values: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Fit a kinked line to the data and return the fit params + covariance
+    """
+    p0 = (20000, 0.0, 0.0, 24)
+    bounds = (
+        (-np.inf, -np.inf, -np.inf, min(ages)),
+        (np.inf, np.inf, np.inf, max(ages)),
+    )
+    params, cov = curve_fit(_kinked_line, ages, values, p0=p0, bounds=bounds)
+
+    return params, cov
 
 
 def _ageplot(
@@ -72,6 +93,19 @@ def _ageplot(
         "C1:",
     )
 
+    # Perform fits
+    median_fit, _ = _fit_kinked_line(age, median)
+    mean_fit, _ = _fit_kinked_line(age, mean)
+    xvals = np.linspace(min(age), max(age), 100)
+    axes[0].plot(xvals, _kinked_line(xvals, *median_fit), "C0--")
+    axes[1].plot(xvals, _kinked_line(xvals, *mean_fit), "C1--")
+
+    axes[0].axvline(median_fit[-1], color="black", linestyle="dashed", alpha=0.5)
+    axes[1].axvline(mean_fit[-1], color="black", linestyle="dashed", alpha=0.5)
+    axes[0].text(0.1 + median_fit[-1], 200, f"{median_fit[-1]:.1f} mo")
+    axes[1].text(0.1 + mean_fit[-1], 200, f"{mean_fit[-1]:.1f} mo")
+
+    # Formatting
     for viols, color in zip((median_viols, mean_viols), ("C0", "C1")):
         for pc in viols["bodies"]:
             pc.set_facecolor(color)
@@ -80,13 +114,13 @@ def _ageplot(
             viols[line].set_color("black")
 
     axes[0].legend(
-        [median_viols["bodies"][0], axes[0].lines[0]],
-        ["Median greyscale of each jaw", "Median of quartiles"],
+        [median_viols["bodies"][0], axes[0].lines[0], axes[0].lines[2]],
+        ["Median greyscale of each jaw", "Median of quartiles", "Fit"],
         loc="upper left",
     )
     axes[1].legend(
-        [mean_viols["bodies"][0], axes[1].lines[0]],
-        ["Mean Greyscale of each jaw", "Median of mean $\pm$ std"],
+        [mean_viols["bodies"][0], axes[1].lines[0], axes[1].lines[2]],
+        ["Mean Greyscale of each jaw", "Median of mean $\pm$ std", "Fit"],
         loc="upper left",
     )
 
