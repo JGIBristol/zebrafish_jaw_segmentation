@@ -3,6 +3,43 @@ Find the muscle attachments by looking for areas of higher density.
 """
 
 import numpy as np
+from scipy.ndimage import uniform_filter
+
+
+def masked_smooth(
+    img: np.ndarray, mask: np.ndarray, filter_size: int = 5
+) -> np.ndarray:
+    """
+    Smooth an image, considering only the pixels in `img` selected by `mask`.
+
+    Uses a mean filter.
+
+    :param img: the image to smooth. Must only contain 0 outside of `mask`.
+    :param mask: boolean array selecting which pixels to keep
+    :param filter_size: size of the window used for smoothing
+
+    :return: smoothed version of img
+    :raises ValueError: if there are nonzero img pixels selected by mask
+    """
+    if not (img[~mask] == 0).all():
+        raise ValueError("Img pixels outside the mask must be set to 0")
+
+    sum = uniform_filter(img, size=filter_size)
+    count = uniform_filter(mask.astype(np.float32), size=filter_size)
+
+    # Avoid div by 0
+    retval = np.divide(sum, count, where=count > 0)
+    return retval * mask
+
+
+def get_max_loc(arr: np.ndarray) -> np.ndarray:
+    """
+    Get the location of the maximum in an array.
+
+    :param arr: an n-dimensional array.
+    :return: an n-length array giving the location of the maximal element.
+    """
+    return np.unravel_index(np.argmax(arr, axis=None), arr.shape)
 
 
 def remove_ball(img: np.ndarray, centre: np.ndarray, radius: float) -> np.ndarray:
