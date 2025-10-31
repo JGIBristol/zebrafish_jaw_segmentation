@@ -4,6 +4,7 @@ Find the muscle attachments by looking for areas of higher density.
 
 import numpy as np
 from scipy.ndimage import uniform_filter
+from scipy.spatial.distance import pdist
 
 
 def masked_smooth(
@@ -89,3 +90,14 @@ def get_maxima(
         image = remove_ball(image, loc, removal_radius)
 
     return retval
+
+
+def get_pairwise_distances(points: list[np.ndarray]) -> np.ndarray:
+    """
+    Get all pairwise distances between a list of n-dimensional points
+    """
+    assert (
+        len(set(x.ndim for x in points)) == 1
+    ), "all points must be same dimensionality"
+
+    return pdist(points)
