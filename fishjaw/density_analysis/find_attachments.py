@@ -77,6 +77,33 @@ def remove_ball(img: np.ndarray, centre: np.ndarray, radius: float) -> np.ndarra
     return np.where(_ball_mask(img.shape, centre, radius), 0, img)
 
 
+def ball_median(img: np.ndarray, centre: np.ndarray, radius: float) -> float:
+    """
+    Get the median in a ball of the given radius from a 3D image.
+
+    Excludes zeros - these will not contribute to the median.
+    This is to avoid the case where the centre is near the edge of a (nonzero) object
+    on a zero background - taking a naive median here would drive the median down.
+
+    :param img: 3d array
+    :param centre: the centre of the ball .
+    :param radius: radius of ball.
+
+    :return: the median of the image in the desired neighbourhood.
+
+    """
+    assert img.ndim == 3
+    assert len(centre) == 3
+
+    mask = _ball_mask(img.shape, centre, radius)
+
+    # Don't include zeros, to avoid driving down the median for locations near the edge
+    # of the image, since the background may be indicated with zeroes.
+    mask[img == 0] = False
+
+    return np.median(img[mask])
+
+
 def get_maxima(
     image: np.ndarray, n_maxima: int, *, removal_radius: float
 ) -> list[np.ndarray]:
