@@ -67,3 +67,25 @@ def remove_ball(img: np.ndarray, centre: np.ndarray, radius: float) -> np.ndarra
     ) <= radius**2
 
     return np.where(mask, 0, img)
+
+
+def get_maxima(
+    image: np.ndarray, n_maxima: int, *, removal_radius: float
+) -> list[np.ndarray]:
+    """
+    Get the locations of the top-n maxima from an image, in order.
+
+    :param image: a 3-d image. Probably should be smoothed (see `masked_smooth`)
+    :param n_maxima: number of maxima to find
+
+    :return: a list of maxima locations, in descending order.
+
+    """
+    retval = []
+
+    for _ in n_maxima:
+        loc = get_max_loc(image)
+        retval.append(loc)
+        image = remove_ball(image, loc, removal_radius)
+
+    return retval
