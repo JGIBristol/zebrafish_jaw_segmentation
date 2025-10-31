@@ -43,6 +43,19 @@ def get_max_loc(arr: np.ndarray) -> np.ndarray:
     return np.unravel_index(np.argmax(arr, axis=None), arr.shape)
 
 
+def _ball_mask(
+    img_shape: tuple[int, int, int], centre: tuple[float, float, float], radius: float
+) -> np.ndarray:
+    """
+    Binary mask for a ball at the given location/size in the provided sized array
+    """
+    z, y, x = np.ogrid[: img_shape[0], : img_shape[1], : img_shape[2]]
+
+    return (
+        (z - centre[0]) ** 2 + (y - centre[1]) ** 2 + (x - centre[2]) ** 2
+    ) <= radius**2
+
+
 def remove_ball(img: np.ndarray, centre: np.ndarray, radius: float) -> np.ndarray:
     """
     Remove a ball of the given radius from a 3D image.
@@ -61,13 +74,7 @@ def remove_ball(img: np.ndarray, centre: np.ndarray, radius: float) -> np.ndarra
     assert img.ndim == 3
     assert len(centre) == 3
 
-    z, y, x = np.ogrid[: img.shape[0], : img.shape[1], : img.shape[2]]
-
-    mask = (
-        (z - centre[0]) ** 2 + (y - centre[1]) ** 2 + (x - centre[2]) ** 2
-    ) <= radius**2
-
-    return np.where(mask, 0, img)
+    return np.where(_ball_mask(img.shape, centre, radius), 0, img)
 
 
 def get_maxima(
@@ -92,12 +99,12 @@ def get_maxima(
     return retval
 
 
-def get_pairwise_distances(points: list[np.ndarray]) -> np.ndarray:
+def get_pairwise_distances(points: list[tuple]) -> np.ndarray:
     """
     Get all pairwise distances between a list of n-dimensional points
     """
     assert (
-        len(set(x.ndim for x in points)) == 1
+        len(set(len(x) for x in points)) == 1
     ), "all points must be same dimensionality"
 
     return pdist(points)
