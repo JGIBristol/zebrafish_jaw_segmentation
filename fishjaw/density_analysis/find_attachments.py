@@ -84,7 +84,7 @@ def get_maxima(
     """
     retval = []
 
-    for _ in n_maxima:
+    for _ in range(n_maxima):
         loc = get_max_loc(image)
         retval.append(loc)
         image = remove_ball(image, loc, removal_radius)
