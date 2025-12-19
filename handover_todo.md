@@ -30,7 +30,12 @@ Checklist for handoverable state:
      [ ] Train the jaw locator
          [ ] train_jaw_locating_model.py
      [ ] Example for running inference on a lot jaws
+         [ ] scripts/pipeline/segment_jaws.py
+         [ ] scripts/pipeline/plot_slices.py
+         [ ] scripts/pipeline/plot_3d.py
+         [ ] scripts/pipeline/shape_plots.py
      [ ] Example for extracting greyscale stats + roughly finding muscle attachements
+         [ ] scripts/pipeline/greyscale_plots.py - simple greyscale plots
          [ ] muscle_attachment_analysis/find_muscle_attachments.ipynb
      [ ] Example fine tuning
          [ ] Perhaps based on quadrate_transfer_learning.py
