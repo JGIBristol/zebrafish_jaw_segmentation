@@ -15,21 +15,28 @@ Checklist for handoverable state:
      [ ] Reproduce the things in the paper
          [ ] Small facts/summaries
               [ ] arch_summary.py 
+              [ ] boring_scripts/training_summary_stats.py
+              [ ] boring_scripts/find_occupancy.py - find the size of the jaw
+              [ ] boring_scripts/rotating_truth_images.py - for making animations of the jaws for slides
          [ ] Mainline Analysis
              [ ] inference_example.py
              [ ] compare_segmentations.py
-         [ ] boring_scripts/training_summary_stats.py
-         [ ] train_models.sh - shell script to train all the models
-         [ ] repeat_training_summary.py - summarise the result
-         [ ] boring_scripts/find_occupancy.py - find the size of the jaw
-         [ ] boring_scripts/rotating_truth_images.py - for making animations of the jaws for slides
+             [ ] compare_slices.py - plot the slices in the fig
+             [ ] cubes.py - plot the cube illustration
+             [ ] plot_3d_rearjaw.py - plot the jaw joint images
+             [ ] train_models.sh - shell script to train all the models
+             [ ] repeat_training_summary.py - summarise the result
+
      [ ] Train the jaw locator
          [ ] train_jaw_locating_model.py
      [ ] Example for running inference on a lot jaws
-     [ ] Example for extracting greyscale stats + roughly f
+     [ ] Example for extracting greyscale stats + roughly finding muscle attachements
+         [ ] muscle_attachment_analysis/find_muscle_attachments.ipynb
      [ ] Example fine tuning
          [ ] Perhaps based on quadrate_transfer_learning.py
      [ ] Toy/not good feature selection script, with its own pyproject.toml
+         [ ] scripts/notebooks/feature_extraction/feature_extraction.py
+         [ ] scripts/notebooks/feature_extraction/pyproject.toml
      [ ] Extraneous scripts
          [ ] plot_dicoms.py
          [ ] plot_train_data.py
