@@ -1,5 +1,5 @@
 # zebrafish_jaw_segmentation
-Segmentation of Zebrafish Jawbones from uCT scans
+Segmentation of Zebrafish Jawbones from uCT scans.
 
 ![UT/IT](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/fast_tests.yml/badge.svg?branch=main)
 ![Tests](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/system_tests.yml/badge.svg?branch=main)
@@ -7,6 +7,8 @@ Segmentation of Zebrafish Jawbones from uCT scans
 ![Format](https://github.com/JGIBristol/zebrafish_jaw_segmentation/actions/workflows/format.yml/badge.svg?branch=main)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+> [!TIP]
+> A newer and more usable version of the code can be found at https://github.com/JGIBristol/Zebrafish_Osteoarthritis
 
 ## Project Description
 This project aims to segment the jawbone of zebrafish from micro-Computed Tomography (uCT) scans using a 3D U-Net model.
